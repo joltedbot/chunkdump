@@ -1,0 +1,8 @@
+[package]
+name = "chunkdump"
+version = "0.1.0"
+edition = "2021"
+authors = ["Dave White"]
+description = "Exports the metadata from wav files including non-standard chunks"
+
+[dependencies]
