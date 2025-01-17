@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Dave White"]
 description = "Exports the metadata from wav files including non-standard chunks"
+license = "Apache-2.0"
 
 [dependencies]
+thiserror = "2.0.11"
