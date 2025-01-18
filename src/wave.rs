@@ -1,26 +1,35 @@
+mod data;
+mod extra;
+mod fact;
 mod fmt;
 
-use crate::bytes::{read_bytes_from_file, skip_over_bytes_in_file};
+use crate::bytes::{read_bytes_from_file, read_bytes_from_file_as_string, skip_over_bytes_in_file};
 use crate::errors::LocalError;
-use crate::wave::fmt::FmtFields;
+use crate::wave::data::read_data_chunk_fields;
+use crate::wave::extra::read_extra_chunk_fields;
+use crate::wave::fact::read_fact_chunk_fields;
+use crate::wave::fmt::{read_fmt_chunk_fields, FmtFields};
+
 use std::error::Error;
 use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const RIFF_CKSIZE_FIELD_LENGTH_IN_BYTES: i64 = 4;
 const WAVEID_IN_DECIMAL_BYTES: [u8; 4] = [87, 65, 86, 69];
-
 const FMT_CHUNK_CHUNKID: &str = "fmt ";
+const FACT_CHUNK_CHUNKID: &str = "fact";
+const DATA_CHUNK_CHUNKID: &str = "data ";
 
 #[derive(Debug, Clone)]
 pub struct Wave {
     pub name: String,
     pub canonical_path: String,
     pub size_in_bytes: u64,
+    pub number_of_samples_per_channel: u32,
     pub format_data: FmtFields,
+    pub extra_data: Vec<Vec<u8>>,
 }
 
 impl Wave {
@@ -31,24 +40,39 @@ impl Wave {
             return Err(Box::new(LocalError::InvalidWaveID));
         }
 
+        let mut number_of_samples_per_channel = Default::default();
         let mut format_data: FmtFields = Default::default();
-        /*
-                let next_chunk_id =
-                    read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES)?;
+        let mut extra_data: Vec<Vec<u8>> = Default::default();
 
-                if next_chunk_id == FMT_CHUNK_CHUNKID {
-                    format_data = read_fmt_chunk_fields(&mut wave_file)?;
+        loop {
+            let next_chunkid =
+                match read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES)
+                {
+                    Ok(chunkid) => chunkid,
+                    Err(_) => break,
+                };
+
+            match next_chunkid.as_str() {
+                FMT_CHUNK_CHUNKID => format_data = read_fmt_chunk_fields(&mut wave_file)?,
+                FACT_CHUNK_CHUNKID => {
+                    number_of_samples_per_channel = read_fact_chunk_fields(&mut wave_file)?
                 }
-        */
-        let canonical_path = canonicalize_file_path(&file_path)?;
+                DATA_CHUNK_CHUNKID => read_data_chunk_fields(&mut wave_file)?,
+                _ => extra_data.push(read_extra_chunk_fields(&mut wave_file)?),
+            }
+        }
+
         let name = get_file_name_from_file_path(&file_path)?;
+        let canonical_path = canonicalize_file_path(&file_path)?;
         let size_in_bytes = wave_file.metadata()?.len();
 
         Ok(Self {
             name,
             canonical_path,
             size_in_bytes,
+            number_of_samples_per_channel,
             format_data,
+            extra_data,
         })
     }
 }
@@ -63,6 +87,7 @@ fn canonicalize_file_path(file_path: &String) -> Result<String, Box<dyn Error>> 
 
     Ok(canonical_path)
 }
+
 fn get_file_name_from_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
     let path = Path::new(file_path);
 
