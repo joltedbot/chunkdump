@@ -1,8 +1,7 @@
-use crate::bytes::{read_four_byte_integer_from_file, skip_over_bytes_in_file};
+use super::take_first_four_bytes_as_integer;
+use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
 use std::error::Error;
 use std::fs::File;
-
-const CUE_CKSIZE_FIELD_LENGTH_IN_BYTES: i64 = 4;
 
 #[derive(Debug, Clone, Default)]
 pub struct CueFields {
@@ -20,20 +19,20 @@ pub struct CuePoint {
     pub sample_start: u32,
 }
 
-pub fn read_cue_chunk_fields(wave_file: &mut File) -> Result<CueFields, Box<dyn Error>> {
-    skip_over_bytes_in_file(wave_file, CUE_CKSIZE_FIELD_LENGTH_IN_BYTES)?;
-    let number_of_cue_points = read_four_byte_integer_from_file(wave_file)?;
-
+pub fn read_cue_chunk(wave_file: &mut File) -> Result<CueFields, Box<dyn Error>> {
+    let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+    let mut cue_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
     let mut cue_points: Vec<CuePoint> = vec![];
+    let number_of_cue_points: u32 = take_first_four_bytes_as_integer(&mut cue_data)?;
 
-    for cue_point in 0..number_of_cue_points {
+    for _ in 0..number_of_cue_points {
         cue_points.push(CuePoint {
-            id: read_four_byte_integer_from_file(wave_file)?,
-            position: read_four_byte_integer_from_file(wave_file)?,
-            data_chunk_id: read_four_byte_integer_from_file(wave_file)?,
-            chunk_start: read_four_byte_integer_from_file(wave_file)?,
-            block_start: read_four_byte_integer_from_file(wave_file)?,
-            sample_start: read_four_byte_integer_from_file(wave_file)?,
+            id: take_first_four_bytes_as_integer(&mut cue_data)?,
+            position: take_first_four_bytes_as_integer(&mut cue_data)?,
+            data_chunk_id: take_first_four_bytes_as_integer(&mut cue_data)?,
+            chunk_start: take_first_four_bytes_as_integer(&mut cue_data)?,
+            block_start: take_first_four_bytes_as_integer(&mut cue_data)?,
+            sample_start: take_first_four_bytes_as_integer(&mut cue_data)?,
         })
     }
 

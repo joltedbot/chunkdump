@@ -1,5 +1,5 @@
-use crate::bytes::{read_bytes_from_file_as_string, read_four_byte_integer_from_file};
 use crate::errors::LocalError;
+use crate::fileio::{read_bytes_from_file_as_string, read_four_byte_integer_from_file};
 use std::error::Error;
 use std::fs::File;
 
@@ -8,12 +8,6 @@ const INFO_TYPE_ID: &str = "INFO";
 const ADTL_TYPE_ID: &str = "adtl";
 
 const INFO_ITEM_ID: usize = 4;
-const INFO_ITEM_SIZE: usize = 4;
-
-#[derive(Debug, Clone, Default)]
-pub struct ListInfo {
-    info_data: Vec<(String, String)>,
-}
 
 #[derive(Debug, Clone, Default)]
 pub struct ListAdtl {}
@@ -28,10 +22,8 @@ pub fn read_list_chunk_fields(
     match list_type.as_str() {
         INFO_TYPE_ID => {
             if list_type == INFO_TYPE_ID {
-                info_data = read_info_list_fields(
-                    wave_file,
-                    chunk_size - LIST_TYPE_LENGTH_IN_BYTES as u32,
-                )?;
+                info_data =
+                    read_info_list(wave_file, chunk_size - LIST_TYPE_LENGTH_IN_BYTES as u32)?;
             }
         }
         ADTL_TYPE_ID => {}
@@ -41,7 +33,7 @@ pub fn read_list_chunk_fields(
     Ok(info_data)
 }
 
-fn read_info_list_fields(
+fn read_info_list(
     wave_file: &mut File,
     mut data_size: u32,
 ) -> Result<Vec<(String, String)>, Box<dyn Error>> {

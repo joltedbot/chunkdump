@@ -1,14 +1,10 @@
-use crate::bytes::{read_bytes_from_file, read_four_byte_integer_from_file};
+use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
 use flate2::read::ZlibDecoder;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-#[derive(Debug, Clone, Default)]
-pub struct ResUFields {
-    json_data: String,
-}
 
-pub fn read_resu_chunk_fields(wave_file: &mut File) -> Result<ResUFields, Box<dyn Error>> {
+pub fn read_resu_chunk(wave_file: &mut File) -> Result<String, Box<dyn Error>> {
     let mut chunk_size = read_four_byte_integer_from_file(wave_file)?;
 
     if !chunk_size.is_power_of_two() {
@@ -21,5 +17,5 @@ pub fn read_resu_chunk_fields(wave_file: &mut File) -> Result<ResUFields, Box<dy
     let mut json_data = String::new();
     zlib.read_to_string(&mut json_data)?;
 
-    Ok(ResUFields { json_data })
+    Ok(json_data)
 }
