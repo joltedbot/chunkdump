@@ -10,4 +10,7 @@ pub enum LocalError {
 
     #[error("Incorrect WAVEID, file is not a valid RIFF WAVE file")]
     InvalidWaveID,
+
+    #[error("Incorrect INFO chunk type, {0}")]
+    InvalidInfoTypeID(String),
 }

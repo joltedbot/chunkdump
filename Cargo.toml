@@ -7,4 +7,5 @@ description = "Exports the metadata from wav files including non-standard chunks
 license = "Apache-2.0"
 
 [dependencies]
+flate2 = "1.0.35"
 thiserror = "2.0.11"

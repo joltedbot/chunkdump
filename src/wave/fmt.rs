@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::bytes::{
     read_bytes_from_file, read_four_byte_integer_from_file, read_two_byte_integer_from_file,
 };
