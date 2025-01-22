@@ -1,5 +1,8 @@
 use crate::errors::LocalError;
-use crate::fileio::{read_bytes_from_file_as_string, read_four_byte_integer_from_file};
+use crate::fileio::{
+    read_bytes_from_file, read_bytes_from_file_as_string, read_four_byte_integer_from_file,
+};
+use crate::wave::{take_first_four_bytes_as_integer, take_number_of_bytes_as_string};
 use std::error::Error;
 use std::fs::File;
 
@@ -7,56 +10,146 @@ const LIST_TYPE_LENGTH_IN_BYTES: usize = 4;
 const INFO_TYPE_ID: &str = "INFO";
 const ADTL_TYPE_ID: &str = "adtl";
 
-const INFO_ITEM_ID: usize = 4;
+const INFO_ITEM_ID_LENGTH_IN_BYTES: usize = 4;
+const ADTL_SUB_CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
+const ADTL_SUB_CHUNK_ID_LABEL: &str = "labl";
+const ADTL_SUB_CHUNK_ID_NOTE: &str = "note";
+const ADTL_SUB_CHUNK_ID_LABELED_TEXT: &str = "ltxt";
+const ADTL_CUE_POINT_ID_LENGTH_IN_BYTES: usize = 4;
+const ADTL_PURPOSE_ID_LENGTH_IN_BYTES: usize = 4;
+const ADTL_COUNTRY_LENGTH_IN_BYTES: usize = 2;
+const ADTL_LANGUAGE_LENGTH_IN_BYTES: usize = 2;
+const ADTL_DIALECT_LENGTH_IN_BYTES: usize = 2;
+const ADTL_CODE_PAGE_LENGTH_IN_BYTES: usize = 2;
 
 #[derive(Debug, Clone, Default)]
-pub struct ListAdtl {}
+pub struct AssociatedData {
+    labels: Vec<(u32, String)>,
+    notes: Vec<(u32, String)>,
+    labeled_texts: Vec<LabeledText>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct LabeledText {
+    cue_point_id: u32,
+    sample_length: u32,
+    purpose_id: String,
+    country: String,
+    language: String,
+    dialect: String,
+    code_page: String,
+    data: String,
+}
 
 pub fn read_list_chunk_fields(
-    wave_file: &mut File,
+    mut wave_file: &mut File,
 ) -> Result<Vec<(String, String)>, Box<dyn Error>> {
     let chunk_size = read_four_byte_integer_from_file(wave_file)?;
     let list_type = read_bytes_from_file_as_string(wave_file, LIST_TYPE_LENGTH_IN_BYTES)?;
+    let list_data_size: usize = chunk_size as usize - LIST_TYPE_LENGTH_IN_BYTES;
+    let mut list_data: Vec<u8> = read_bytes_from_file(&mut wave_file, list_data_size)?;
+
     let mut info_data: Vec<(String, String)> = Default::default();
+    let mut adtl_data: Vec<AssociatedData> = Default::default();
 
     match list_type.as_str() {
-        INFO_TYPE_ID => {
-            if list_type == INFO_TYPE_ID {
-                info_data =
-                    read_info_list(wave_file, chunk_size - LIST_TYPE_LENGTH_IN_BYTES as u32)?;
-            }
-        }
-        ADTL_TYPE_ID => {}
+        INFO_TYPE_ID => info_data = read_info_list(&mut list_data)?,
+        ADTL_TYPE_ID => adtl_data = read_adtl_list(&mut list_data)?,
         other => return Err(Box::new(LocalError::InvalidInfoTypeID(other.to_string()))),
     }
 
     Ok(info_data)
 }
 
-fn read_info_list(
-    wave_file: &mut File,
-    mut data_size: u32,
-) -> Result<Vec<(String, String)>, Box<dyn Error>> {
+fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<dyn Error>> {
     let mut list_fields: Vec<(String, String)> = Default::default();
-
     loop {
-        let id = match read_bytes_from_file_as_string(wave_file, INFO_ITEM_ID) {
-            Ok(id) => id,
-            Err(_) => break,
-        };
-        let size = read_four_byte_integer_from_file(wave_file)?;
-        let data = read_bytes_from_file_as_string(wave_file, size as usize)?;
-
-        list_fields.push((id, data));
-
-        let info_item_size = INFO_ITEM_ID as u32 + 4 + size;
-
-        if data_size > info_item_size {
-            data_size -= info_item_size;
-        } else {
+        if list_data.is_empty() {
             break;
         }
+
+        let id = take_number_of_bytes_as_string(list_data, INFO_ITEM_ID_LENGTH_IN_BYTES)?;
+        let size = take_first_four_bytes_as_integer(list_data)?;
+        let data = take_number_of_bytes_as_string(list_data, size as usize)?;
+
+        list_fields.push((id, data));
     }
 
     Ok(list_fields)
+}
+
+fn read_adtl_list(mut list_data: &mut Vec<u8>) -> Result<Vec<AssociatedData>, Box<dyn Error>> {
+    let mut adtl_list_data: Vec<AssociatedData> = Default::default();
+
+    loop {
+        if list_data.is_empty() {
+            break;
+        }
+
+        let mut associated_data: AssociatedData = Default::default();
+
+        match take_number_of_bytes_as_string(list_data, ADTL_SUB_CHUNK_ID_LENGTH_IN_BYTES)?.as_str()
+        {
+            ADTL_SUB_CHUNK_ID_LABEL => {
+                let label: (u32, String) = read_label_data(list_data)?;
+                associated_data.labels.push(label);
+            }
+            ADTL_SUB_CHUNK_ID_NOTE => {
+                let note: (u32, String) = read_note_data(list_data)?;
+                associated_data.notes.push(note);
+            }
+            ADTL_SUB_CHUNK_ID_LABELED_TEXT => {
+                let labeled_text: LabeledText = read_labeled_text_data(list_data)?;
+                associated_data.labeled_texts.push(labeled_text);
+            }
+            other => return Err(Box::new(LocalError::InvalidADTLTypeID(other.to_string()))),
+        }
+
+        adtl_list_data.push(associated_data);
+    }
+
+    Ok(adtl_list_data)
+}
+
+fn read_label_data(list_data: &mut Vec<u8>) -> Result<(u32, String), Box<dyn Error>> {
+    let label_size: usize = take_first_four_bytes_as_integer(list_data)? as usize;
+    let data_size: usize = label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
+    let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let label_data: String = take_number_of_bytes_as_string(list_data, data_size)?;
+    Ok((cue_point_id, label_data))
+}
+
+fn read_note_data(list_data: &mut Vec<u8>) -> Result<(u32, String), Box<dyn Error>> {
+    let note_size: usize = take_first_four_bytes_as_integer(list_data)? as usize;
+    let data_size: usize = note_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
+    let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let note_data: String = take_number_of_bytes_as_string(list_data, data_size)?;
+    Ok((cue_point_id, note_data))
+}
+
+fn read_labeled_text_data(list_data: &mut Vec<u8>) -> Result<LabeledText, Box<dyn Error>> {
+    let labeled_text: LabeledText = read_labeled_text_data(list_data)?;
+    let labeled_test_size: usize = take_first_four_bytes_as_integer(list_data)? as usize;
+    let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let sample_length: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let purpose_id: String =
+        take_number_of_bytes_as_string(list_data, ADTL_PURPOSE_ID_LENGTH_IN_BYTES)?;
+    let country: String = take_number_of_bytes_as_string(list_data, ADTL_COUNTRY_LENGTH_IN_BYTES)?;
+    let language: String =
+        take_number_of_bytes_as_string(list_data, ADTL_LANGUAGE_LENGTH_IN_BYTES)?;
+    let dialect: String = take_number_of_bytes_as_string(list_data, ADTL_DIALECT_LENGTH_IN_BYTES)?;
+    let code_page: String =
+        take_number_of_bytes_as_string(list_data, ADTL_CODE_PAGE_LENGTH_IN_BYTES)?;
+    let data: String = take_number_of_bytes_as_string(list_data, list_data.len())?;
+
+    Ok(LabeledText {
+        cue_point_id,
+        sample_length,
+        purpose_id,
+        country,
+        language,
+        dialect,
+        code_page,
+        data,
+    })
 }

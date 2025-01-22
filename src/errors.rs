@@ -13,4 +13,7 @@ pub enum LocalError {
 
     #[error("Incorrect INFO chunk type, {0}")]
     InvalidInfoTypeID(String),
+
+    #[error("Incorrect ADTL chunk type, {0}")]
+    InvalidADTLTypeID(String),
 }
