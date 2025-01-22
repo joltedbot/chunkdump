@@ -63,7 +63,9 @@ pub fn read_bytes_from_file_as_lossy_string(
     number_of_bytes: usize,
 ) -> Result<String, Box<dyn Error>> {
     let extracted_bytes = read_bytes_from_file(file, number_of_bytes)?;
-    Ok(String::from_utf8_lossy(&extracted_bytes).to_string())
+    let cleaned_bytes: Vec<u8> = extracted_bytes.into_iter().filter(|b| *b != 0).collect();
+
+    Ok(String::from_utf8_lossy(&cleaned_bytes).to_string())
 }
 
 #[cfg(test)]

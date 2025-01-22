@@ -10,7 +10,7 @@ const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
 const WAVE_FILE_CHUNKID: &str = "RIFF";
 
 fn main() {
-    let path_of_file_to_read = "./test/from_logic.wav".to_string();
+    let path_of_file_to_read = "./test/from_reaper.wav".to_string();
     let mut file = File::open(&path_of_file_to_read).expect("Could not open file path");
 
     let file_chunk_id = read_bytes_from_file_as_string(&mut file, FILE_CHUNKID_LENGTH_IN_BYTES)
