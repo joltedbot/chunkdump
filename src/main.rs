@@ -19,6 +19,6 @@ fn main() {
         let wave_file =
             Wave::new(path_of_file_to_read, file).expect("Could not create new wave file object");
 
-        println!("{:?}", wave_file);
+        println!("{:#?}", wave_file.extra_data);
     }
 }
