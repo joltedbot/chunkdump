@@ -3,6 +3,7 @@ mod data;
 mod extra;
 mod fact;
 mod fmt;
+mod id3;
 mod ixml;
 mod junk;
 mod list;
@@ -19,17 +20,19 @@ use crate::wave::data::skip_data_chunk;
 use crate::wave::extra::read_extra_chunk_fields;
 use crate::wave::fact::read_fact_chunk;
 use crate::wave::fmt::{read_fmt_chunk, FmtFields};
+use crate::wave::id3::read_id3_chunk;
+use crate::wave::ixml::read_ixml_chunk;
 use crate::wave::junk::read_junk_chunk;
 use crate::wave::list::read_list_chunk_fields;
 use crate::wave::resu::read_resu_chunk;
-
-use crate::wave::ixml::read_ixml_chunk;
 use crate::wave::xmp::read_xmp_chunk;
+
 use std::error::Error;
 use std::fs::File;
 
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
+const CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
 const RIFF_CKSIZE_FIELD_LENGTH_IN_BYTES: i64 = 4;
 const WAVEID_IN_DECIMAL_BYTES: [u8; 4] = [87, 65, 86, 69];
 const FMT_CHUNKID: &str = "fmt ";
@@ -42,6 +45,8 @@ const JUNK_CHUNKID: &str = "junk\
 const LIST_CHUNKID: &str = "LIST";
 const IXML_CHUNKID: &str = "iXML";
 const XMP_CHUNKID: &str = "_PMX";
+
+const ID3_CHUNKID: &str = "id3 ";
 
 #[derive(Debug, Clone, Default)]
 pub struct Wave {
@@ -57,6 +62,7 @@ pub struct Wave {
     pub list_data: Vec<(String, String)>,
     pub ixml_data: String,
     pub xmp_data: String,
+    pub id3_data: Vec<(String, String)>,
     pub extra_data: Vec<(String, String)>,
 }
 
@@ -91,11 +97,14 @@ impl Wave {
                 LIST_CHUNKID => new_wave.list_data = read_list_chunk_fields(&mut wave_file)?,
                 IXML_CHUNKID => new_wave.ixml_data = read_ixml_chunk(&mut wave_file)?,
                 XMP_CHUNKID => new_wave.xmp_data = read_xmp_chunk(&mut wave_file)?,
-                _ => new_wave
-                    .extra_data
-                    .push(read_extra_chunk_fields(&mut wave_file, next_chunkid)?),
+                ID3_CHUNKID => new_wave.id3_data = read_id3_chunk(&mut wave_file)?,
+                _ => {
+                    let extra_chunk_data = read_extra_chunk_fields(&mut wave_file, next_chunkid)?;
+                    new_wave.extra_data.push(extra_chunk_data);
+                }
             }
         }
+
         new_wave.name = get_file_name_from_file_path(&file_path)?;
         new_wave.canonical_path = canonicalize_file_path(&file_path)?;
         new_wave.size_in_bytes = wave_file.metadata()?.len();
@@ -106,7 +115,6 @@ impl Wave {
 
 pub fn take_first_four_bytes_as_integer(byte_data: &mut Vec<u8>) -> Result<u32, Box<dyn Error>> {
     let bytes: Vec<u8> = byte_data.drain(..4).collect();
-
     let mut chunk_size_array: [u8; 4] = Default::default();
     chunk_size_array.copy_from_slice(bytes.as_slice());
 

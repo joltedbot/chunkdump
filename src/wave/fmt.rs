@@ -4,10 +4,21 @@ use std::error::Error;
 use std::fs::File;
 
 const FORMAT_CHUNK_SIZE_IF_NO_EXTENSION: u32 = 16;
+const WAVE_FORMAT_PCM_ID: u16 = 1;
+const WAVE_FORMAT_PCM_NAME: &str = "PCM";
+const WAVE_FORMAT_IEEE_FLOAT_ID: u16 = 3;
+const WAVE_FORMAT_IEEE_FLOAT_NAME: &str = "IEEE float";
+const WAVE_FORMAT_ALAW_ID: u16 = 6;
+const WAVE_FORMAT_ALAW_NAME: &str = "8-bit ITU-T G.711 A-law";
+const WAVE_FORMAT_MULAW_ID: u16 = 7;
+const WAVE_FORMAT_MULAW_NAME: &str = "8-bit ITU-T G.711 µ-law";
+const WAVE_FORMAT_EXTENSIBLE_ID: u16 = 65279;
+const WAVE_FORMAT_EXTENSIBLE_NAME: &str = "Determined by SubFormat";
+const WAVE_FORMAT_UNKNOWN: &str = "Unknown Format ID: ";
 
 #[derive(Debug, Clone, Default)]
 pub struct FmtFields {
-    pub format_code: u16,
+    pub format_code: String,
     pub number_of_channels: u16,
     pub samples_per_second: u32,
     pub average_data_rate: u32,
@@ -22,7 +33,8 @@ pub fn read_fmt_chunk(wave_file: &mut File) -> Result<FmtFields, Box<dyn Error>>
     let chunk_size = read_four_byte_integer_from_file(wave_file)?;
     let mut fmt_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
-    let format_code = take_first_two_bytes_as_integer(&mut fmt_data)?;
+    let format_code =
+        get_format_name_from_format_id(take_first_two_bytes_as_integer(&mut fmt_data)?);
     let number_of_channels = take_first_two_bytes_as_integer(&mut fmt_data)?;
     let samples_per_second = take_first_four_bytes_as_integer(&mut fmt_data)?;
     let average_data_rate = take_first_four_bytes_as_integer(&mut fmt_data)?;
@@ -56,4 +68,15 @@ pub fn read_fmt_chunk(wave_file: &mut File) -> Result<FmtFields, Box<dyn Error>>
         speaker_position_mask,
         subformat_guid,
     })
+}
+
+fn get_format_name_from_format_id(format_id: u16) -> String {
+    match format_id {
+        WAVE_FORMAT_PCM_ID => WAVE_FORMAT_PCM_NAME.to_string(),
+        WAVE_FORMAT_IEEE_FLOAT_ID => WAVE_FORMAT_IEEE_FLOAT_NAME.to_string(),
+        WAVE_FORMAT_ALAW_ID => WAVE_FORMAT_ALAW_NAME.to_string(),
+        WAVE_FORMAT_MULAW_ID => WAVE_FORMAT_MULAW_NAME.to_string(),
+        WAVE_FORMAT_EXTENSIBLE_ID => WAVE_FORMAT_EXTENSIBLE_NAME.to_string(),
+        _ => format!("{} {}", WAVE_FORMAT_UNKNOWN, format_id),
+    }
 }
