@@ -128,8 +128,6 @@ fn read_note_data(list_data: &mut Vec<u8>) -> Result<(u32, String), Box<dyn Erro
 }
 
 fn read_labeled_text_data(list_data: &mut Vec<u8>) -> Result<LabeledText, Box<dyn Error>> {
-    let labeled_text: LabeledText = read_labeled_text_data(list_data)?;
-    let labeled_test_size: usize = take_first_four_bytes_as_integer(list_data)? as usize;
     let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
     let sample_length: u32 = take_first_four_bytes_as_integer(list_data)?;
     let purpose_id: String =

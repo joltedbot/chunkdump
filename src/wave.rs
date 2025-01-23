@@ -40,8 +40,7 @@ const FACT_CHUNKID: &str = "fact";
 const DATA_CHUNKID: &str = "data";
 const CUE_CHUNKID: &str = "cue ";
 const RESU_CHUNKID: &str = "ResU";
-const JUNK_CHUNKID: &str = "junk\
-";
+const JUNK_CHUNKID: &str = "junk";
 const LIST_CHUNKID: &str = "LIST";
 const IXML_CHUNKID: &str = "iXML";
 const XMP_CHUNKID: &str = "_PMX";
@@ -76,13 +75,19 @@ impl Wave {
         }
 
         let mut new_wave: Self = Default::default();
+        new_wave.name = get_file_name_from_file_path(&file_path)?;
+        new_wave.canonical_path = canonicalize_file_path(&file_path)?;
+        new_wave.size_in_bytes = wave_file.metadata()?.len();
 
         loop {
             let next_chunkid =
                 match read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES)
                 {
                     Ok(chunkid) => chunkid,
-                    Err(_) => break,
+                    Err(e) => {
+                        println!("--{:?}", e);
+                        break;
+                    }
                 };
 
             new_wave.chunk_ids.push(next_chunkid.clone());
@@ -97,17 +102,16 @@ impl Wave {
                 LIST_CHUNKID => new_wave.list_data = read_list_chunk_fields(&mut wave_file)?,
                 IXML_CHUNKID => new_wave.ixml_data = read_ixml_chunk(&mut wave_file)?,
                 XMP_CHUNKID => new_wave.xmp_data = read_xmp_chunk(&mut wave_file)?,
-                ID3_CHUNKID => new_wave.id3_data = read_id3_chunk(&mut wave_file)?,
+                ID3_CHUNKID => {
+                    new_wave.id3_data =
+                        read_id3_chunk(&mut wave_file, new_wave.canonical_path.clone())?
+                }
                 _ => {
                     let extra_chunk_data = read_extra_chunk_fields(&mut wave_file, next_chunkid)?;
                     new_wave.extra_data.push(extra_chunk_data);
                 }
             }
         }
-
-        new_wave.name = get_file_name_from_file_path(&file_path)?;
-        new_wave.canonical_path = canonicalize_file_path(&file_path)?;
-        new_wave.size_in_bytes = wave_file.metadata()?.len();
 
         Ok(new_wave)
     }
@@ -136,7 +140,7 @@ pub fn take_number_of_bytes_as_string(
 ) -> Result<String, Box<dyn Error>> {
     let extracted_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
     let cleaned_bytes: Vec<u8> = extracted_bytes.into_iter().filter(|b| *b != 0).collect();
-    Ok(String::from_utf8_lossy(&cleaned_bytes.as_slice()).to_string())
+    Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())
 }
 
 #[cfg(test)]
@@ -162,7 +166,7 @@ mod tests {
 
         assert_eq!(
             test_bytes_length_after_function_call,
-            (test_bytes_length_before_function_call - 4)
+            test_bytes_length_before_function_call - 4
         );
     }
 
@@ -185,7 +189,7 @@ mod tests {
 
         assert_eq!(
             test_bytes_length_after_function_call,
-            (test_bytes_length_before_function_call - 2)
+            test_bytes_length_before_function_call - 2
         );
     }
 }
