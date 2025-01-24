@@ -16,4 +16,7 @@ pub enum LocalError {
 
     #[error("Incorrect ADTL chunk type, {0}")]
     InvalidADTLTypeID(String),
+
+    #[error("Requested number of bytes {0} is greater than the available bytes: {1}")]
+    InsufficientBytesToTake(usize, usize),
 }

@@ -1,4 +1,6 @@
-use super::{take_first_four_bytes_as_integer, take_first_two_bytes_as_integer};
+#![allow(dead_code)]
+
+use crate::byteio::{take_first_four_bytes_as_integer, take_first_two_bytes_as_integer};
 use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
 use std::error::Error;
 use std::fs::File;
