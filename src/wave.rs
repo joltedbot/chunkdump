@@ -29,7 +29,6 @@ use crate::wave::resu::read_resu_chunk;
 use crate::wave::xmp::read_xmp_chunk;
 use std::error::Error;
 use std::fs::File;
-use std::io::Read;
 
 const FMT_CHUNKID: &str = "fmt ";
 const FACT_CHUNKID: &str = "fact";

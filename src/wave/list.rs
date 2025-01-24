@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
 use crate::errors::LocalError;
 use crate::fileio::{
@@ -25,7 +27,7 @@ const ADTL_CODE_PAGE_LENGTH_IN_BYTES: usize = 2;
 #[derive(Debug, Clone, Default)]
 pub struct ListData {
     pub info_data: Vec<(String, String)>,
-    pub adtl_data: Vec<(AssociatedData)>,
+    pub adtl_data: Vec<AssociatedData>,
 }
 
 #[derive(Debug, Clone, Default)]
