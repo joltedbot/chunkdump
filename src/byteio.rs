@@ -1,5 +1,16 @@
 use crate::errors::LocalError;
 
+pub fn take_first_eight_bytes_as_integer(byte_data: &mut Vec<u8>) -> Result<u64, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 8;
+    check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(u64::from_le_bytes(byte_array))
+}
+
 pub fn take_first_four_bytes_as_integer(byte_data: &mut Vec<u8>) -> Result<u32, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
     check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
@@ -22,6 +33,17 @@ pub fn take_first_two_bytes_as_integer(byte_data: &mut Vec<u8>) -> Result<u16, L
     Ok(u16::from_le_bytes(byte_array))
 }
 
+pub fn take_first_four_bytes_float(byte_data: &mut Vec<u8>) -> Result<f32, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
+    check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(f32::from_le_bytes(byte_array))
+}
+
 pub fn take_first_number_of_bytes_as_string(
     byte_data: &mut Vec<u8>,
     number_of_bytes: usize,
@@ -35,6 +57,17 @@ pub fn take_first_number_of_bytes_as_string(
         .collect();
 
     Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())
+}
+
+pub fn take_first_number_of_bytes(
+    byte_data: &mut Vec<u8>,
+    number_of_bytes: usize,
+) -> Result<Vec<u8>, LocalError> {
+    check_sufficient_bytes_are_available(byte_data, number_of_bytes)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
+
+    Ok(taken_bytes)
 }
 
 fn check_sufficient_bytes_are_available(

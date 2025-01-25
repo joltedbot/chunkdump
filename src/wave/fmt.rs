@@ -6,17 +6,17 @@ use std::error::Error;
 use std::fs::File;
 
 const FORMAT_CHUNK_SIZE_IF_NO_EXTENSION: u32 = 16;
-const WAVE_FORMAT_PCM_ID: u16 = 1;
-const WAVE_FORMAT_PCM_NAME: &str = "PCM";
-const WAVE_FORMAT_IEEE_FLOAT_ID: u16 = 3;
-const WAVE_FORMAT_IEEE_FLOAT_NAME: &str = "IEEE float";
-const WAVE_FORMAT_ALAW_ID: u16 = 6;
-const WAVE_FORMAT_ALAW_NAME: &str = "8-bit ITU-T G.711 A-law";
-const WAVE_FORMAT_MULAW_ID: u16 = 7;
-const WAVE_FORMAT_MULAW_NAME: &str = "8-bit ITU-T G.711 µ-law";
-const WAVE_FORMAT_EXTENSIBLE_ID: u16 = 65279;
-const WAVE_FORMAT_EXTENSIBLE_NAME: &str = "Determined by SubFormat";
-const WAVE_FORMAT_UNKNOWN: &str = "Unknown Format ID: ";
+const PCM_FORMAT_ID: u16 = 1;
+const PCM_FORMAT_NAME: &str = "PCM";
+const IEEE_FORMAT_FLOAT_ID: u16 = 3;
+const IEEE_FORMAT_FLOAT_NAME: &str = "IEEE float";
+const ALAW_FORMAT_ID: u16 = 6;
+const ALAW_FORMAT_NAME: &str = "8-bit ITU-T G.711 A-law";
+const MULAW_FORMAT_ID: u16 = 7;
+const MULAW_FORMAT_NAME: &str = "8-bit ITU-T G.711 µ-law";
+const EXTENSIBLE_FORMAT_ID: u16 = 65279;
+const EXTENSIBLE_FORMAT_NAME: &str = "Determined by SubFormat";
+const UNKOWN_FORMAT: &str = "Unknown Format ID: ";
 
 #[derive(Debug, Clone, Default)]
 pub struct FmtFields {
@@ -74,11 +74,11 @@ pub fn read_fmt_chunk(wave_file: &mut File) -> Result<FmtFields, Box<dyn Error>>
 
 fn get_format_name_from_format_id(format_id: u16) -> String {
     match format_id {
-        WAVE_FORMAT_PCM_ID => WAVE_FORMAT_PCM_NAME.to_string(),
-        WAVE_FORMAT_IEEE_FLOAT_ID => WAVE_FORMAT_IEEE_FLOAT_NAME.to_string(),
-        WAVE_FORMAT_ALAW_ID => WAVE_FORMAT_ALAW_NAME.to_string(),
-        WAVE_FORMAT_MULAW_ID => WAVE_FORMAT_MULAW_NAME.to_string(),
-        WAVE_FORMAT_EXTENSIBLE_ID => WAVE_FORMAT_EXTENSIBLE_NAME.to_string(),
-        _ => format!("{} {}", WAVE_FORMAT_UNKNOWN, format_id),
+        PCM_FORMAT_ID => PCM_FORMAT_NAME.to_string(),
+        IEEE_FORMAT_FLOAT_ID => IEEE_FORMAT_FLOAT_NAME.to_string(),
+        ALAW_FORMAT_ID => ALAW_FORMAT_NAME.to_string(),
+        MULAW_FORMAT_ID => MULAW_FORMAT_NAME.to_string(),
+        EXTENSIBLE_FORMAT_ID => EXTENSIBLE_FORMAT_NAME.to_string(),
+        _ => format!("{} {}", UNKOWN_FORMAT, format_id),
     }
 }
