@@ -25,7 +25,7 @@ const ADTL_DIALECT_LENGTH_IN_BYTES: usize = 2;
 const ADTL_CODE_PAGE_LENGTH_IN_BYTES: usize = 2;
 
 #[derive(Debug, Clone, Default)]
-pub struct ListData {
+pub struct ListFields {
     pub info_data: Vec<(String, String)>,
     pub adtl_data: Vec<AssociatedData>,
 }
@@ -49,23 +49,24 @@ pub struct LabeledText {
     data: String,
 }
 
-pub fn read_list_chunk_fields(mut wave_file: &mut File) -> Result<ListData, Box<dyn Error>> {
-    let chunk_size = read_four_byte_integer_from_file(wave_file)?;
-    let list_type = read_bytes_from_file_as_string(wave_file, LIST_TYPE_LENGTH_IN_BYTES)?;
-    let data_size: usize = chunk_size as usize - LIST_TYPE_LENGTH_IN_BYTES;
-    let mut data: Vec<u8> = read_bytes_from_file(&mut wave_file, data_size)?;
+impl ListFields {
+    pub fn new(mut wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
+        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let list_type = read_bytes_from_file_as_string(wave_file, LIST_TYPE_LENGTH_IN_BYTES)?;
+        let data_size: usize = chunk_size as usize - LIST_TYPE_LENGTH_IN_BYTES;
+        let mut data: Vec<u8> = read_bytes_from_file(&mut wave_file, data_size)?;
 
-    let mut list_data: ListData = Default::default();
+        let mut list_data: Self = Default::default();
 
-    match list_type.as_str() {
-        INFO_TYPE_ID => list_data.info_data = read_info_list(&mut data)?,
-        ADTL_TYPE_ID => list_data.adtl_data = read_adtl_list(&mut data)?,
-        other => return Err(Box::new(LocalError::InvalidInfoTypeID(other.to_string()))),
+        match list_type.as_str() {
+            INFO_TYPE_ID => list_data.info_data = read_info_list(&mut data)?,
+            ADTL_TYPE_ID => list_data.adtl_data = read_adtl_list(&mut data)?,
+            other => return Err(Box::new(LocalError::InvalidInfoTypeID(other.to_string()))),
+        }
+
+        Ok(list_data)
     }
-
-    Ok(list_data)
 }
-
 fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<dyn Error>> {
     let mut list_fields: Vec<(String, String)> = Default::default();
     loop {

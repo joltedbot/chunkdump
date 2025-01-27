@@ -35,20 +35,22 @@ pub struct AcidData {
     tempo: f32,
 }
 
-pub fn read_acid_chunk(wave_file: &mut File) -> Result<AcidData, Box<dyn Error>> {
-    let chunk_size = read_four_byte_integer_from_file(wave_file)?;
-    let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
+impl AcidData {
+    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
+        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
-    Ok(AcidData {
-        file_type: get_file_type_from_bytes(take_first_four_bytes_as_integer(&mut acid_data)?)?,
-        root_note: take_first_two_bytes_as_integer(&mut acid_data)?,
-        mystery_one: take_first_two_bytes_as_integer(&mut acid_data)?,
-        mystery_two: take_first_four_bytes_float(&mut acid_data)?,
-        number_of_beats: take_first_four_bytes_as_integer(&mut acid_data)?,
-        meter_denominator: take_first_two_bytes_as_integer(&mut acid_data)?,
-        meter_numerator: take_first_two_bytes_as_integer(&mut acid_data)?,
-        tempo: take_first_four_bytes_float(&mut acid_data)?,
-    })
+        Ok(Self {
+            file_type: get_file_type_from_bytes(take_first_four_bytes_as_integer(&mut acid_data)?)?,
+            root_note: take_first_two_bytes_as_integer(&mut acid_data)?,
+            mystery_one: take_first_two_bytes_as_integer(&mut acid_data)?,
+            mystery_two: take_first_four_bytes_float(&mut acid_data)?,
+            number_of_beats: take_first_four_bytes_as_integer(&mut acid_data)?,
+            meter_denominator: take_first_two_bytes_as_integer(&mut acid_data)?,
+            meter_numerator: take_first_two_bytes_as_integer(&mut acid_data)?,
+            tempo: take_first_four_bytes_float(&mut acid_data)?,
+        })
+    }
 }
 
 fn get_file_type_from_bytes(file_type: u32) -> Result<FileType, Box<dyn Error>> {

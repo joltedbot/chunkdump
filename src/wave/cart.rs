@@ -60,58 +60,80 @@ pub struct CartData {
     pub tag_text: String,
 }
 
-pub fn read_cart_chunk(wave_file: &mut File) -> Result<CartData, Box<dyn Error>> {
-    let chunk_size = read_four_byte_integer_from_file(wave_file)?;
-    let mut cart_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
+impl CartData {
+    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
+        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let mut cart_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
-    Ok(CartData {
-        version: take_first_number_of_bytes_as_string(&mut cart_data, VERSION_LENGTH_IN_BYTES)?,
-        title: take_first_number_of_bytes_as_string(&mut cart_data, TITLE_LENGTH_IN_BYTES)?,
-        artist: take_first_number_of_bytes_as_string(&mut cart_data, ARTIST_LENGTH_IN_BYTES)?,
-        cue_id: take_first_number_of_bytes_as_string(&mut cart_data, CUE_ID_LENGTH_IN_BYTES)?,
-        client_id: take_first_number_of_bytes_as_string(&mut cart_data, CLIENT_ID_LENGTH_IN_BYTES)?,
-        category: take_first_number_of_bytes_as_string(&mut cart_data, CATEGORY_LENGTH_IN_BYTES)?,
-        classification: take_first_number_of_bytes_as_string(
-            &mut cart_data,
-            CLASSIFICATION_LENGTH_IN_BYTES,
-        )?,
-        out_cue: take_first_number_of_bytes_as_string(&mut cart_data, OUT_CUE_LENGTH_IN_BYTES)?,
-        start_date: take_first_number_of_bytes_as_string(
-            &mut cart_data,
-            START_DATE_LENGTH_IN_BYTES,
-        )?,
-        start_time: take_first_number_of_bytes_as_string(
-            &mut cart_data,
-            START_TIME_LENGTH_IN_BYTES,
-        )?,
-        end_date: take_first_number_of_bytes_as_string(&mut cart_data, END_DATE_LENGTH_IN_BYTES)?,
-        end_time: take_first_number_of_bytes_as_string(&mut cart_data, END_TIME_LENGTH_IN_BYTES)?,
-        producer_app_id: take_first_number_of_bytes_as_string(
-            &mut cart_data,
-            PRODUCER_APP_ID_LENGTH_IN_BYTES,
-        )?,
-        producer_app_version: take_first_number_of_bytes_as_string(
-            &mut cart_data,
-            PRODUCER_APP_VERSION_LENGTH_IN_BYTES,
-        )?,
-        user_def: take_first_number_of_bytes_as_string(&mut cart_data, USER_DEF_LENGTH_IN_BYTES)?,
-        dw_level_reference: take_first_eight_bytes_as_integer(&mut cart_data)?,
-        post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
-            &mut cart_data,
-            POST_TIMER_LENGTH_IN_BYTES,
-        )?)?,
-        reserved: take_first_number_of_bytes_as_string(&mut cart_data, RESERVED_LENGTH_IN_BYTES)?,
-        url: take_first_number_of_bytes_as_string(&mut cart_data, URL_LENGTH_IN_BYTES)?,
-        tag_text: take_first_number_of_bytes_as_string(&mut cart_data, TAG_TEXT_LENGTH_IN_BYTES)?,
-    })
+        Ok(Self {
+            version: take_first_number_of_bytes_as_string(&mut cart_data, VERSION_LENGTH_IN_BYTES)?,
+            title: take_first_number_of_bytes_as_string(&mut cart_data, TITLE_LENGTH_IN_BYTES)?,
+            artist: take_first_number_of_bytes_as_string(&mut cart_data, ARTIST_LENGTH_IN_BYTES)?,
+            cue_id: take_first_number_of_bytes_as_string(&mut cart_data, CUE_ID_LENGTH_IN_BYTES)?,
+            client_id: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                CLIENT_ID_LENGTH_IN_BYTES,
+            )?,
+            category: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                CATEGORY_LENGTH_IN_BYTES,
+            )?,
+            classification: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                CLASSIFICATION_LENGTH_IN_BYTES,
+            )?,
+            out_cue: take_first_number_of_bytes_as_string(&mut cart_data, OUT_CUE_LENGTH_IN_BYTES)?,
+            start_date: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                START_DATE_LENGTH_IN_BYTES,
+            )?,
+            start_time: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                START_TIME_LENGTH_IN_BYTES,
+            )?,
+            end_date: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                END_DATE_LENGTH_IN_BYTES,
+            )?,
+            end_time: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                END_TIME_LENGTH_IN_BYTES,
+            )?,
+            producer_app_id: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                PRODUCER_APP_ID_LENGTH_IN_BYTES,
+            )?,
+            producer_app_version: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                PRODUCER_APP_VERSION_LENGTH_IN_BYTES,
+            )?,
+            user_def: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                USER_DEF_LENGTH_IN_BYTES,
+            )?,
+            dw_level_reference: take_first_eight_bytes_as_integer(&mut cart_data)?,
+            post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
+                &mut cart_data,
+                POST_TIMER_LENGTH_IN_BYTES,
+            )?)?,
+            reserved: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                RESERVED_LENGTH_IN_BYTES,
+            )?,
+            url: take_first_number_of_bytes_as_string(&mut cart_data, URL_LENGTH_IN_BYTES)?,
+            tag_text: take_first_number_of_bytes_as_string(
+                &mut cart_data,
+                TAG_TEXT_LENGTH_IN_BYTES,
+            )?,
+        })
+    }
 }
-
 fn get_post_timer_from_bytes(
     mut post_timer_data: Vec<u8>,
 ) -> Result<Vec<CartTimer>, Box<dyn Error>> {
     let mut post_timer: Vec<CartTimer> = vec![];
 
-    for i in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
+    for _ in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
         let dw_usage =
             take_first_number_of_bytes_as_string(&mut post_timer_data, DW_USAGE_LENGTH_IN_BYTES)?;
         let dw_value = take_first_four_bytes_as_integer(&mut post_timer_data)?;

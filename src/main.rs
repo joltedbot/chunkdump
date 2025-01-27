@@ -31,7 +31,6 @@ fn main() {
     if file_chunk_id.as_str() == WAVE_FILE_CHUNKID {
         let wave_file =
             Wave::new(path_of_file_to_read, file).expect("Could not create new wave file object");
-
-        println!("{:#?}", wave_file);
+        let _ = wave_file.display_wave_file_metadata();
     }
 }
