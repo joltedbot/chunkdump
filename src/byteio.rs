@@ -64,7 +64,7 @@ pub fn take_first_number_of_bytes_as_string(
     let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
     let cleaned_bytes: Vec<u8> = taken_bytes
         .into_iter()
-        .filter(|bytes| *bytes != 0)
+        .filter(|byte| byte.is_ascii() && *byte != 0 && !byte.is_ascii_control())
         .collect();
 
     Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())

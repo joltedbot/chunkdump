@@ -1,4 +1,5 @@
 use crate::errors::LocalError;
+use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek};
@@ -67,8 +68,10 @@ pub fn read_bytes_from_file_as_lossy_string(
     number_of_bytes: usize,
 ) -> Result<String, Box<dyn Error>> {
     let extracted_bytes = read_bytes_from_file(file, number_of_bytes)?;
-    let cleaned_bytes: Vec<u8> = extracted_bytes.into_iter().filter(|b| *b != 0).collect();
-
+    let cleaned_bytes: Vec<u8> = extracted_bytes
+        .into_iter()
+        .filter(|byte| byte.is_ascii() && !byte.is_zero() && !byte.is_ascii_control())
+        .collect();
     Ok(String::from_utf8_lossy(&cleaned_bytes).to_string())
 }
 

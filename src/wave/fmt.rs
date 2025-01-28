@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_two_bytes_as_integer};
 use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
 use std::error::Error;
@@ -78,7 +76,7 @@ impl FmtFields {
     pub fn get_metadata_output(&self) -> Vec<String> {
         let mut fmt_data: Vec<String> = vec![];
 
-        fmt_data.push("\n-------------\nFMT Chunk Details:\n-------------".to_string());
+        fmt_data.push("\n-------------\nFormat (fmt) Chunk Details:\n-------------".to_string());
         fmt_data.push(format!("Format Code: {}", self.format_code));
         fmt_data.push(format!("Number of Channels: {}", self.number_of_channels));
         fmt_data.push(format!(

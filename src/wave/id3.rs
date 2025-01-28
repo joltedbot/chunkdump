@@ -34,11 +34,13 @@ impl ID3Fields {
     pub fn get_metadata_output(&self) -> Vec<String> {
         let mut id3_data: Vec<String> = vec![];
 
-        id3_data.push("\n-------------\nID3 Chunk Details:\n-------------".to_string());
+        if !self.tags.is_empty() {
+            id3_data.push("\n-------------\nID3 Chunk Details:\n-------------".to_string());
 
-        self.tags.iter().for_each(|tag| {
-            id3_data.push(format!("{}: {}", tag.0, tag.1));
-        });
+            self.tags.iter().for_each(|tag| {
+                id3_data.push(format!("{}: {}", tag.0, tag.1));
+            });
+        }
 
         id3_data
     }

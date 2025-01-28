@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
 use crate::errors::LocalError;
 use crate::fileio::{

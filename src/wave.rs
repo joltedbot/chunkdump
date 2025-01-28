@@ -23,7 +23,7 @@ use crate::wave::fmt::FmtFields;
 
 use crate::wave::bext::BextData;
 use crate::wave::data::skip_data_chunk;
-use crate::wave::extra::read_extra_chunk_fields;
+use crate::wave::extra::{get_extra_chunks_output, read_extra_chunk_fields};
 use crate::wave::fact::FactFields;
 use crate::wave::id3::ID3Fields;
 use crate::wave::ixml::IXMLFields;
@@ -92,7 +92,42 @@ impl Wave {
         Ok(new_wave)
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
+    pub fn display_wave_file_metadata(&self) -> Result<(), Box<dyn Error>> {
+        println!("\n > Wave File Metadata \n");
+
+        let wave_file_header_fields = self.get_metadata_output();
+        for header_field in wave_file_header_fields {
+            println!("{}", header_field);
+        }
+
+        for chunk in self.chunk_ids.iter() {
+            let chunk_fields = match chunk.as_str() {
+                FACT_CHUNKID => self.fact_data.get_metadata_output(),
+                FMT_CHUNKID => self.format_data.get_metadata_output(),
+                BEXT_CHUNKID => self.bext_data.get_metadata_output(),
+                ID3_CHUNKID => self.id3_data.get_metadata_output(),
+                CUE_CHUNKID => self.cue_data.get_metadata_output(),
+                JUNK_LOWER_CHUNKID => self.junk_data.get_metadata_output(),
+                JUNK_UPPER_CHUNKID => self.junk_data.get_metadata_output(),
+                ACID_CHUNKID => self.acid_data.get_metadata_output(),
+                _ => vec![],
+            };
+
+            for field in chunk_fields {
+                println!("{}", field);
+            }
+        }
+
+        for extra_chunk in get_extra_chunks_output(&self.extra_data) {
+            println!("{}", extra_chunk);
+        }
+
+        println!("\n");
+
+        Ok(())
+    }
+
+    fn get_metadata_output(&self) -> Vec<String> {
         let mut header_data: Vec<String> = vec![];
 
         header_data.push("-------------\nFile Details:\n-------------".to_string());
@@ -108,44 +143,6 @@ impl Wave {
         ));
 
         header_data
-    }
-
-    pub fn display_wave_file_metadata(&self) -> Result<(), Box<dyn Error>> {
-        println!("\n > Wave File Metadata \n");
-
-        let wave_file_header_fields = self.get_metadata_output();
-        for header_field in wave_file_header_fields {
-            println!("{}", header_field);
-        }
-
-        let fact_chunk_fields = self.fact_data.get_metadata_output();
-        for fact_field in fact_chunk_fields {
-            println!("{}", fact_field);
-        }
-
-        let fmt_chunk_fields = self.format_data.get_metadata_output();
-        for fmt_field in fmt_chunk_fields {
-            println!("{}", fmt_field);
-        }
-
-        let bext_chunk_fields = self.bext_data.get_metadata_output();
-        for bext_field in bext_chunk_fields {
-            println!("{}", bext_field);
-        }
-
-        let id3_chunk_fields = self.id3_data.get_metadata_output();
-        for id3_field in id3_chunk_fields {
-            println!("{}", id3_field);
-        }
-
-        let cue_chunk_fields = self.cue_data.get_metadata_output();
-        for cue_field in cue_chunk_fields {
-            println!("{}", cue_field);
-        }
-
-        println!("\n");
-
-        Ok(())
     }
 }
 

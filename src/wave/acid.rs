@@ -1,9 +1,8 @@
-#![allow(dead_code)]
-
 use crate::byteio::{
     take_first_four_bytes_as_integer, take_first_four_bytes_float, take_first_two_bytes_as_integer,
 };
 use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
+use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
 use std::fs::File;
 
@@ -50,6 +49,57 @@ impl AcidData {
             meter_numerator: take_first_two_bytes_as_integer(&mut acid_data)?,
             tempo: take_first_four_bytes_float(&mut acid_data)?,
         })
+    }
+
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut acid_data: Vec<String> = vec![];
+
+        acid_data.push("\n-------------\nACID Chunk Details:\n-------------".to_string());
+        acid_data.push("File Type:\n-------------".to_string());
+
+        match self.file_type.one_shot {
+            true => acid_data.push(" > OneShot".to_string()),
+            false => acid_data.push(" > Loop".to_string()),
+        };
+
+        match self.file_type.root_note {
+            true => acid_data.push(" > Root Note Set".to_string()),
+            false => acid_data.push(" > Root Note Not Set".to_string()),
+        }
+
+        match self.file_type.stretch {
+            true => acid_data.push(" > Stretch is On".to_string()),
+            false => acid_data.push(" > Stretch is Off".to_string()),
+        }
+
+        match self.file_type.disk_based {
+            true => acid_data.push(" > Disk Based".to_string()),
+            false => acid_data.push(" > Ram Based".to_string()),
+        }
+
+        match self.file_type.acidizer {
+            true => acid_data.push(" > Acidizer is On".to_string()),
+            false => acid_data.push(" > Acidizer is Off".to_string()),
+        }
+
+        acid_data.push("-------------".to_string());
+
+        if self.file_type.root_note {
+            acid_data.push(format!("Root Note: {:#?}", self.root_note));
+        }
+
+        if !self.number_of_beats.is_zero() {
+            acid_data.push(format!(
+                "Number of Beats: {}",
+                self.number_of_beats.to_string()
+            ));
+        }
+
+        if !self.tempo.is_zero() {
+            acid_data.push(format!("Tempo: {}bpm", self.tempo.to_string()));
+        }
+
+        acid_data
     }
 }
 

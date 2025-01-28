@@ -11,3 +11,16 @@ pub fn read_extra_chunk_fields(
 
     Ok((chunk_id, chunk_data))
 }
+
+pub fn get_extra_chunks_output(extra_chunks: &Vec<(String, String)>) -> Vec<String> {
+    let mut extra_data: Vec<String> = vec![];
+
+    if !extra_chunks.is_empty() {
+        extra_data.push("\n-------------\nExtra Chunk Details:\n-------------".to_string());
+        for chunk in extra_chunks {
+            extra_data.push(format!("{}:, {}", chunk.0.clone(), chunk.1.clone()));
+        }
+    }
+
+    extra_data
+}

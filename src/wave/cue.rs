@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
 use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
 use byte_unit::rust_decimal::prelude::Zero;
@@ -54,34 +52,35 @@ impl CueFields {
     pub fn get_metadata_output(&self) -> Vec<String> {
         let mut cue_data: Vec<String> = vec![];
 
-        cue_data.push("\n-------------\nCue Chunk Details:\n-------------".to_string());
-        cue_data.push(format!(
-            "Number of Cue Points: {}\n",
-            self.number_of_cue_points
-        ));
+        if self.number_of_cue_points > 0 {
+            cue_data.push("\n-------------\nCue Chunk Details:\n-------------".to_string());
+            cue_data.push(format!(
+                "Number of Cue Points: {}",
+                self.number_of_cue_points
+            ));
 
-        for cue_point in &self.cue_points {
-            if !cue_point.id.is_zero() {
+            for cue_point in &self.cue_points {
+                if !cue_point.id.is_zero() {
+                    cue_data.push("-------------".to_string());
+                    cue_data.push(format!("Cue Point ID: {}", cue_point.id));
+                    cue_data.push(format!("Position: Sample {}", cue_point.position));
+                    cue_data.push(format!("Data Chunk ID: {}", cue_point.data_chunk_id));
+                    cue_data.push(format!(
+                        "Chunk Start: Byte Position {}",
+                        cue_point.chunk_start
+                    ));
+                    cue_data.push(format!(
+                        "Block Start: Byte Position {}",
+                        cue_point.block_start
+                    ));
+                    cue_data.push(format!(
+                        "Sample Start: Byte Position {}",
+                        cue_point.sample_start
+                    ));
+                }
                 cue_data.push("-------------".to_string());
-                cue_data.push(format!("Cue Point ID: {}", cue_point.id));
-                cue_data.push(format!("Position: Sample {}", cue_point.position));
-                cue_data.push(format!("Data Chunk ID: {}", cue_point.data_chunk_id));
-                cue_data.push(format!(
-                    "Chunk Start: Byte Position {}",
-                    cue_point.chunk_start
-                ));
-                cue_data.push(format!(
-                    "Block Start: Byte Position {}",
-                    cue_point.block_start
-                ));
-                cue_data.push(format!(
-                    "Sample Start: Byte Position {}",
-                    cue_point.sample_start
-                ));
             }
-            cue_data.push("-------------".to_string());
         }
-
         cue_data
     }
 }

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::byteio::{
     take_first_eight_bytes_as_integer, take_first_number_of_bytes,
     take_first_number_of_bytes_as_string, take_first_two_bytes_as_integer,
