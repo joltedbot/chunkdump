@@ -30,9 +30,9 @@ pub struct ListFields {
 
 #[derive(Debug, Clone, Default)]
 pub struct AssociatedData {
-    labels: Vec<(u32, String)>,
-    notes: Vec<(u32, String)>,
-    labeled_texts: Vec<LabeledText>,
+    pub labels: Vec<(u32, String)>,
+    pub notes: Vec<(u32, String)>,
+    pub labeled_texts: Vec<LabeledText>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -64,7 +64,54 @@ impl ListFields {
 
         Ok(list_data)
     }
+
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut list_data: Vec<String> = vec![];
+
+        list_data.push("\n-------------\nList Chunk Details:\n-------------\n".to_string());
+        if !self.info_data.is_empty() {
+            list_data.push("Type: Info\n-------------".to_string());
+            for info in &self.info_data {
+                list_data.push(format!("{:#}:  {}", info.0, info.1));
+            }
+            list_data.push("".to_string());
+        }
+
+        if !self.adtl_data.is_empty() {
+            list_data.push("Type: Associated Data List (adtl)\n-------------".to_string());
+
+            for adtl in &self.adtl_data {
+                if !adtl.labels.is_empty() {
+                    for label in &adtl.labels {
+                        list_data.push(format!("Label {:#}:  {}\n", label.0, label.1));
+                    }
+                }
+                if !adtl.notes.is_empty() {
+                    for note in &adtl.notes {
+                        list_data.push(format!("Note {:#}:  {}\n", note.0, note.1));
+                    }
+                }
+                if !adtl.labeled_texts.is_empty() {
+                    list_data.push("Labeled Text:\n-------------".to_string());
+                    for text in &adtl.labeled_texts {
+                        list_data.push(format!("Cue Point ID: {}", text.cue_point_id));
+                        list_data.push(format!("Sample Length: {}", text.sample_length));
+                        list_data.push(format!("Purpose ID: {}", text.purpose_id));
+                        list_data.push(format!("Country: {}", text.country));
+                        list_data.push(format!("Language: {}", text.language));
+                        list_data.push(format!("Dialect: {}", text.dialect));
+                        list_data.push(format!("Code Page: {}", text.code_page));
+                        list_data.push(format!("Data: {}", text.data));
+                        list_data.push("".to_string());
+                    }
+                }
+            }
+        }
+
+        list_data
+    }
 }
+
 fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<dyn Error>> {
     let mut list_fields: Vec<(String, String)> = Default::default();
     loop {
@@ -75,7 +122,6 @@ fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<
         let id = take_first_number_of_bytes_as_string(list_data, INFO_ITEM_ID_LENGTH_IN_BYTES)?;
         let size = take_first_four_bytes_as_integer(list_data)?;
         let data = take_first_number_of_bytes_as_string(list_data, size as usize)?;
-
         list_fields.push((id, data));
     }
 

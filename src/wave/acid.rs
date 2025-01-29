@@ -6,7 +6,6 @@ use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
 use std::fs::File;
 
-const FILE_TYPE_MASK_NUMBER_OF_BITS: u8 = 5;
 const FILE_TYPE_BIT_POSITION: u8 = 1;
 const ROOT_NOTE_BIT_POSITION: u8 = 2;
 const STRETCH_BIT_POSITION: u8 = 3;
@@ -84,9 +83,22 @@ impl AcidData {
 
         acid_data.push("-------------".to_string());
 
-        if self.file_type.root_note {
+        if !self.root_note.is_zero() {
             acid_data.push(format!("Root Note: {:#?}", self.root_note));
         }
+
+        if !self.mystery_one.is_zero() {
+            acid_data.push(format!("Mystery Value One: {:#?}", self.mystery_one));
+        }
+
+        if !self.mystery_two.is_zero() {
+            acid_data.push(format!("Mystery Value Two: {:#?}", self.mystery_two));
+        }
+
+        acid_data.push(format!(
+            "Time Signature (Likely Incorrect): {}/{}",
+            self.meter_numerator, self.meter_denominator
+        ));
 
         if !self.number_of_beats.is_zero() {
             acid_data.push(format!(

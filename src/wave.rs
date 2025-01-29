@@ -110,6 +110,11 @@ impl Wave {
                 JUNK_LOWER_CHUNKID => self.junk_data.get_metadata_output(),
                 JUNK_UPPER_CHUNKID => self.junk_data.get_metadata_output(),
                 ACID_CHUNKID => self.acid_data.get_metadata_output(),
+                XMP_CHUNKID => self.xmp_data.get_metadata_output(),
+                IXML_CHUNKID => self.ixml_data.get_metadata_output(),
+                RESU_CHUNKID => self.resu_data.get_metadata_output(),
+                CART_CHUNKID => self.cart_data.get_metadata_output(),
+                LIST_CHUNKID => self.list_data.get_metadata_output(),
                 _ => vec![],
             };
 
@@ -168,11 +173,11 @@ fn extract_metadata(mut wave_file: File, file_path: String) -> Result<Wave, Box<
             RESU_CHUNKID => new_wave.resu_data = ResuFields::new(&mut wave_file)?,
             LIST_CHUNKID => {
                 let list_result = ListFields::new(&mut wave_file)?;
-                if list_result.info_data.is_empty() {
+                if !list_result.info_data.is_empty() {
                     new_wave.list_data.info_data = list_result.info_data;
                 }
 
-                if list_result.adtl_data.is_empty() {
+                if !list_result.adtl_data.is_empty() {
                     new_wave.list_data.adtl_data = list_result.adtl_data;
                 }
             }

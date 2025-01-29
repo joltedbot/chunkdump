@@ -1,5 +1,5 @@
 use crate::byteio::{
-    take_first_eight_bytes_as_integer, take_first_four_bytes_as_integer,
+    take_first_four_bytes_as_integer, take_first_four_bytes_as_signed_integer,
     take_first_number_of_bytes, take_first_number_of_bytes_as_string,
 };
 use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
@@ -51,7 +51,7 @@ pub struct CartData {
     pub producer_app_id: String,
     pub producer_app_version: String,
     pub user_def: String,
-    pub dw_level_reference: u64,
+    pub dw_level_reference: i32,
     pub post_timer: Vec<CartTimer>,
     pub reserved: String,
     pub url: String,
@@ -109,7 +109,7 @@ impl CartData {
                 &mut cart_data,
                 USER_DEF_LENGTH_IN_BYTES,
             )?,
-            dw_level_reference: take_first_eight_bytes_as_integer(&mut cart_data)?,
+            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut cart_data)?,
             post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
                 &mut cart_data,
                 POST_TIMER_LENGTH_IN_BYTES,
@@ -124,6 +124,51 @@ impl CartData {
                 TAG_TEXT_LENGTH_IN_BYTES,
             )?,
         })
+    }
+
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut cart_data: Vec<String> = vec![];
+
+        cart_data.push("\n-------------\nCart Chunk Details:\n-------------".to_string());
+        cart_data.push(format!(
+            "Version: v{}",
+            get_formated_version_from_version_string(self.version.clone())
+        ));
+        cart_data.push(format!("Title: {}", self.title));
+        cart_data.push(format!("Artist: {}", self.artist));
+        cart_data.push(format!("Cue ID: {}", self.cue_id));
+        cart_data.push(format!("Client ID: {}", self.client_id));
+        cart_data.push(format!("Category: {}", self.category));
+        cart_data.push(format!("Classification: {}", self.classification));
+        cart_data.push(format!("Out Cue: {}", self.out_cue));
+        cart_data.push(format!("Start Date: {}", self.start_date));
+        cart_data.push(format!("Start Time: {}", self.start_time));
+        cart_data.push(format!("End Date: {}", self.end_date));
+        cart_data.push(format!("End Time: {}", self.end_time));
+        cart_data.push(format!("Producer App ID: {}", self.producer_app_id));
+        cart_data.push(format!(
+            "Producer App Version: {}",
+            self.producer_app_version
+        ));
+        cart_data.push(format!("User Defined: {}", self.user_def));
+        cart_data.push(format!("DW Level Reference: {}", self.dw_level_reference));
+        if !self.post_timer.is_empty() {
+            cart_data.push("Post Timer:\n-------------".to_string());
+            for timer in &self.post_timer {
+                cart_data.push(format!("{} - {}", timer.dw_usage, timer.dw_value));
+            }
+        } else {
+            cart_data.push("Post Timer: None".to_string());
+        }
+
+        if !self.reserved.is_empty() {
+            cart_data.push(format!("Reserved Chunk As String: {}", self.reserved));
+        }
+
+        cart_data.push(format!("URL: {}", self.url));
+        cart_data.push(format!("Tag Text: {}", self.tag_text));
+
+        cart_data
     }
 }
 fn get_post_timer_from_bytes(
@@ -142,4 +187,11 @@ fn get_post_timer_from_bytes(
     }
 
     Ok(post_timer)
+}
+
+fn get_formated_version_from_version_string(mut version: String) -> String {
+    version.insert(2, '.');
+
+    let formated_version = version.trim_start_matches("0").to_string();
+    formated_version
 }

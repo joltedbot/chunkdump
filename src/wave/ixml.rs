@@ -13,4 +13,15 @@ impl IXMLFields {
         let ixml_xml = read_bytes_from_file_as_lossy_string(wave_file, chunk_size as usize)?;
         Ok(Self { ixml_xml })
     }
+
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut ixml_data: Vec<String> = vec![];
+
+        if !self.ixml_xml.is_empty() {
+            ixml_data.push("\n-------------\niXML Chunk XML Data:\n-------------".to_string());
+            ixml_data.push(format!("{}", self.ixml_xml));
+        }
+
+        ixml_data
+    }
 }

@@ -25,4 +25,15 @@ impl ResuFields {
 
         Ok(Self { resu_json })
     }
+
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut resu_data: Vec<String> = vec![];
+
+        if !self.resu_json.is_empty() {
+            resu_data.push("\n-------------\nResU Chunk JSON Data:\n-------------".to_string());
+            resu_data.push(format!("{}", self.resu_json));
+        }
+
+        resu_data
+    }
 }

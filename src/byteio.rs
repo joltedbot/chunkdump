@@ -44,6 +44,18 @@ pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result
     Ok(i16::from_le_bytes(byte_array))
 }
 
+pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i32, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
+    check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(i32::from_le_bytes(byte_array))
+}
+
 pub fn take_first_four_bytes_float(byte_data: &mut Vec<u8>) -> Result<f32, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
     check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
