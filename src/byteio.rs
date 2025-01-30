@@ -33,6 +33,29 @@ pub fn take_first_two_bytes_as_integer(byte_data: &mut Vec<u8>) -> Result<u16, L
     Ok(u16::from_le_bytes(byte_array))
 }
 
+pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i16, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 2;
+    check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(i16::from_le_bytes(byte_array))
+}
+
+pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i32, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
+    check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(i32::from_le_bytes(byte_array))
+}
+
 pub fn take_first_four_bytes_float(byte_data: &mut Vec<u8>) -> Result<f32, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
     check_sufficient_bytes_are_available(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
@@ -51,9 +74,10 @@ pub fn take_first_number_of_bytes_as_string(
     check_sufficient_bytes_are_available(byte_data, number_of_bytes)?;
 
     let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
+
     let cleaned_bytes: Vec<u8> = taken_bytes
         .into_iter()
-        .filter(|bytes| *bytes != 0)
+        .filter(|byte| byte.is_ascii() && *byte != 0x00 && !byte.is_ascii_control())
         .collect();
 
     Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())

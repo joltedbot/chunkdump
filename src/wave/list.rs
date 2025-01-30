@@ -1,9 +1,7 @@
-#![allow(dead_code)]
-
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
 use crate::errors::LocalError;
 use crate::fileio::{
-    read_bytes_from_file, read_bytes_from_file_as_string, read_four_byte_integer_from_file,
+    read_bytes_from_file, read_bytes_from_file_as_string, read_chunk_size_from_file,
 };
 use std::error::Error;
 use std::fs::File;
@@ -25,16 +23,16 @@ const ADTL_DIALECT_LENGTH_IN_BYTES: usize = 2;
 const ADTL_CODE_PAGE_LENGTH_IN_BYTES: usize = 2;
 
 #[derive(Debug, Clone, Default)]
-pub struct ListData {
+pub struct ListFields {
     pub info_data: Vec<(String, String)>,
     pub adtl_data: Vec<AssociatedData>,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct AssociatedData {
-    labels: Vec<(u32, String)>,
-    notes: Vec<(u32, String)>,
-    labeled_texts: Vec<LabeledText>,
+    pub labels: Vec<(u32, String)>,
+    pub notes: Vec<(u32, String)>,
+    pub labeled_texts: Vec<LabeledText>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -49,21 +47,69 @@ pub struct LabeledText {
     data: String,
 }
 
-pub fn read_list_chunk_fields(mut wave_file: &mut File) -> Result<ListData, Box<dyn Error>> {
-    let chunk_size = read_four_byte_integer_from_file(wave_file)?;
-    let list_type = read_bytes_from_file_as_string(wave_file, LIST_TYPE_LENGTH_IN_BYTES)?;
-    let data_size: usize = chunk_size as usize - LIST_TYPE_LENGTH_IN_BYTES;
-    let mut data: Vec<u8> = read_bytes_from_file(&mut wave_file, data_size)?;
+impl ListFields {
+    pub fn new(mut wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
+        let chunk_size = read_chunk_size_from_file(wave_file)?;
+        let list_type = read_bytes_from_file_as_string(wave_file, LIST_TYPE_LENGTH_IN_BYTES)?;
+        let data_size: usize = chunk_size as usize - LIST_TYPE_LENGTH_IN_BYTES;
+        let mut data: Vec<u8> = read_bytes_from_file(&mut wave_file, data_size)?;
 
-    let mut list_data: ListData = Default::default();
+        let mut list_data: Self = Default::default();
 
-    match list_type.as_str() {
-        INFO_TYPE_ID => list_data.info_data = read_info_list(&mut data)?,
-        ADTL_TYPE_ID => list_data.adtl_data = read_adtl_list(&mut data)?,
-        other => return Err(Box::new(LocalError::InvalidInfoTypeID(other.to_string()))),
+        match list_type.as_str() {
+            INFO_TYPE_ID => list_data.info_data = read_info_list(&mut data)?,
+            ADTL_TYPE_ID => list_data.adtl_data = read_adtl_list(&mut data)?,
+            other => return Err(Box::new(LocalError::InvalidInfoTypeID(other.to_string()))),
+        }
+
+        Ok(list_data)
     }
 
-    Ok(list_data)
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut list_data: Vec<String> = vec![];
+
+        list_data.push("\n-------------\nList Chunk Details:\n-------------\n".to_string());
+        if !self.info_data.is_empty() {
+            list_data.push("Type: Info\n-------------".to_string());
+            for info in &self.info_data {
+                list_data.push(format!("{:#}:  {}", info.0, info.1));
+            }
+            list_data.push("".to_string());
+        }
+
+        if !self.adtl_data.is_empty() {
+            list_data.push("Type: Associated Data List (adtl)\n-------------".to_string());
+
+            for adtl in &self.adtl_data {
+                if !adtl.labels.is_empty() {
+                    for label in &adtl.labels {
+                        list_data.push(format!("Label {:#}:  {}\n", label.0, label.1));
+                    }
+                }
+                if !adtl.notes.is_empty() {
+                    for note in &adtl.notes {
+                        list_data.push(format!("Note {:#}:  {}\n", note.0, note.1));
+                    }
+                }
+                if !adtl.labeled_texts.is_empty() {
+                    list_data.push("Labeled Text:\n-------------".to_string());
+                    for text in &adtl.labeled_texts {
+                        list_data.push(format!("Cue Point ID: {}", text.cue_point_id));
+                        list_data.push(format!("Sample Length: {}", text.sample_length));
+                        list_data.push(format!("Purpose ID: {}", text.purpose_id));
+                        list_data.push(format!("Country: {}", text.country));
+                        list_data.push(format!("Language: {}", text.language));
+                        list_data.push(format!("Dialect: {}", text.dialect));
+                        list_data.push(format!("Code Page: {}", text.code_page));
+                        list_data.push(format!("Data: {}", text.data));
+                        list_data.push("".to_string());
+                    }
+                }
+            }
+        }
+
+        list_data
+    }
 }
 
 fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<dyn Error>> {
@@ -74,7 +120,12 @@ fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<
         }
 
         let id = take_first_number_of_bytes_as_string(list_data, INFO_ITEM_ID_LENGTH_IN_BYTES)?;
-        let size = take_first_four_bytes_as_integer(list_data)?;
+        let mut size = take_first_four_bytes_as_integer(list_data)?;
+
+        if size % 2 > 0 {
+            size += 1;
+        }
+
         let data = take_first_number_of_bytes_as_string(list_data, size as usize)?;
 
         list_fields.push((id, data));

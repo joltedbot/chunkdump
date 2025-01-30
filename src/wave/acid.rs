@@ -1,18 +1,16 @@
-#![allow(dead_code)]
-
 use crate::byteio::{
     take_first_four_bytes_as_integer, take_first_four_bytes_float, take_first_two_bytes_as_integer,
 };
-use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
+use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
 use std::fs::File;
 
-const FILE_TYPE_MASK_NUMBER_OF_BITS: u8 = 5;
-const FILE_TYPE_BIT_POSITION: u8 = 1;
-const ROOT_NOTE_BIT_POSITION: u8 = 2;
-const STRETCH_BIT_POSITION: u8 = 3;
-const DISK_BASED_BIT_POSITION: u8 = 4;
-const ACIDIZER_BIT_POSITION: u8 = 5;
+const FILE_TYPE_BIT_POSITION: u8 = 0;
+const ROOT_NOTE_BIT_POSITION: u8 = 1;
+const STRETCH_BIT_POSITION: u8 = 2;
+const DISK_BASED_BIT_POSITION: u8 = 3;
+const ACIDIZER_BIT_POSITION: u8 = 4;
 
 #[derive(Debug, Clone, Default)]
 pub struct FileType {
@@ -35,20 +33,86 @@ pub struct AcidData {
     tempo: f32,
 }
 
-pub fn read_acid_chunk(wave_file: &mut File) -> Result<AcidData, Box<dyn Error>> {
-    let chunk_size = read_four_byte_integer_from_file(wave_file)?;
-    let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
+impl AcidData {
+    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
+        let chunk_size = read_chunk_size_from_file(wave_file)?;
+        let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
-    Ok(AcidData {
-        file_type: get_file_type_from_bytes(take_first_four_bytes_as_integer(&mut acid_data)?)?,
-        root_note: take_first_two_bytes_as_integer(&mut acid_data)?,
-        mystery_one: take_first_two_bytes_as_integer(&mut acid_data)?,
-        mystery_two: take_first_four_bytes_float(&mut acid_data)?,
-        number_of_beats: take_first_four_bytes_as_integer(&mut acid_data)?,
-        meter_denominator: take_first_two_bytes_as_integer(&mut acid_data)?,
-        meter_numerator: take_first_two_bytes_as_integer(&mut acid_data)?,
-        tempo: take_first_four_bytes_float(&mut acid_data)?,
-    })
+        Ok(Self {
+            file_type: get_file_type_from_bytes(take_first_four_bytes_as_integer(&mut acid_data)?)?,
+            root_note: take_first_two_bytes_as_integer(&mut acid_data)?,
+            mystery_one: take_first_two_bytes_as_integer(&mut acid_data)?,
+            mystery_two: take_first_four_bytes_float(&mut acid_data)?,
+            number_of_beats: take_first_four_bytes_as_integer(&mut acid_data)?,
+            meter_denominator: take_first_two_bytes_as_integer(&mut acid_data)?,
+            meter_numerator: take_first_two_bytes_as_integer(&mut acid_data)?,
+            tempo: take_first_four_bytes_float(&mut acid_data)?,
+        })
+    }
+
+    pub fn get_metadata_output(&self) -> Vec<String> {
+        let mut acid_data: Vec<String> = vec![];
+
+        acid_data.push("\n-------------\nACID Chunk Details:\n-------------".to_string());
+        acid_data.push("File Type:\n-------------".to_string());
+
+        match self.file_type.one_shot {
+            true => acid_data.push(" > OneShot".to_string()),
+            false => acid_data.push(" > Loop".to_string()),
+        };
+
+        match self.file_type.root_note {
+            true => acid_data.push(" > Root Note Set".to_string()),
+            false => acid_data.push(" > Root Note Not Set".to_string()),
+        }
+
+        match self.file_type.stretch {
+            true => acid_data.push(" > Stretch is On".to_string()),
+            false => acid_data.push(" > Stretch is Off".to_string()),
+        }
+
+        match self.file_type.disk_based {
+            true => acid_data.push(" > Disk Based".to_string()),
+            false => acid_data.push(" > Ram Based".to_string()),
+        }
+
+        match self.file_type.acidizer {
+            true => acid_data.push(" > Acidizer is On".to_string()),
+            false => acid_data.push(" > Acidizer is Off".to_string()),
+        }
+
+        acid_data.push("-------------".to_string());
+
+        if !self.root_note.is_zero() {
+            acid_data.push(format!("Root Note: {:#?}", self.root_note));
+        }
+
+        if !self.mystery_one.is_zero() {
+            acid_data.push(format!("Mystery Value One: {:#?}", self.mystery_one));
+        }
+
+        if !self.mystery_two.is_zero() {
+            acid_data.push(format!("Mystery Value Two: {:#?}", self.mystery_two));
+        }
+
+        acid_data.push(format!(
+            "Time Signature (Likely Incorrect): {}/{}",
+            self.meter_numerator, self.meter_denominator
+        ));
+
+        if !self.number_of_beats.is_zero() {
+            acid_data.push(format!(
+                "Number of Beats: {}",
+                self.number_of_beats.to_string()
+            ));
+        }
+
+        if !self.tempo.is_zero() {
+            acid_data.push(format!("Tempo: {}bpm", self.tempo.to_string()));
+        }
+
+        acid_data
+    }
 }
 
 fn get_file_type_from_bytes(file_type: u32) -> Result<FileType, Box<dyn Error>> {

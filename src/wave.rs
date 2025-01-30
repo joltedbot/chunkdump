@@ -18,22 +18,23 @@ use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file,
     read_bytes_from_file_as_string, skip_over_bytes_in_file,
 };
-use crate::wave::cue::{read_cue_chunk, CueFields};
-use crate::wave::fmt::{read_fmt_chunk, FmtFields};
+use crate::wave::cue::CueFields;
+use crate::wave::fmt::FmtFields;
 
-use crate::wave::bext::{read_bext_chunk, BextData};
+use crate::wave::bext::BextData;
 use crate::wave::data::skip_data_chunk;
-use crate::wave::extra::read_extra_chunk_fields;
-use crate::wave::fact::read_fact_chunk;
-use crate::wave::id3::read_id3_chunk;
-use crate::wave::ixml::read_ixml_chunk;
-use crate::wave::junk::read_junk_chunk;
-use crate::wave::list::{read_list_chunk_fields, ListData};
-use crate::wave::resu::read_resu_chunk;
-use crate::wave::xmp::read_xmp_chunk;
+use crate::wave::extra::{get_extra_chunks_output, read_extra_chunk_fields};
+use crate::wave::fact::FactFields;
+use crate::wave::id3::ID3Fields;
+use crate::wave::ixml::IXMLFields;
+use crate::wave::junk::JunkFields;
+use crate::wave::list::ListFields;
+use crate::wave::resu::ResuFields;
+use crate::wave::xmp::XMPFields;
 
-use crate::wave::acid::{read_acid_chunk, AcidData};
-use crate::wave::cart::{read_cart_chunk, CartData};
+use crate::wave::acid::AcidData;
+use crate::wave::cart::CartData;
+use byte_unit::{AdjustedByte, Byte, UnitType};
 use std::error::Error;
 use std::fs::File;
 
@@ -41,12 +42,11 @@ const FMT_CHUNKID: &str = "fmt ";
 const FACT_CHUNKID: &str = "fact";
 const DATA_CHUNKID: &str = "data";
 const CUE_CHUNKID: &str = "cue ";
-const RESU_CHUNKID: &str = "ResU";
-const JUNK_UPPER_CHUNKID: &str = "JUNK";
-const JUNK_LOWER_CHUNKID: &str = "junk";
-const LIST_CHUNKID: &str = "LIST";
-const IXML_CHUNKID: &str = "iXML";
-const XMP_CHUNKID: &str = "_PMX";
+const RESU_CHUNKID: &str = "resu";
+const JUNK_CHUNKID: &str = "junk";
+const LIST_CHUNKID: &str = "list";
+const IXML_CHUNKID: &str = "ixml";
+const XMP_CHUNKID: &str = "_pmx";
 const ID3_CHUNKID: &str = "id3 ";
 const BEXT_CHUNKID: &str = "bext";
 const CART_CHUNKID: &str = "cart";
@@ -63,15 +63,15 @@ pub struct Wave {
     pub chunk_ids: Vec<String>,
     pub canonical_path: String,
     pub size_in_bytes: u64,
-    pub samples_per_channel: u32,
+    pub fact_data: FactFields,
     pub format_data: FmtFields,
-    pub resu_data: String,
+    pub resu_data: ResuFields,
     pub cue_data: CueFields,
-    pub junk_data: String,
-    pub list_data: ListData,
-    pub ixml_data: String,
-    pub xmp_data: String,
-    pub id3_data: Vec<(String, String)>,
+    pub junk_data: JunkFields,
+    pub list_data: ListFields,
+    pub ixml_data: IXMLFields,
+    pub xmp_data: XMPFields,
+    pub id3_data: ID3Fields,
     pub bext_data: BextData,
     pub cart_data: CartData,
     pub acid_data: AcidData,
@@ -87,47 +87,103 @@ impl Wave {
             return Err(Box::new(LocalError::InvalidWaveID));
         }
 
-        let new_wave: Self = extract_metadata(file_path, wave_file)?;
+        let new_wave: Self = extract_metadata(wave_file, file_path)?;
         Ok(new_wave)
+    }
+
+    pub fn display_wave_file_metadata(&self) -> Result<(), Box<dyn Error>> {
+        println!("\n > Wave File Metadata \n");
+
+        let wave_file_header_fields = self.get_metadata_output();
+        for header_field in wave_file_header_fields {
+            println!("{}", header_field);
+        }
+
+        for chunk in self.chunk_ids.iter() {
+            let chunk_fields = match chunk.as_str() {
+                FACT_CHUNKID => self.fact_data.get_metadata_output(),
+                FMT_CHUNKID => self.format_data.get_metadata_output(),
+                BEXT_CHUNKID => self.bext_data.get_metadata_output(),
+                ID3_CHUNKID => self.id3_data.get_metadata_output(),
+                CUE_CHUNKID => self.cue_data.get_metadata_output(),
+                JUNK_CHUNKID => self.junk_data.get_metadata_output(),
+                ACID_CHUNKID => self.acid_data.get_metadata_output(),
+                XMP_CHUNKID => self.xmp_data.get_metadata_output(),
+                IXML_CHUNKID => self.ixml_data.get_metadata_output(),
+                RESU_CHUNKID => self.resu_data.get_metadata_output(),
+                CART_CHUNKID => self.cart_data.get_metadata_output(),
+                LIST_CHUNKID => self.list_data.get_metadata_output(),
+                _ => vec![],
+            };
+
+            for field in chunk_fields {
+                println!("{}", field);
+            }
+        }
+
+        for extra_chunk in get_extra_chunks_output(&self.extra_data) {
+            println!("{}", extra_chunk);
+        }
+
+        println!("\n");
+
+        Ok(())
+    }
+
+    fn get_metadata_output(&self) -> Vec<String> {
+        let mut header_data: Vec<String> = vec![];
+
+        header_data.push("-------------\nFile Details:\n-------------".to_string());
+        header_data.push(format!("File Name: {}", self.name.clone()));
+        header_data.push(format!("File Path: {}", self.canonical_path.clone()));
+        header_data.push(format!(
+            "File Size: {:.2}",
+            format_file_size(self.size_in_bytes.clone())
+        ));
+        header_data.push(format!(
+            "Chunk IDs Found: [{}]",
+            self.chunk_ids.clone().join(", ")
+        ));
+
+        header_data
     }
 }
 
-fn extract_metadata(file_path: String, mut wave_file: File) -> Result<Wave, Box<dyn Error>> {
+fn extract_metadata(mut wave_file: File, file_path: String) -> Result<Wave, Box<dyn Error>> {
     let mut new_wave: Wave = Default::default();
 
     loop {
         let next_chunkid: String =
             match read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES) {
-                Ok(chunkid) => chunkid,
+                Ok(chunkid) => chunkid.to_lowercase(),
                 Err(_) => break,
             };
 
         new_wave.chunk_ids.push(next_chunkid.clone());
 
         match next_chunkid.as_str() {
-            JUNK_UPPER_CHUNKID => new_wave.junk_data = read_junk_chunk(&mut wave_file)?,
-            JUNK_LOWER_CHUNKID => new_wave.junk_data = read_junk_chunk(&mut wave_file)?,
-            FMT_CHUNKID => new_wave.format_data = read_fmt_chunk(&mut wave_file)?,
-            FACT_CHUNKID => new_wave.samples_per_channel = read_fact_chunk(&mut wave_file)?,
+            JUNK_CHUNKID => new_wave.junk_data = JunkFields::new(&mut wave_file)?,
+            FMT_CHUNKID => new_wave.format_data = FmtFields::new(&mut wave_file)?,
+            FACT_CHUNKID => new_wave.fact_data = FactFields::new(&mut wave_file)?,
             DATA_CHUNKID => skip_data_chunk(&mut wave_file)?,
-            CUE_CHUNKID => new_wave.cue_data = read_cue_chunk(&mut wave_file)?,
-            RESU_CHUNKID => new_wave.resu_data = read_resu_chunk(&mut wave_file)?,
+            CUE_CHUNKID => new_wave.cue_data = CueFields::new(&mut wave_file)?,
+            RESU_CHUNKID => new_wave.resu_data = ResuFields::new(&mut wave_file)?,
             LIST_CHUNKID => {
-                let list_result = read_list_chunk_fields(&mut wave_file)?;
-                if list_result.info_data.is_empty() {
+                let list_result = ListFields::new(&mut wave_file)?;
+                if !list_result.info_data.is_empty() {
                     new_wave.list_data.info_data = list_result.info_data;
                 }
 
-                if list_result.adtl_data.is_empty() {
+                if !list_result.adtl_data.is_empty() {
                     new_wave.list_data.adtl_data = list_result.adtl_data;
                 }
             }
-            IXML_CHUNKID => new_wave.ixml_data = read_ixml_chunk(&mut wave_file)?,
-            XMP_CHUNKID => new_wave.xmp_data = read_xmp_chunk(&mut wave_file)?,
-            ID3_CHUNKID => new_wave.id3_data = read_id3_chunk(&mut wave_file, file_path.clone())?,
-            BEXT_CHUNKID => new_wave.bext_data = read_bext_chunk(&mut wave_file)?,
-            CART_CHUNKID => new_wave.cart_data = read_cart_chunk(&mut wave_file)?,
-            ACID_CHUNKID => new_wave.acid_data = read_acid_chunk(&mut wave_file)?,
+            IXML_CHUNKID => new_wave.ixml_data = IXMLFields::new(&mut wave_file)?,
+            XMP_CHUNKID => new_wave.xmp_data = XMPFields::new(&mut wave_file)?,
+            ID3_CHUNKID => new_wave.id3_data = ID3Fields::new(&mut wave_file, file_path.clone())?,
+            BEXT_CHUNKID => new_wave.bext_data = BextData::new(&mut wave_file)?,
+            CART_CHUNKID => new_wave.cart_data = CartData::new(&mut wave_file)?,
+            ACID_CHUNKID => new_wave.acid_data = AcidData::new(&mut wave_file)?,
             _ => new_wave
                 .extra_data
                 .push(read_extra_chunk_fields(&mut wave_file, next_chunkid)?),
@@ -139,4 +195,8 @@ fn extract_metadata(file_path: String, mut wave_file: File) -> Result<Wave, Box<
     new_wave.size_in_bytes = wave_file.metadata()?.len();
 
     Ok(new_wave)
+}
+
+fn format_file_size(file_size_in_bytes: u64) -> AdjustedByte {
+    Byte::from_u64(file_size_in_bytes).get_appropriate_unit(UnitType::Binary)
 }
