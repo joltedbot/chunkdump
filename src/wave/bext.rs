@@ -3,7 +3,7 @@ use crate::byteio::{
     take_first_number_of_bytes_as_string, take_first_two_bytes_as_integer,
     take_first_two_bytes_as_signed_integer,
 };
-use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
+use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use std::error::Error;
 use std::fs::File;
 
@@ -36,7 +36,7 @@ pub struct BextData {
 
 impl BextData {
     pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let chunk_size = read_chunk_size_from_file(wave_file)?;
         let mut bext_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
         Ok(Self {

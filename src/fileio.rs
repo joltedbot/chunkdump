@@ -54,6 +54,16 @@ pub fn read_four_byte_integer_from_file(file: &mut File) -> Result<u32, Box<dyn 
     Ok(u32::from_le_bytes(byte_array))
 }
 
+pub fn read_chunk_size_from_file(file: &mut File) -> Result<u32, Box<dyn Error>> {
+    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
+    let mut byte_array: [u8; 4] = Default::default();
+    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
+
+    let chunk_size = u32::from_le_bytes(byte_array);
+
+    Ok(chunk_size)
+}
+
 pub fn read_bytes_from_file_as_string(
     file: &mut File,
     number_of_bytes: usize,

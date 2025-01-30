@@ -42,12 +42,11 @@ const FMT_CHUNKID: &str = "fmt ";
 const FACT_CHUNKID: &str = "fact";
 const DATA_CHUNKID: &str = "data";
 const CUE_CHUNKID: &str = "cue ";
-const RESU_CHUNKID: &str = "ResU";
-const JUNK_UPPER_CHUNKID: &str = "JUNK";
-const JUNK_LOWER_CHUNKID: &str = "junk";
-const LIST_CHUNKID: &str = "LIST";
-const IXML_CHUNKID: &str = "iXML";
-const XMP_CHUNKID: &str = "_PMX";
+const RESU_CHUNKID: &str = "resu";
+const JUNK_CHUNKID: &str = "junk";
+const LIST_CHUNKID: &str = "list";
+const IXML_CHUNKID: &str = "ixml";
+const XMP_CHUNKID: &str = "_pmx";
 const ID3_CHUNKID: &str = "id3 ";
 const BEXT_CHUNKID: &str = "bext";
 const CART_CHUNKID: &str = "cart";
@@ -107,8 +106,7 @@ impl Wave {
                 BEXT_CHUNKID => self.bext_data.get_metadata_output(),
                 ID3_CHUNKID => self.id3_data.get_metadata_output(),
                 CUE_CHUNKID => self.cue_data.get_metadata_output(),
-                JUNK_LOWER_CHUNKID => self.junk_data.get_metadata_output(),
-                JUNK_UPPER_CHUNKID => self.junk_data.get_metadata_output(),
+                JUNK_CHUNKID => self.junk_data.get_metadata_output(),
                 ACID_CHUNKID => self.acid_data.get_metadata_output(),
                 XMP_CHUNKID => self.xmp_data.get_metadata_output(),
                 IXML_CHUNKID => self.ixml_data.get_metadata_output(),
@@ -157,15 +155,14 @@ fn extract_metadata(mut wave_file: File, file_path: String) -> Result<Wave, Box<
     loop {
         let next_chunkid: String =
             match read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES) {
-                Ok(chunkid) => chunkid,
+                Ok(chunkid) => chunkid.to_lowercase(),
                 Err(_) => break,
             };
 
         new_wave.chunk_ids.push(next_chunkid.clone());
 
         match next_chunkid.as_str() {
-            JUNK_UPPER_CHUNKID => new_wave.junk_data = JunkFields::new(&mut wave_file)?,
-            JUNK_LOWER_CHUNKID => new_wave.junk_data = JunkFields::new(&mut wave_file)?,
+            JUNK_CHUNKID => new_wave.junk_data = JunkFields::new(&mut wave_file)?,
             FMT_CHUNKID => new_wave.format_data = FmtFields::new(&mut wave_file)?,
             FACT_CHUNKID => new_wave.fact_data = FactFields::new(&mut wave_file)?,
             DATA_CHUNKID => skip_data_chunk(&mut wave_file)?,

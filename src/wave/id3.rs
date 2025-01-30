@@ -1,4 +1,4 @@
-use crate::fileio::{read_four_byte_integer_from_file, skip_over_bytes_in_file};
+use crate::fileio::{read_chunk_size_from_file, skip_over_bytes_in_file};
 use id3::Tag;
 use std::error::Error;
 use std::fs::File;
@@ -13,7 +13,12 @@ pub struct ID3Fields {
 
 impl ID3Fields {
     pub fn new(wave_file: &mut File, wave_file_path: String) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let mut chunk_size = read_chunk_size_from_file(wave_file)?;
+
+        if chunk_size % 2 > 0 {
+            chunk_size += 1;
+        }
+
         skip_over_bytes_in_file(wave_file, chunk_size as i64)?;
 
         let mut id3_entries: Self = Default::default();

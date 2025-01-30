@@ -1,7 +1,7 @@
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
 use crate::errors::LocalError;
 use crate::fileio::{
-    read_bytes_from_file, read_bytes_from_file_as_string, read_four_byte_integer_from_file,
+    read_bytes_from_file, read_bytes_from_file_as_string, read_chunk_size_from_file,
 };
 use std::error::Error;
 use std::fs::File;
@@ -49,7 +49,7 @@ pub struct LabeledText {
 
 impl ListFields {
     pub fn new(mut wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let chunk_size = read_chunk_size_from_file(wave_file)?;
         let list_type = read_bytes_from_file_as_string(wave_file, LIST_TYPE_LENGTH_IN_BYTES)?;
         let data_size: usize = chunk_size as usize - LIST_TYPE_LENGTH_IN_BYTES;
         let mut data: Vec<u8> = read_bytes_from_file(&mut wave_file, data_size)?;
@@ -120,8 +120,14 @@ fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<
         }
 
         let id = take_first_number_of_bytes_as_string(list_data, INFO_ITEM_ID_LENGTH_IN_BYTES)?;
-        let size = take_first_four_bytes_as_integer(list_data)?;
+        let mut size = take_first_four_bytes_as_integer(list_data)?;
+
+        if size % 2 > 0 {
+            size += 1;
+        }
+
         let data = take_first_number_of_bytes_as_string(list_data, size as usize)?;
+
         list_fields.push((id, data));
     }
 

@@ -1,4 +1,4 @@
-use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
+use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use flate2::read::ZlibDecoder;
 use std::error::Error;
 use std::fs::File;
@@ -11,7 +11,7 @@ pub struct ResuFields {
 
 impl ResuFields {
     pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let mut chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let mut chunk_size = read_chunk_size_from_file(wave_file)?;
 
         if !chunk_size.is_power_of_two() {
             chunk_size += 1;

@@ -1,16 +1,16 @@
 use crate::byteio::{
     take_first_four_bytes_as_integer, take_first_four_bytes_float, take_first_two_bytes_as_integer,
 };
-use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
+use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
 use std::fs::File;
 
-const FILE_TYPE_BIT_POSITION: u8 = 1;
-const ROOT_NOTE_BIT_POSITION: u8 = 2;
-const STRETCH_BIT_POSITION: u8 = 3;
-const DISK_BASED_BIT_POSITION: u8 = 4;
-const ACIDIZER_BIT_POSITION: u8 = 5;
+const FILE_TYPE_BIT_POSITION: u8 = 0;
+const ROOT_NOTE_BIT_POSITION: u8 = 1;
+const STRETCH_BIT_POSITION: u8 = 2;
+const DISK_BASED_BIT_POSITION: u8 = 3;
+const ACIDIZER_BIT_POSITION: u8 = 4;
 
 #[derive(Debug, Clone, Default)]
 pub struct FileType {
@@ -35,7 +35,7 @@ pub struct AcidData {
 
 impl AcidData {
     pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let chunk_size = read_chunk_size_from_file(wave_file)?;
         let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
         Ok(Self {

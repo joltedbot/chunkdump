@@ -1,5 +1,5 @@
 use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
-use crate::fileio::{read_bytes_from_file, read_four_byte_integer_from_file};
+use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
 use std::fs::File;
@@ -24,7 +24,7 @@ pub struct CuePoint {
 
 impl CueFields {
     pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_four_byte_integer_from_file(wave_file)?;
+        let chunk_size = read_chunk_size_from_file(wave_file)?;
         let mut cue_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
         let mut cue_points: Vec<CuePoint> = vec![];
         let number_of_cue_points: u32 = take_first_four_bytes_as_integer(&mut cue_data)?;
