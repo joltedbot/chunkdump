@@ -1,4 +1,6 @@
-use crate::byteio::{take_first_four_bytes_as_integer, take_first_number_of_bytes_as_string};
+use crate::byteio::{
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string,
+};
 use crate::errors::LocalError;
 use crate::fileio::{
     read_bytes_from_file, read_bytes_from_file_as_string, read_chunk_size_from_file,
@@ -120,7 +122,7 @@ fn read_info_list(list_data: &mut Vec<u8>) -> Result<Vec<(String, String)>, Box<
         }
 
         let id = take_first_number_of_bytes_as_string(list_data, INFO_ITEM_ID_LENGTH_IN_BYTES)?;
-        let mut size = take_first_four_bytes_as_integer(list_data)?;
+        let mut size = take_first_four_bytes_as_unsigned_integer(list_data)?;
 
         if size % 2 > 0 {
             size += 1;
@@ -169,24 +171,24 @@ fn read_adtl_list(list_data: &mut Vec<u8>) -> Result<Vec<AssociatedData>, Box<dy
 }
 
 fn read_label_data(list_data: &mut Vec<u8>) -> Result<(u32, String), Box<dyn Error>> {
-    let label_size: usize = take_first_four_bytes_as_integer(list_data)? as usize;
+    let label_size: usize = take_first_four_bytes_as_unsigned_integer(list_data)? as usize;
     let data_size: usize = label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
-    let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
     let label_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok((cue_point_id, label_data))
 }
 
 fn read_note_data(list_data: &mut Vec<u8>) -> Result<(u32, String), Box<dyn Error>> {
-    let note_size: usize = take_first_four_bytes_as_integer(list_data)? as usize;
+    let note_size: usize = take_first_four_bytes_as_unsigned_integer(list_data)? as usize;
     let data_size: usize = note_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
-    let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
     let note_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok((cue_point_id, note_data))
 }
 
 fn read_labeled_text_data(list_data: &mut Vec<u8>) -> Result<LabeledText, Box<dyn Error>> {
-    let cue_point_id: u32 = take_first_four_bytes_as_integer(list_data)?;
-    let sample_length: u32 = take_first_four_bytes_as_integer(list_data)?;
+    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
+    let sample_length: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
     let purpose_id: String =
         take_first_number_of_bytes_as_string(list_data, ADTL_PURPOSE_ID_LENGTH_IN_BYTES)?;
     let country: String =

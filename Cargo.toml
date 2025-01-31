@@ -11,3 +11,6 @@ byte-unit = "5.1.6"
 flate2 = "1.0.35"
 id3 = "1.16.1"
 thiserror = "2.0.11"
+upon = "0.8.1"
+
+

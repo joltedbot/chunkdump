@@ -1,6 +1,8 @@
 use crate::fileio::{read_bytes_from_file_as_lossy_string, read_chunk_size_from_file};
+use crate::template::Template;
 use std::error::Error;
 use std::fs::File;
+use upon::Value;
 
 #[derive(Debug, Clone, Default)]
 pub struct XMPFields {
@@ -14,16 +16,11 @@ impl XMPFields {
         Ok(Self { xmp_xml })
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
-        let mut xmp_data: Vec<String> = vec![];
+    pub fn get_metadata_outputs(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        let wave_output_values: Value = upon::value! {
+            xmp_xml: self.xmp_xml.clone(),
+        };
 
-        if !self.xmp_xml.is_empty() {
-            xmp_data.push(
-                "\n-------------\nXMP (_PMX) Chunk XPacket (XML) Data:\n-------------".to_string(),
-            );
-            xmp_data.push(format!("{}", self.xmp_xml));
-        }
-
-        xmp_data
+        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
     }
 }

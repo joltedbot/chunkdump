@@ -1,4 +1,6 @@
-use crate::byteio::{take_first_four_bytes_as_integer, take_first_two_bytes_as_integer};
+use crate::byteio::{
+    take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer,
+};
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use std::error::Error;
 use std::fs::File;
@@ -71,18 +73,19 @@ impl FmtFields {
         let chunk_size = read_chunk_size_from_file(wave_file)?;
         let mut fmt_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
-        let format_code =
-            get_format_name_from_format_id(take_first_two_bytes_as_integer(&mut fmt_data)?);
-        let number_of_channels = take_first_two_bytes_as_integer(&mut fmt_data)?;
-        let samples_per_second = take_first_four_bytes_as_integer(&mut fmt_data)?;
-        let average_data_rate = take_first_four_bytes_as_integer(&mut fmt_data)?;
-        let data_block_size = take_first_two_bytes_as_integer(&mut fmt_data)?;
-        let bits_per_sample = take_first_two_bytes_as_integer(&mut fmt_data)?;
+        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(
+            &mut fmt_data,
+        )?);
+        let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
+        let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
+        let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
+        let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
+        let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
 
         let mut extension_size: u16 = Default::default();
 
         if chunk_size > FORMAT_CHUNK_SIZE_IF_NO_EXTENSION {
-            extension_size = take_first_two_bytes_as_integer(&mut fmt_data)?;
+            extension_size = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
         }
 
         let mut valid_bits_per_sample: u16 = Default::default();
@@ -90,8 +93,8 @@ impl FmtFields {
         let mut subformat_guid: Vec<u8> = vec![];
 
         if extension_size > 0 {
-            valid_bits_per_sample = take_first_two_bytes_as_integer(&mut fmt_data)?;
-            speaker_position_mask = take_first_four_bytes_as_integer(&mut fmt_data)?;
+            valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
+            speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
             subformat_guid = fmt_data;
         }
 

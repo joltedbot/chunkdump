@@ -1,5 +1,5 @@
 use crate::byteio::{
-    take_first_four_bytes_as_integer, take_first_four_bytes_as_signed_integer,
+    take_first_four_bytes_as_signed_integer, take_first_four_bytes_as_unsigned_integer,
     take_first_number_of_bytes, take_first_number_of_bytes_as_string,
 };
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
@@ -179,7 +179,7 @@ fn get_post_timer_from_bytes(
     for _ in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
         let dw_usage =
             take_first_number_of_bytes_as_string(&mut post_timer_data, DW_USAGE_LENGTH_IN_BYTES)?;
-        let dw_value = take_first_four_bytes_as_integer(&mut post_timer_data)?;
+        let dw_value = take_first_four_bytes_as_unsigned_integer(&mut post_timer_data)?;
 
         if !dw_usage.is_empty() || dw_value != 0 {
             post_timer.push(CartTimer { dw_usage, dw_value });

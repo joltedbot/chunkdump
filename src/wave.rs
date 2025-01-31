@@ -15,16 +15,18 @@ mod xmp;
 
 use crate::errors::LocalError;
 use crate::fileio::{
-    canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file,
-    read_bytes_from_file_as_string, skip_over_bytes_in_file,
+    canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
+    skip_over_bytes_in_file,
 };
-use crate::wave::cue::CueFields;
-use crate::wave::fmt::FmtFields;
-
+use crate::template::Template;
+use crate::wave::acid::AcidData;
 use crate::wave::bext::BextData;
+use crate::wave::cart::CartData;
+use crate::wave::cue::CueFields;
 use crate::wave::data::skip_data_chunk;
-use crate::wave::extra::{get_extra_chunks_output, read_extra_chunk_fields};
+use crate::wave::extra::{get_extra_chunk_header_output, ExtraFields};
 use crate::wave::fact::FactFields;
+use crate::wave::fmt::FmtFields;
 use crate::wave::id3::ID3Fields;
 use crate::wave::ixml::IXMLFields;
 use crate::wave::junk::JunkFields;
@@ -32,11 +34,10 @@ use crate::wave::list::ListFields;
 use crate::wave::resu::ResuFields;
 use crate::wave::xmp::XMPFields;
 
-use crate::wave::acid::AcidData;
-use crate::wave::cart::CartData;
-use byte_unit::{AdjustedByte, Byte, UnitType};
+use byte_unit::{Byte, UnitType};
 use std::error::Error;
 use std::fs::File;
+use upon::Value;
 
 const FMT_CHUNKID: &str = "fmt ";
 const FACT_CHUNKID: &str = "fact";
@@ -52,6 +53,22 @@ const BEXT_CHUNKID: &str = "bext";
 const CART_CHUNKID: &str = "cart";
 const ACID_CHUNKID: &str = "acid";
 
+pub const ACID_TEMPLATE_NAME: &str = "acid";
+pub const BEXT_TEMPLATE_NAME: &str = "bext";
+pub const CART_TEMPLATE_NAME: &str = "cart";
+pub const CUE_TEMPLATE_NAME: &str = "cue";
+pub const EXTRA_TEMPLATE_HEADER_NAME: &str = "extra_header";
+pub const EXTRA_TEMPLATE_NAME: &str = "extra";
+pub const FACT_TEMPLATE_NAME: &str = "fact";
+pub const FMT_TEMPLATE_NAME: &str = "fmt";
+pub const ID3_TEMPLATE_NAME: &str = "id3";
+pub const IXML_TEMPLATE_NAME: &str = "ixml";
+pub const JUNK_TEMPLATE_NAME: &str = "junk";
+pub const LIST_TEMPLATE_NAME: &str = "list";
+pub const RESU_TEMPLATE_NAME: &str = "resu";
+pub const WAVE_TEMPLATE_NAME: &str = "wave";
+pub const XMP_TEMPLATE_NAME: &str = "xmp";
+
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const RIFF_CKSIZE_FIELD_LENGTH_IN_BYTES: i64 = 4;
@@ -59,6 +76,7 @@ const WAVEID_IN_DECIMAL_LITTLE_ENDIAN_BYTES: [u8; 4] = [87, 65, 86, 69];
 
 #[derive(Debug, Clone, Default)]
 pub struct Wave {
+    pub original_file_path: String,
     pub name: String,
     pub chunk_ids: Vec<String>,
     pub canonical_path: String,
@@ -75,7 +93,7 @@ pub struct Wave {
     pub bext_data: BextData,
     pub cart_data: CartData,
     pub acid_data: AcidData,
-    pub extra_data: Vec<(String, String)>,
+    pub extra_data: Vec<ExtraFields>,
 }
 
 impl Wave {
@@ -87,42 +105,42 @@ impl Wave {
             return Err(Box::new(LocalError::InvalidWaveID));
         }
 
-        let new_wave: Self = extract_metadata(wave_file, file_path)?;
+        let new_wave: Self = extract_metadata(file_path, wave_file)?;
         Ok(new_wave)
     }
 
-    pub fn display_wave_file_metadata(&self) -> Result<(), Box<dyn Error>> {
-        println!("\n > Wave File Metadata \n");
-
-        let wave_file_header_fields = self.get_metadata_output();
-        for header_field in wave_file_header_fields {
-            println!("{}", header_field);
-        }
+    pub fn display_wave_file_metadata(&self, template: Template) -> Result<(), Box<dyn Error>> {
+        println!("{}", self.get_metadata_outputs(&template)?);
 
         for chunk in self.chunk_ids.iter() {
             let chunk_fields = match chunk.as_str() {
-                FACT_CHUNKID => self.fact_data.get_metadata_output(),
-                FMT_CHUNKID => self.format_data.get_metadata_output(),
-                BEXT_CHUNKID => self.bext_data.get_metadata_output(),
-                ID3_CHUNKID => self.id3_data.get_metadata_output(),
-                CUE_CHUNKID => self.cue_data.get_metadata_output(),
-                JUNK_CHUNKID => self.junk_data.get_metadata_output(),
-                ACID_CHUNKID => self.acid_data.get_metadata_output(),
-                XMP_CHUNKID => self.xmp_data.get_metadata_output(),
-                IXML_CHUNKID => self.ixml_data.get_metadata_output(),
-                RESU_CHUNKID => self.resu_data.get_metadata_output(),
-                CART_CHUNKID => self.cart_data.get_metadata_output(),
-                LIST_CHUNKID => self.list_data.get_metadata_output(),
-                _ => vec![],
+                FACT_CHUNKID => self.fact_data.get_metadata_outputs(&template, FACT_TEMPLATE_NAME)?,
+                FMT_CHUNKID => self.format_data.get_metadata_outputs(&template, FMT_TEMPLATE_NAME)?,
+                BEXT_CHUNKID => self.bext_data.get_metadata_outputs(&template, BEXT_TEMPLATE_NAME)?,
+                ID3_CHUNKID => self.id3_data.get_metadata_outputs(&template, ID3_TEMPLATE_NAME)?,
+                CUE_CHUNKID => self.cue_data.get_metadata_outputs(&template, CUE_TEMPLATE_NAME)?,
+                JUNK_CHUNKID => self.junk_data.get_metadata_outputs(&template, JUNK_TEMPLATE_NAME)?,
+                ACID_CHUNKID => self.acid_data.get_metadata_outputs(&template, ACID_TEMPLATE_NAME)?,
+                XMP_CHUNKID => self.xmp_data.get_metadata_outputs(&template, XMP_TEMPLATE_NAME)?,
+                IXML_CHUNKID => self.ixml_data.get_metadata_outputs(&template, IXML_TEMPLATE_NAME)?,
+                RESU_CHUNKID => self.resu_data.get_metadata_outputs(&template, RESU_TEMPLATE_NAME)?,
+                CART_CHUNKID => self.cart_data.get_metadata_outputs(&template, CART_TEMPLATE_NAME)?,
+                LIST_CHUNKID => self.list_data.get_metadata_outputs(&template, LIST_TEMPLATE_NAME)?,
+                _ => continue,
             };
 
-            for field in chunk_fields {
-                println!("{}", field);
-            }
+            println!("{}", chunk_fields);
         }
 
-        for extra_chunk in get_extra_chunks_output(&self.extra_data) {
-            println!("{}", extra_chunk);
+        println!();
+
+        println!(
+            "{}",
+            get_extra_chunk_header_output(&template, EXTRA_TEMPLATE_HEADER_NAME)?
+        );
+
+        for extra_chunk in self.extra_data.iter() {
+            println!("{}", extra_chunk.get_metadata_outputs(&template, EXTRA_TEMPLATE_NAME)?);
         }
 
         println!("\n");
@@ -130,64 +148,31 @@ impl Wave {
         Ok(())
     }
 
-    fn get_metadata_output(&self) -> Vec<String> {
-        let mut header_data: Vec<String> = vec![];
+    fn get_metadata_outputs(&self, template: &Template) -> Result<String, Box<dyn Error>> {
+        let wave_output_values: Value = upon::value! {
+            file_name: self.name.clone(),
+            file_path: self.original_file_path.clone(),
+            file_size: self.size_in_bytes,
+            chunk_ids_found: self.chunk_ids.clone().join(", "),
+        };
 
-        header_data.push("-------------\nFile Details:\n-------------".to_string());
-        header_data.push(format!("File Name: {}", self.name.clone()));
-        header_data.push(format!("File Path: {}", self.canonical_path.clone()));
-        header_data.push(format!(
-            "File Size: {:.2}",
-            format_file_size(self.size_in_bytes.clone())
-        ));
-        header_data.push(format!(
-            "Chunk IDs Found: [{}]",
-            self.chunk_ids.clone().join(", ")
-        ));
-
-        header_data
+        Ok(template.get_wave_chunk_output(WAVE_TEMPLATE_NAME, wave_output_values)?)
     }
 }
 
-fn extract_metadata(mut wave_file: File, file_path: String) -> Result<Wave, Box<dyn Error>> {
+fn extract_metadata(file_path: String, mut wave_file: File) -> Result<Wave, Box<dyn Error>> {
     let mut new_wave: Wave = Default::default();
+    new_wave.original_file_path = file_path.clone();
 
     loop {
-        let next_chunkid: String =
-            match read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES) {
-                Ok(chunkid) => chunkid.to_lowercase(),
-                Err(_) => break,
-            };
+        let next_chunkid: String = match read_bytes_from_file_as_string(&mut wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES) {
+            Ok(chunkid) => chunkid.to_lowercase(),
+            Err(_) => break,
+        };
 
         new_wave.chunk_ids.push(next_chunkid.clone());
 
-        match next_chunkid.as_str() {
-            JUNK_CHUNKID => new_wave.junk_data = JunkFields::new(&mut wave_file)?,
-            FMT_CHUNKID => new_wave.format_data = FmtFields::new(&mut wave_file)?,
-            FACT_CHUNKID => new_wave.fact_data = FactFields::new(&mut wave_file)?,
-            DATA_CHUNKID => skip_data_chunk(&mut wave_file)?,
-            CUE_CHUNKID => new_wave.cue_data = CueFields::new(&mut wave_file)?,
-            RESU_CHUNKID => new_wave.resu_data = ResuFields::new(&mut wave_file)?,
-            LIST_CHUNKID => {
-                let list_result = ListFields::new(&mut wave_file)?;
-                if !list_result.info_data.is_empty() {
-                    new_wave.list_data.info_data = list_result.info_data;
-                }
-
-                if !list_result.adtl_data.is_empty() {
-                    new_wave.list_data.adtl_data = list_result.adtl_data;
-                }
-            }
-            IXML_CHUNKID => new_wave.ixml_data = IXMLFields::new(&mut wave_file)?,
-            XMP_CHUNKID => new_wave.xmp_data = XMPFields::new(&mut wave_file)?,
-            ID3_CHUNKID => new_wave.id3_data = ID3Fields::new(&mut wave_file, file_path.clone())?,
-            BEXT_CHUNKID => new_wave.bext_data = BextData::new(&mut wave_file)?,
-            CART_CHUNKID => new_wave.cart_data = CartData::new(&mut wave_file)?,
-            ACID_CHUNKID => new_wave.acid_data = AcidData::new(&mut wave_file)?,
-            _ => new_wave
-                .extra_data
-                .push(read_extra_chunk_fields(&mut wave_file, next_chunkid)?),
-        }
+        parse_chunk_ids(&mut wave_file, &mut new_wave, next_chunkid)?;
     }
 
     new_wave.name = get_file_name_from_file_path(&file_path)?;
@@ -197,6 +182,39 @@ fn extract_metadata(mut wave_file: File, file_path: String) -> Result<Wave, Box<
     Ok(new_wave)
 }
 
-fn format_file_size(file_size_in_bytes: u64) -> AdjustedByte {
-    Byte::from_u64(file_size_in_bytes).get_appropriate_unit(UnitType::Binary)
+fn parse_chunk_ids(mut wave_file: &mut File, new_wave: &mut Wave, next_chunkid: String) -> Result<(), Box<dyn Error>> {
+    match next_chunkid.as_str() {
+        JUNK_CHUNKID => new_wave.junk_data = JunkFields::new(&mut wave_file)?,
+        FMT_CHUNKID => new_wave.format_data = FmtFields::new(&mut wave_file)?,
+        FACT_CHUNKID => new_wave.fact_data = FactFields::new(&mut wave_file)?,
+        DATA_CHUNKID => skip_data_chunk(&mut wave_file)?,
+        CUE_CHUNKID => new_wave.cue_data = CueFields::new(&mut wave_file)?,
+        RESU_CHUNKID => new_wave.resu_data = ResuFields::new(&mut wave_file)?,
+        LIST_CHUNKID => {
+            let list_result = ListFields::new(&mut wave_file)?;
+            if !list_result.info_data.is_empty() {
+                new_wave.list_data.info_data = list_result.info_data;
+            }
+
+            if !list_result.adtl_data.is_empty() {
+                new_wave.list_data.adtl_data = list_result.adtl_data;
+            }
+        }
+        IXML_CHUNKID => new_wave.ixml_data = IXMLFields::new(&mut wave_file)?,
+        XMP_CHUNKID => new_wave.xmp_data = XMPFields::new(&mut wave_file)?,
+        ID3_CHUNKID => new_wave.id3_data = ID3Fields::new(&mut wave_file, new_wave.original_file_path.clone())?,
+        BEXT_CHUNKID => new_wave.bext_data = BextData::new(&mut wave_file)?,
+        CART_CHUNKID => new_wave.cart_data = CartData::new(&mut wave_file)?,
+        ACID_CHUNKID => new_wave.acid_data = AcidData::new(&mut wave_file)?,
+        _ => new_wave
+            .extra_data
+            .push(ExtraFields::new(&mut wave_file, next_chunkid)?),
+    }
+    Ok(())
+}
+
+fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
+    Byte::from_u64(file_size_in_bytes)
+        .get_appropriate_unit(UnitType::Binary)
+        .to_string()
 }
