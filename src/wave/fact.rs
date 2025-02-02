@@ -1,7 +1,8 @@
 use crate::fileio::{read_four_byte_integer_from_file, skip_over_bytes_in_file};
-use byte_unit::rust_decimal::prelude::Zero;
+use crate::template::Template;
 use std::error::Error;
 use std::fs::File;
+use upon::Value;
 
 const FACT_CKSIZE_FIELD_LENGTH_IN_BYTES: i64 = 4;
 
@@ -19,13 +20,11 @@ impl FactFields {
         })
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
-        let mut fact_data: Vec<String> = vec![];
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        let wave_output_values: Value = upon::value! {
+            samples_per_channel: self.samples_per_channel,
+        };
 
-        if !self.samples_per_channel.is_zero() {
-            fact_data.push("\n-------------\nFact Chunk Details:\n-------------".to_string());
-            fact_data.push(format!("Samples per Channel: {}", self.samples_per_channel));
-        }
-        fact_data
+        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
     }
 }

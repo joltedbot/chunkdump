@@ -1,8 +1,10 @@
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+use crate::template::Template;
 use flate2::read::ZlibDecoder;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
+use upon::Value;
 
 #[derive(Debug, Clone, Default)]
 pub struct ResuFields {
@@ -26,14 +28,11 @@ impl ResuFields {
         Ok(Self { resu_json })
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
-        let mut resu_data: Vec<String> = vec![];
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        let wave_output_values: Value = upon::value! {
+            resu_json: self.resu_json.clone(),
+        };
 
-        if !self.resu_json.is_empty() {
-            resu_data.push("\n-------------\nResU Chunk JSON Data:\n-------------".to_string());
-            resu_data.push(format!("{}", self.resu_json));
-        }
-
-        resu_data
+        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
     }
 }

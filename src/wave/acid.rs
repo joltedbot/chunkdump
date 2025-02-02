@@ -1,10 +1,11 @@
 use crate::byteio::{
-    take_first_four_bytes_as_integer, take_first_four_bytes_float, take_first_two_bytes_as_integer,
+    take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer,
 };
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
-use byte_unit::rust_decimal::prelude::Zero;
+use crate::template::Template;
 use std::error::Error;
 use std::fs::File;
+use upon::Value;
 
 const FILE_TYPE_BIT_POSITION: u8 = 0;
 const ROOT_NOTE_BIT_POSITION: u8 = 1;
@@ -39,79 +40,59 @@ impl AcidData {
         let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
         Ok(Self {
-            file_type: get_file_type_from_bytes(take_first_four_bytes_as_integer(&mut acid_data)?)?,
-            root_note: take_first_two_bytes_as_integer(&mut acid_data)?,
-            mystery_one: take_first_two_bytes_as_integer(&mut acid_data)?,
-            mystery_two: take_first_four_bytes_float(&mut acid_data)?,
-            number_of_beats: take_first_four_bytes_as_integer(&mut acid_data)?,
-            meter_denominator: take_first_two_bytes_as_integer(&mut acid_data)?,
-            meter_numerator: take_first_two_bytes_as_integer(&mut acid_data)?,
-            tempo: take_first_four_bytes_float(&mut acid_data)?,
+            file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(&mut acid_data)?)?,
+            root_note: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
+            mystery_one: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
+            mystery_two: take_first_four_bytes_as_float(&mut acid_data)?,
+            number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut acid_data)?,
+            meter_denominator: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
+            meter_numerator: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
+            tempo: take_first_four_bytes_as_float(&mut acid_data)?,
         })
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
-        let mut acid_data: Vec<String> = vec![];
-
-        acid_data.push("\n-------------\nACID Chunk Details:\n-------------".to_string());
-        acid_data.push("File Type:\n-------------".to_string());
-
-        match self.file_type.one_shot {
-            true => acid_data.push(" > OneShot".to_string()),
-            false => acid_data.push(" > Loop".to_string()),
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        let loop_on = match self.file_type.one_shot {
+            true => "OneShot".to_string(),
+            false => "Loop".to_string(),
         };
 
-        match self.file_type.root_note {
-            true => acid_data.push(" > Root Note Set".to_string()),
-            false => acid_data.push(" > Root Note Not Set".to_string()),
-        }
+        let root_note_set = match self.file_type.root_note {
+            true => "Root Note Set".to_string(),
+            false => "Root Note Not Set".to_string(),
+        };
 
-        match self.file_type.stretch {
-            true => acid_data.push(" > Stretch is On".to_string()),
-            false => acid_data.push(" > Stretch is Off".to_string()),
-        }
+        let stretch = match self.file_type.stretch {
+            true => "Stretch is On".to_string(),
+            false => "Stretch is Off".to_string(),
+        };
 
-        match self.file_type.disk_based {
-            true => acid_data.push(" > Disk Based".to_string()),
-            false => acid_data.push(" > Ram Based".to_string()),
-        }
+        let disk_based = match self.file_type.disk_based {
+            true => "Disk Based".to_string(),
+            false => "Ram Based".to_string(),
+        };
 
-        match self.file_type.acidizer {
-            true => acid_data.push(" > Acidizer is On".to_string()),
-            false => acid_data.push(" > Acidizer is Off".to_string()),
-        }
+        let acidizer = match self.file_type.acidizer {
+            true => "Acidizer is On".to_string(),
+            false => "Acidizer is Off".to_string(),
+        };
 
-        acid_data.push("-------------".to_string());
+        let wave_output_values: Value = upon::value! {
+            loop_on: loop_on,
+            root_note_set: root_note_set,
+            stretch: stretch,
+            disk_based: disk_based,
+            acidizer: acidizer,
+            root_note: self.root_note,
+            mystery_one: self.mystery_one,
+            mystery_two: self.mystery_two,
+            number_of_beats: self.number_of_beats,
+            meter_denominator: self.meter_denominator,
+            meter_numerator: self.meter_numerator,
+            tempo: format!("{:2}", self.tempo),
+        };
 
-        if !self.root_note.is_zero() {
-            acid_data.push(format!("Root Note: {:#?}", self.root_note));
-        }
-
-        if !self.mystery_one.is_zero() {
-            acid_data.push(format!("Mystery Value One: {:#?}", self.mystery_one));
-        }
-
-        if !self.mystery_two.is_zero() {
-            acid_data.push(format!("Mystery Value Two: {:#?}", self.mystery_two));
-        }
-
-        acid_data.push(format!(
-            "Time Signature (Likely Incorrect): {}/{}",
-            self.meter_numerator, self.meter_denominator
-        ));
-
-        if !self.number_of_beats.is_zero() {
-            acid_data.push(format!(
-                "Number of Beats: {}",
-                self.number_of_beats.to_string()
-            ));
-        }
-
-        if !self.tempo.is_zero() {
-            acid_data.push(format!("Tempo: {}bpm", self.tempo.to_string()));
-        }
-
-        acid_data
+        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
     }
 }
 
@@ -129,6 +110,5 @@ fn check_bit_mask_position(bit_mask: u32, position: u8) -> bool {
     if (bit_mask & (1 << position)) > 0 {
         return true;
     }
-
     false
 }
