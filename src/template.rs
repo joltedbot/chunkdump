@@ -21,7 +21,7 @@ impl Template {
             None => return Err(Box::new(LocalError::InvalidOutputTemplate)),
         };
 
-        match template.render_from(&self.engine, &values).to_string() {
+        match template.render(&self.engine, &values).to_string() {
             Ok(template) => Ok(template),
             Err(e) => Err(Box::new(e)),
         }
@@ -48,10 +48,6 @@ pub fn create_wave_template_store(engine: &Engine) -> upon::Result<HashMap<&'sta
         engine.compile(include_str!("templates/wave/cue.tmpl"))?,
     );
     store.insert(
-        crate::wave::EXTRA_TEMPLATE_HEADER_NAME,
-        engine.compile(include_str!("templates/wave/extra_header.tmpl"))?,
-    );
-    store.insert(
         crate::wave::EXTRA_TEMPLATE_NAME,
         engine.compile(include_str!("templates/wave/extra.tmpl"))?,
     );
@@ -76,8 +72,12 @@ pub fn create_wave_template_store(engine: &Engine) -> upon::Result<HashMap<&'sta
         engine.compile(include_str!("templates/wave/junk.tmpl"))?,
     );
     store.insert(
-        crate::wave::LIST_TEMPLATE_NAME,
-        engine.compile(include_str!("templates/wave/list.tmpl"))?,
+        crate::wave::LIST_TEMPLATE_INFO_NAME,
+        engine.compile(include_str!("templates/wave/list_info.tmpl"))?,
+    );
+    store.insert(
+        crate::wave::LIST_TEMPLATE_ADTL_NAME,
+        engine.compile(include_str!("templates/wave/list_adtl.tmpl"))?,
     );
     store.insert(
         crate::wave::RESU_TEMPLATE_NAME,

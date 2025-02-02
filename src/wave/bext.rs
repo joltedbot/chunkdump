@@ -62,7 +62,7 @@ impl BextData {
         })
     }
 
-    pub fn get_metadata_outputs(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
         let wave_output_values: Value = upon::value! {
             description: &self.description,
             originator: &self.originator,

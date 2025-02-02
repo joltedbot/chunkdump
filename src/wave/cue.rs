@@ -1,8 +1,7 @@
-use crate::byteio::{
-    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string,
-};
+use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string};
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
-use byte_unit::rust_decimal::prelude::Zero;
+use crate::template::Template;
+use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 
@@ -14,7 +13,7 @@ pub struct CueFields {
     pub cue_points: Vec<CuePoint>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct CuePoint {
     pub id: u32,
     pub position: u32,
@@ -35,10 +34,7 @@ impl CueFields {
             cue_points.push(CuePoint {
                 id: take_first_four_bytes_as_unsigned_integer(&mut cue_data)?,
                 position: take_first_four_bytes_as_unsigned_integer(&mut cue_data)?,
-                data_chunk_id: take_first_number_of_bytes_as_string(
-                    &mut cue_data,
-                    DATA_CHUNK_ID_LENGTH_IN_BYTES,
-                )?,
+                data_chunk_id: take_first_number_of_bytes_as_string(&mut cue_data, DATA_CHUNK_ID_LENGTH_IN_BYTES)?,
                 chunk_start: take_first_four_bytes_as_unsigned_integer(&mut cue_data)?,
                 block_start: take_first_four_bytes_as_unsigned_integer(&mut cue_data)?,
                 sample_start: take_first_four_bytes_as_unsigned_integer(&mut cue_data)?,
@@ -51,37 +47,14 @@ impl CueFields {
         })
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
-        let mut cue_data: Vec<String> = vec![];
-
-        cue_data.push("\n-------------\nCue Chunk Details:\n-------------".to_string());
-        cue_data.push(format!(
-            "Number of Cue Points: {}",
-            self.number_of_cue_points
-        ));
-
-        for cue_point in &self.cue_points {
-            if !cue_point.id.is_zero() {
-                cue_data.push("-------------".to_string());
-                cue_data.push(format!("Cue Point ID: {}", cue_point.id));
-                cue_data.push(format!("Position: Sample {}", cue_point.position));
-                cue_data.push(format!("Data Chunk ID: {}", cue_point.data_chunk_id));
-                cue_data.push(format!(
-                    "Chunk Start: Byte Position {}",
-                    cue_point.chunk_start
-                ));
-                cue_data.push(format!(
-                    "Block Start: Byte Position {}",
-                    cue_point.block_start
-                ));
-                cue_data.push(format!(
-                    "Sample Start: Byte Position {}",
-                    cue_point.sample_start
-                ));
-            }
-            cue_data.push("-------------".to_string());
-        }
-
-        cue_data
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        let cue_output: String = template.get_wave_chunk_output(
+            template_name,
+            upon::value! {
+                number_of_cue_points: &self.number_of_cue_points,
+                cue_points: &self.cue_points
+            },
+        )?;
+        Ok(cue_output)
     }
 }

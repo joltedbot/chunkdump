@@ -16,7 +16,11 @@ impl JunkFields {
         Ok(JunkFields { junk_as_string })
     }
 
-    pub fn get_metadata_outputs(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        if self.junk_as_string.is_empty() {
+            return Ok("".to_string());
+        }
+
         let wave_output_values: Value = upon::value! {
             junk: self.junk_as_string.clone(),
         };

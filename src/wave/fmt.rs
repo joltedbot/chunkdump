@@ -1,9 +1,9 @@
-use crate::byteio::{
-    take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer,
-};
+use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer};
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+use crate::template::Template;
 use std::error::Error;
 use std::fs::File;
+use upon::Value;
 
 const FORMAT_CHUNK_SIZE_IF_NO_EXTENSION: u32 = 16;
 const PCM_FORMAT_ID: u16 = 1;
@@ -19,21 +19,6 @@ const EXTENSIBLE_FORMAT_NAME: &str = "Determined by SubFormat";
 const UNKOWN_FORMAT: &str = "Unknown Format ID: ";
 const GUID_LENGTH_IN_BYTES: usize = 16;
 const NO_GUID_FOUND_MESSAGE: &str = "N/A";
-const OUTPUT_HEADER: &str = "\n-------------\nFormat (fmt) Chunk Details:\n-------------";
-const OUTPUT_FORMAT_CODE_MESSAGE: &str = "Format Code: ";
-const OUTPUT_NUMBER_OF_CHANNELS_MESSAGE: &str = "Number of Channels: ";
-const OUTPUT_SAMPLES_PER_SECOND_MESSAGE: &str = "Sample Rate: ";
-const OUTPUT_SAMPLES_PER_SECOND_UNIT: &str = "kHz";
-const OUTPUT_BITS_PER_SAMPLE_MESSAGE: &str = "Bit Depth: ";
-const OUTPUT_BITS_PER_SAMPLE_UNIT: &str = " bits";
-const OUTPUT_AVERAGE_DATA_RATE_MESSAGE: &str = "Average Data Rate: ";
-const OUTPUT_AVERAGE_DATA_RATE_UNIT: &str = " kB/Second";
-const OUTPUT_DATA_BLOCK_SIZE_MESSAGE: &str = "Data Block Size: ";
-const OUTPUT_DATA_BLOCK_SIZE_UNIT: &str = " bytes";
-const OUTPUT_VALID_BITS_PER_SAMPLE_MESSAGE: &str = "Valid Bits per Sample: ";
-const OUTPUT_VALID_BITS_PER_SAMPLE_UNIT: &str = " bits";
-const OUTPUT_SPEAKER_POSITION_MESSAGE: &str = "Speaker Position Mask: ";
-const OUTPUT_GUID_MESSAGE: &str = "GUID: ";
 const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
     "Front Left",
     "Front Tight",
@@ -73,9 +58,7 @@ impl FmtFields {
         let chunk_size = read_chunk_size_from_file(wave_file)?;
         let mut fmt_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
 
-        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(
-            &mut fmt_data,
-        )?);
+        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?);
         let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
         let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
         let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
@@ -111,57 +94,20 @@ impl FmtFields {
         })
     }
 
-    pub fn get_metadata_output(&self) -> Vec<String> {
-        let mut fmt_data: Vec<String> = vec![];
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+        let wave_output_values: Value = upon::value! {
+            format_code: &self.format_code,
+            number_of_channels: &self.number_of_channels,
+            samples_per_second: &(self.samples_per_second as f64 / 1000.0),
+            bits_per_sample: &self.bits_per_sample,
+            average_data_rate: &(self.average_data_rate as f64 / 1000.0),
+            data_block_size: self.data_block_size,
+            valid_bits_per_sample: &self.valid_bits_per_sample,
+            speaker_position_mask: format_speaker_position(self.speaker_position_mask),
+            subformat_guid: format_guid(self.subformat_guid.clone())
+        };
 
-        fmt_data.push(OUTPUT_HEADER.to_string());
-        fmt_data.push(format!(
-            "{}{}",
-            OUTPUT_FORMAT_CODE_MESSAGE, self.format_code
-        ));
-        fmt_data.push(format!(
-            "{}{}",
-            OUTPUT_NUMBER_OF_CHANNELS_MESSAGE, self.number_of_channels
-        ));
-        fmt_data.push(format!(
-            "{} {} {}",
-            OUTPUT_SAMPLES_PER_SECOND_MESSAGE,
-            self.samples_per_second as f64 / 1000.0,
-            OUTPUT_SAMPLES_PER_SECOND_UNIT
-        ));
-        fmt_data.push(format!(
-            "{}{}{}",
-            OUTPUT_BITS_PER_SAMPLE_MESSAGE, self.bits_per_sample, OUTPUT_BITS_PER_SAMPLE_UNIT
-        ));
-        fmt_data.push(format!(
-            "{}{}{}",
-            OUTPUT_AVERAGE_DATA_RATE_MESSAGE,
-            self.average_data_rate as f64 / 1000.0,
-            OUTPUT_AVERAGE_DATA_RATE_UNIT
-        ));
-        fmt_data.push(format!(
-            "{}{}{}",
-            OUTPUT_DATA_BLOCK_SIZE_MESSAGE, self.data_block_size, OUTPUT_DATA_BLOCK_SIZE_UNIT
-        ));
-
-        fmt_data.push(format!(
-            "{}{}{}",
-            OUTPUT_VALID_BITS_PER_SAMPLE_MESSAGE,
-            self.valid_bits_per_sample,
-            OUTPUT_VALID_BITS_PER_SAMPLE_UNIT
-        ));
-        fmt_data.push(format!(
-            "{}{}",
-            OUTPUT_SPEAKER_POSITION_MESSAGE,
-            format_speaker_position(self.speaker_position_mask)
-        ));
-        fmt_data.push(format!(
-            "{}{:#?}",
-            OUTPUT_GUID_MESSAGE,
-            format_guid(self.subformat_guid.clone())
-        ));
-
-        fmt_data
+        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
     }
 }
 
@@ -181,10 +127,7 @@ fn format_guid(guid_bytes: Vec<u8>) -> String {
         return NO_GUID_FOUND_MESSAGE.to_string();
     }
 
-    let formated_guid: Vec<String> = guid_bytes
-        .iter()
-        .map(|byte| format!("{:X}", byte))
-        .collect();
+    let formated_guid: Vec<String> = guid_bytes.iter().map(|byte| format!("{:X}", byte)).collect();
 
     formated_guid.join("")
 }

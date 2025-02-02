@@ -1,33 +1,50 @@
 use crate::fileio::{read_bytes_from_file_as_lossy_string, read_chunk_size_from_file};
 use crate::template::Template;
+use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
-use upon::Value;
 
-#[derive(Debug, Clone, Default)]
-pub struct ExtraFields {
-    chunk_id: String,
-    chunk_data: String,
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct ExtraChunks {
+    pub chunks: Vec<Chunk>,
 }
 
-impl ExtraFields {
-    pub fn new(wave_file: &mut File, chunk_id: String) -> Result<Self, Box<dyn Error>> {
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct Chunk {
+    pub id: String,
+    pub data: String,
+}
+
+impl ExtraChunks {
+    pub fn new() -> Self {
+        Self {
+            chunks: Default::default(),
+        }
+    }
+
+    pub fn add_chunk(&mut self, wave_file: &mut File, chunk_id: String) -> Result<(), Box<dyn Error>> {
         let chunk_size = read_chunk_size_from_file(wave_file)?;
         let chunk_data = read_bytes_from_file_as_lossy_string(wave_file, chunk_size as usize)?;
+        self.chunks.push(Chunk {
+            id: chunk_id,
+            data: chunk_data,
+        });
 
-        Ok(Self { chunk_id, chunk_data })
+        Ok(())
     }
 
     pub fn get_metadata_outputs(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
-        let wave_output_values: Value = upon::value! {
-            chunk_id: self.chunk_id.clone(),
-            chunk_data: self.chunk_data.clone(),
-        };
+        if self.chunks.is_empty() {
+            return Ok("".to_string());
+        }
 
-        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
+        let extra_chunk_output = &template.get_wave_chunk_output(
+            template_name,
+            upon::value! {
+                extra_chunks: &self.chunks
+            },
+        )?;
+
+        Ok(extra_chunk_output.to_string())
     }
-}
-
-pub fn get_extra_chunk_header_output(template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
-    Ok(template.get_wave_chunk_output(template_name, upon::value! {})?)
 }

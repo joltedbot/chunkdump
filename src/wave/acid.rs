@@ -51,7 +51,7 @@ impl AcidData {
         })
     }
 
-    pub fn get_metadata_outputs(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
         let loop_on = match self.file_type.one_shot {
             true => "OneShot".to_string(),
             false => "Loop".to_string(),
@@ -89,7 +89,7 @@ impl AcidData {
             number_of_beats: self.number_of_beats,
             meter_denominator: self.meter_denominator,
             meter_numerator: self.meter_numerator,
-            tempo: self.tempo,
+            tempo: format!("{:2}", self.tempo),
         };
 
         Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)

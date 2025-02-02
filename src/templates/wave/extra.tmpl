@@ -1,3 +1,5 @@
-{chunk_id}:
------------
-{chunk_data}
+------------------------
+Extra Chunks As Strings:
+------------------------
+{% for chunk in extra_chunks %}
+{{ chunk.id }}: {{ chunk.data }}{% endfor %}
