@@ -1,8 +1,17 @@
 use crate::errors::LocalError;
 
-pub fn take_first_two_bytes_as_unsigned_integer(
-    byte_data: &mut Vec<u8>,
-) -> Result<u16, LocalError> {
+pub fn take_first_byte_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
+    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(u8::from_le_bytes(byte_array))
+}
+
+pub fn take_first_two_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u16, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 2;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -13,9 +22,7 @@ pub fn take_first_two_bytes_as_unsigned_integer(
     Ok(u16::from_le_bytes(byte_array))
 }
 
-pub fn take_first_four_bytes_as_unsigned_integer(
-    byte_data: &mut Vec<u8>,
-) -> Result<u32, LocalError> {
+pub fn take_first_four_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u32, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -26,9 +33,7 @@ pub fn take_first_four_bytes_as_unsigned_integer(
     Ok(u32::from_le_bytes(byte_array))
 }
 
-pub fn take_first_eight_bytes_as_unsigned_integer(
-    byte_data: &mut Vec<u8>,
-) -> Result<u64, LocalError> {
+pub fn take_first_eight_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u64, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 8;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -37,6 +42,17 @@ pub fn take_first_eight_bytes_as_unsigned_integer(
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     Ok(u64::from_le_bytes(byte_array))
+}
+
+pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i8, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
+    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(i8::from_le_bytes(byte_array))
 }
 
 pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i16, LocalError> {
@@ -89,10 +105,7 @@ pub fn take_first_number_of_bytes_as_string(
     Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())
 }
 
-pub fn take_first_number_of_bytes(
-    byte_data: &mut Vec<u8>,
-    number_of_bytes: usize,
-) -> Result<Vec<u8>, LocalError> {
+pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<Vec<u8>, LocalError> {
     check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
 
     let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
@@ -122,8 +135,7 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_four_bytes_as_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: u32 =
-            take_first_four_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: u32 = take_first_four_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
         let correct_result: u32 = 16843024;
         assert_eq!(result_integer, correct_result);
     }
@@ -145,8 +157,7 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_two_bytes_as_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: u16 =
-            take_first_two_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: u16 = take_first_two_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
         let correct_result: u16 = 272;
         assert_eq!(result_integer, correct_result);
     }
@@ -172,8 +183,7 @@ mod tests {
         let number_of_bytes: usize = 4;
 
         let result_string: String =
-            take_first_number_of_bytes_as_string(&mut little_endian_test_bytes, number_of_bytes)
-                .unwrap();
+            take_first_number_of_bytes_as_string(&mut little_endian_test_bytes, number_of_bytes).unwrap();
 
         assert_eq!(result_string, correct_result_string);
     }
@@ -184,9 +194,7 @@ mod tests {
         let test_bytes_length_before_function_call = little_endian_test_bytes.len();
         let number_of_bytes: usize = 4;
 
-        let _: String =
-            take_first_number_of_bytes_as_string(&mut little_endian_test_bytes, number_of_bytes)
-                .unwrap();
+        let _: String = take_first_number_of_bytes_as_string(&mut little_endian_test_bytes, number_of_bytes).unwrap();
 
         let test_bytes_length_after_function_call = little_endian_test_bytes.len();
 
@@ -202,10 +210,7 @@ mod tests {
         let test_bytes_length = little_endian_test_bytes.len();
         let number_of_bytes_to_take: usize = 4;
 
-        let result = check_sufficient_bytes_are_available_to_take(
-            &little_endian_test_bytes,
-            number_of_bytes_to_take,
-        );
+        let result = check_sufficient_bytes_are_available_to_take(&little_endian_test_bytes, number_of_bytes_to_take);
 
         assert_eq!(
             result.err(),

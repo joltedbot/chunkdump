@@ -11,6 +11,7 @@ mod ixml;
 mod junk;
 mod list;
 mod resu;
+mod smpl;
 mod xmp;
 
 use crate::errors::LocalError;
@@ -34,6 +35,7 @@ use crate::wave::list::ListFields;
 use crate::wave::resu::ResuFields;
 use crate::wave::xmp::XMPFields;
 
+use crate::wave::smpl::SmplFields;
 use byte_unit::{Byte, UnitType};
 use std::error::Error;
 use std::fs::File;
@@ -52,6 +54,7 @@ const ID3_CHUNKID: &str = "id3 ";
 const BEXT_CHUNKID: &str = "bext";
 const CART_CHUNKID: &str = "cart";
 const ACID_CHUNKID: &str = "acid";
+const SMPL_CHUNKID: &str = "smpl";
 
 pub const ACID_TEMPLATE_NAME: &str = "acid";
 pub const BEXT_TEMPLATE_NAME: &str = "bext";
@@ -68,6 +71,7 @@ pub const LIST_TEMPLATE_ADTL_NAME: &str = "adtl_info";
 pub const RESU_TEMPLATE_NAME: &str = "resu";
 pub const WAVE_TEMPLATE_NAME: &str = "wave";
 pub const XMP_TEMPLATE_NAME: &str = "xmp";
+pub const SMPL_TEMPLATE_NAME: &str = "smpl";
 
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
@@ -93,6 +97,7 @@ pub struct Wave {
     pub bext_data: BextData,
     pub cart_data: CartData,
     pub acid_data: AcidData,
+    pub smpl_data: SmplFields,
     pub extra_data: ExtraChunks,
 }
 
@@ -125,6 +130,7 @@ impl Wave {
                 IXML_CHUNKID => self.ixml_data.get_metadata_output(&template, IXML_TEMPLATE_NAME)?,
                 RESU_CHUNKID => self.resu_data.get_metadata_output(&template, RESU_TEMPLATE_NAME)?,
                 CART_CHUNKID => self.cart_data.get_metadata_output(&template, CART_TEMPLATE_NAME)?,
+                SMPL_CHUNKID => self.smpl_data.get_metadata_output(&template, SMPL_TEMPLATE_NAME)?,
                 LIST_CHUNKID => {
                     let mut list_metadata_output = Default::default();
                     for list_field in self.list_data.iter() {
@@ -203,6 +209,7 @@ fn parse_chunk_ids(wave_file: &mut File, new_wave: &mut Wave, next_chunkid: Stri
         BEXT_CHUNKID => new_wave.bext_data = BextData::new(wave_file)?,
         CART_CHUNKID => new_wave.cart_data = CartData::new(wave_file)?,
         ACID_CHUNKID => new_wave.acid_data = AcidData::new(wave_file)?,
+        SMPL_CHUNKID => new_wave.smpl_data = SmplFields::new(wave_file)?,
         _ => new_wave.extra_data.add_chunk(wave_file, next_chunkid)?,
     }
     Ok(())

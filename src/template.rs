@@ -91,6 +91,10 @@ pub fn create_wave_template_store(engine: &Engine) -> upon::Result<HashMap<&'sta
         crate::wave::XMP_TEMPLATE_NAME,
         engine.compile(include_str!("templates/wave/xmp.tmpl"))?,
     );
+    store.insert(
+        crate::wave::SMPL_TEMPLATE_NAME,
+        engine.compile(include_str!("templates/wave/smpl.tmpl"))?,
+    );
 
     Ok(store)
 }

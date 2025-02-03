@@ -2,6 +2,7 @@ use crate::byteio::{
     take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer,
 };
 use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+use crate::midi::note_name_from_midi_note_number;
 use crate::template::Template;
 use std::error::Error;
 use std::fs::File;
@@ -25,7 +26,7 @@ pub struct FileType {
 #[derive(Debug, Clone, Default)]
 pub struct AcidData {
     file_type: FileType,
-    root_note: u16,
+    root_note: String,
     mystery_one: u16,
     mystery_two: f32,
     number_of_beats: u32,
@@ -41,7 +42,7 @@ impl AcidData {
 
         Ok(Self {
             file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(&mut acid_data)?)?,
-            root_note: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
+            root_note: note_name_from_midi_note_number(take_first_two_bytes_as_unsigned_integer(&mut acid_data)? as u32),
             mystery_one: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
             mystery_two: take_first_four_bytes_as_float(&mut acid_data)?,
             number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut acid_data)?,
@@ -83,7 +84,7 @@ impl AcidData {
             stretch: stretch,
             disk_based: disk_based,
             acidizer: acidizer,
-            root_note: self.root_note,
+            root_note: &self.root_note,
             mystery_one: self.mystery_one,
             mystery_two: self.mystery_two,
             number_of_beats: self.number_of_beats,

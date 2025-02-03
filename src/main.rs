@@ -1,6 +1,7 @@
 mod byteio;
 mod errors;
 mod fileio;
+mod midi;
 mod template;
 mod wave;
 
