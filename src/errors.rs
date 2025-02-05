@@ -28,4 +28,7 @@ pub enum LocalError {
 
     #[error("Requested number of bytes {0} is greater than the available bytes: {1}")]
     InsufficientBytesToTake(usize, usize),
+
+    #[error("Output File {0} Already Exists")]
+    OutputFileAlreadyExists(String),
 }
