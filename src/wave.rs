@@ -4,6 +4,7 @@ use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
     read_chunk_size_from_file, skip_over_bytes_in_file,
 };
+use crate::output::write_out_file_data;
 use crate::template::Template;
 
 use byte_unit::{Byte, UnitType};
@@ -22,15 +23,16 @@ const WAVEID_IN_DECIMAL_LITTLE_ENDIAN_BYTES: [u8; 4] = [87, 65, 86, 69];
 pub struct Wave {
     pub template_name: &'static str,
     pub template_path: &'static str,
-    pub original_file_path: String,
     pub name: String,
+    pub original_file_path: String,
     pub canonical_path: String,
+    pub output_file_path: String,
     pub size_in_bytes: u64,
     chunks: Chunk,
 }
 
 impl Wave {
-    pub fn new(file_path: String, mut wave_file: File) -> Result<Self, Box<dyn Error>> {
+    pub fn new(file_path: String, mut wave_file: File, output_file_path: String) -> Result<Self, Box<dyn Error>> {
         skip_over_bytes_in_file(&mut wave_file, RIFF_CKSIZE_FIELD_LENGTH_IN_BYTES)?;
 
         let wave_id_bytes = read_bytes_from_file(&mut wave_file, WAVEID_FIELD_LENGTH_IN_BYTES)?;
@@ -40,6 +42,7 @@ impl Wave {
 
         let mut new_wave: Self = extract_file_metadata(file_path, wave_file)?;
 
+        new_wave.output_file_path = output_file_path;
         new_wave.template_name = TEMPLATE_NAME;
         new_wave.template_path = TEMPLATE_PATH;
 
@@ -47,13 +50,13 @@ impl Wave {
     }
 
     pub fn display_wave_file_metadata(&self, mut template: Template) -> Result<(), Box<dyn Error>> {
-        println!("{}", self.format_data_for_output(&mut template)?);
+        let mut output_lines: Vec<String> = vec![];
 
-        let output_lines = self.chunks.format_data_for_output(&mut template)?;
+        output_lines.push(self.format_data_for_output(&mut template)?);
+        let wave_chunk_output_lines = self.chunks.format_data_for_output(&mut template)?;
+        output_lines.extend(wave_chunk_output_lines);
 
-        for line in output_lines {
-            println!("{}", line);
-        }
+        write_out_file_data(output_lines, self.output_file_path.clone())?;
 
         Ok(())
     }

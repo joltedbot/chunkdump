@@ -3,6 +3,7 @@ mod chunk;
 mod errors;
 mod fileio;
 mod midi;
+mod output;
 mod template;
 mod wave;
 
@@ -29,7 +30,11 @@ struct CLIArguments {
     #[argh(switch, short = 'v')]
     version: bool,
 
-    #[argh(positional, greedy)]
+    /// a file path to output the data to rather than stdout
+    #[argh(option, short = 'o')]
+    output_file: Option<String>,
+
+    #[argh(positional)]
     wave_file: Option<String>,
 }
 
@@ -46,6 +51,8 @@ fn main() {
         exit(EXIT_CODE_ERROR);
     }
 
+    let path_to_ouptut_file: String = args.output_file.unwrap_or_else(|| String::new());
+
     let path_of_file_to_read = args.wave_file.unwrap();
 
     let mut file = open_file(&path_of_file_to_read);
@@ -53,7 +60,7 @@ fn main() {
 
     validate_file_chunk_id(file_chunk_id, path_of_file_to_read.clone());
 
-    let wave_file = match Wave::new(path_of_file_to_read.clone(), file) {
+    let wave_file = match Wave::new(path_of_file_to_read.clone(), file, path_to_ouptut_file) {
         Ok(file) => file,
         Err(e) => {
             println!(
