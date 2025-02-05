@@ -2,12 +2,14 @@ use crate::byteio::{
     take_first_four_bytes_as_signed_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes,
     take_first_number_of_bytes_as_string,
 };
-use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+
 use crate::template::Template;
 use serde::Serialize;
 use std::error::Error;
-use std::fs::File;
 use upon::Value;
+
+const TEMPLATE_NAME: &str = "cart";
+const TEMPLATE_PATH: &str = include_str!("../templates/wave/cart.tmpl");
 
 const VERSION_LENGTH_IN_BYTES: usize = 4;
 const TITLE_LENGTH_IN_BYTES: usize = 64;
@@ -38,7 +40,9 @@ pub struct CartTimer {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct CartData {
+pub struct CartFields {
+    pub template_name: &'static str,
+    pub template_path: &'static str,
     pub version: String,
     pub title: String,
     pub artist: String,
@@ -61,44 +65,45 @@ pub struct CartData {
     pub tag_text: String,
 }
 
-impl CartData {
-    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_chunk_size_from_file(wave_file)?;
-        let mut cart_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
-
+impl CartFields {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
-            version: take_first_number_of_bytes_as_string(&mut cart_data, VERSION_LENGTH_IN_BYTES)?,
-            title: take_first_number_of_bytes_as_string(&mut cart_data, TITLE_LENGTH_IN_BYTES)?,
-            artist: take_first_number_of_bytes_as_string(&mut cart_data, ARTIST_LENGTH_IN_BYTES)?,
-            cue_id: take_first_number_of_bytes_as_string(&mut cart_data, CUE_ID_LENGTH_IN_BYTES)?,
-            client_id: take_first_number_of_bytes_as_string(&mut cart_data, CLIENT_ID_LENGTH_IN_BYTES)?,
-            category: take_first_number_of_bytes_as_string(&mut cart_data, CATEGORY_LENGTH_IN_BYTES)?,
-            classification: take_first_number_of_bytes_as_string(&mut cart_data, CLASSIFICATION_LENGTH_IN_BYTES)?,
-            out_cue: take_first_number_of_bytes_as_string(&mut cart_data, OUT_CUE_LENGTH_IN_BYTES)?,
-            start_date: take_first_number_of_bytes_as_string(&mut cart_data, START_DATE_LENGTH_IN_BYTES)?,
-            start_time: take_first_number_of_bytes_as_string(&mut cart_data, START_TIME_LENGTH_IN_BYTES)?,
-            end_date: take_first_number_of_bytes_as_string(&mut cart_data, END_DATE_LENGTH_IN_BYTES)?,
-            end_time: take_first_number_of_bytes_as_string(&mut cart_data, END_TIME_LENGTH_IN_BYTES)?,
-            producer_app_id: take_first_number_of_bytes_as_string(&mut cart_data, PRODUCER_APP_ID_LENGTH_IN_BYTES)?,
+            template_name: TEMPLATE_NAME,
+            template_path: TEMPLATE_PATH,
+            version: take_first_number_of_bytes_as_string(&mut chunk_data, VERSION_LENGTH_IN_BYTES)?,
+            title: take_first_number_of_bytes_as_string(&mut chunk_data, TITLE_LENGTH_IN_BYTES)?,
+            artist: take_first_number_of_bytes_as_string(&mut chunk_data, ARTIST_LENGTH_IN_BYTES)?,
+            cue_id: take_first_number_of_bytes_as_string(&mut chunk_data, CUE_ID_LENGTH_IN_BYTES)?,
+            client_id: take_first_number_of_bytes_as_string(&mut chunk_data, CLIENT_ID_LENGTH_IN_BYTES)?,
+            category: take_first_number_of_bytes_as_string(&mut chunk_data, CATEGORY_LENGTH_IN_BYTES)?,
+            classification: take_first_number_of_bytes_as_string(&mut chunk_data, CLASSIFICATION_LENGTH_IN_BYTES)?,
+            out_cue: take_first_number_of_bytes_as_string(&mut chunk_data, OUT_CUE_LENGTH_IN_BYTES)?,
+            start_date: take_first_number_of_bytes_as_string(&mut chunk_data, START_DATE_LENGTH_IN_BYTES)?,
+            start_time: take_first_number_of_bytes_as_string(&mut chunk_data, START_TIME_LENGTH_IN_BYTES)?,
+            end_date: take_first_number_of_bytes_as_string(&mut chunk_data, END_DATE_LENGTH_IN_BYTES)?,
+            end_time: take_first_number_of_bytes_as_string(&mut chunk_data, END_TIME_LENGTH_IN_BYTES)?,
+            producer_app_id: take_first_number_of_bytes_as_string(&mut chunk_data, PRODUCER_APP_ID_LENGTH_IN_BYTES)?,
             producer_app_version: take_first_number_of_bytes_as_string(
-                &mut cart_data,
+                &mut chunk_data,
                 PRODUCER_APP_VERSION_LENGTH_IN_BYTES,
             )?,
-            user_def: take_first_number_of_bytes_as_string(&mut cart_data, USER_DEF_LENGTH_IN_BYTES)?,
-            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut cart_data)?,
+            user_def: take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?,
+            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data)?,
             post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
-                &mut cart_data,
+                &mut chunk_data,
                 POST_TIMER_LENGTH_IN_BYTES,
             )?)?,
-            reserved: take_first_number_of_bytes_as_string(&mut cart_data, RESERVED_LENGTH_IN_BYTES)?,
-            url: take_first_number_of_bytes_as_string(&mut cart_data, URL_LENGTH_IN_BYTES)?,
-            tag_text: take_first_number_of_bytes_as_string(&mut cart_data, TAG_TEXT_LENGTH_IN_BYTES)?,
+            reserved: take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_LENGTH_IN_BYTES)?,
+            url: take_first_number_of_bytes_as_string(&mut chunk_data, URL_LENGTH_IN_BYTES)?,
+            tag_text: take_first_number_of_bytes_as_string(&mut chunk_data, TAG_TEXT_LENGTH_IN_BYTES)?,
         })
     }
 
-    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
-        let cart_output_values: Value = upon::value! {
-            version: get_formated_version_from_version_string(self.version.clone()),
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
+
+        let wave_output_values: Value = upon::value! {
+           version: get_formated_version_from_version_string(self.version.clone()),
             title: &self.title,
             artist: &self.artist,
             cue_id: &self.cue_id,
@@ -120,7 +125,7 @@ impl CartData {
             post_timer: &self.post_timer,
         };
 
-        Ok(template.get_wave_chunk_output(template_name, cart_output_values)?)
+        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
     }
 }
 

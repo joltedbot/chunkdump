@@ -1,6 +1,6 @@
 [package]
 name = "chunkdump"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Dave White"]
 description = "Exports the metadata from wav files including non-standard chunks"
@@ -13,5 +13,6 @@ id3 = "1.16.1"
 thiserror = "2.0.11"
 upon = "0.8.1"
 serde = { version = "1.0.217", features = ["derive"] }
+argh = "0.1.13"
 
 

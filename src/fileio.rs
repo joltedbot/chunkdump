@@ -1,9 +1,37 @@
 use crate::errors::LocalError;
-use byte_unit::rust_decimal::prelude::Zero;
+use crate::wave::add_one_if_byte_size_is_odd;
+use crate::{print_usage_message, EXIT_CODE_ERROR, FILE_CHUNKID_LENGTH_IN_BYTES};
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::Path;
+use std::process::exit;
+
+pub fn open_file(path_of_file_to_read: &String) -> File {
+    match File::open(path_of_file_to_read) {
+        Ok(file) => file,
+        Err(e) => {
+            println!("\n{}: {}\n  {}", LocalError::InvalidPath, path_of_file_to_read, e);
+            print_usage_message();
+            exit(EXIT_CODE_ERROR);
+        }
+    }
+}
+
+pub fn get_file_chunk_id(path_of_file_to_read: &str, file: &mut File) -> String {
+    match read_bytes_from_file_as_string(file, FILE_CHUNKID_LENGTH_IN_BYTES) {
+        Ok(chunk_id) => chunk_id,
+        Err(e) => {
+            println!(
+                "\n{}: {}",
+                LocalError::CouldNotReadFile(path_of_file_to_read.to_string()),
+                e
+            );
+            print_usage_message();
+            exit(EXIT_CODE_ERROR);
+        }
+    }
+}
 
 pub fn canonicalize_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
     let path = Path::new(file_path).canonicalize()?;
@@ -34,43 +62,27 @@ pub fn read_bytes_from_file(file: &mut File, number_of_bytes: usize) -> Result<V
     Ok(read_bytes)
 }
 
-pub fn skip_over_bytes_in_file(file: &mut File, number_of_bytes: i64) -> Result<(), Box<dyn Error>> {
-    file.seek_relative(number_of_bytes)?;
+pub fn skip_over_bytes_in_file(file: &mut File, number_of_bytes: usize) -> Result<(), Box<dyn Error>> {
+    file.seek_relative(number_of_bytes as i64)?;
 
     Ok(())
 }
 
-pub fn read_four_byte_integer_from_file(file: &mut File) -> Result<u32, Box<dyn Error>> {
-    let read_bytes = read_bytes_from_file(file, 4)?;
-    let mut byte_array: [u8; 4] = Default::default();
-    byte_array.copy_from_slice(read_bytes.as_slice());
-
-    Ok(u32::from_le_bytes(byte_array))
-}
-
-pub fn read_chunk_size_from_file(file: &mut File) -> Result<u32, Box<dyn Error>> {
+pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
     let mut byte_array: [u8; 4] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
 
-    let chunk_size = u32::from_le_bytes(byte_array);
+    let mut chunk_size = u32::from_le_bytes(byte_array);
+    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
 
-    Ok(chunk_size)
+    Ok(chunk_size as usize)
 }
 
 pub fn read_bytes_from_file_as_string(file: &mut File, number_of_bytes: usize) -> Result<String, Box<dyn Error>> {
     let read_bytes = read_bytes_from_file(file, number_of_bytes)?;
 
     Ok(String::from_utf8(read_bytes)?)
-}
-
-pub fn read_bytes_from_file_as_lossy_string(file: &mut File, number_of_bytes: usize) -> Result<String, Box<dyn Error>> {
-    let extracted_bytes = read_bytes_from_file(file, number_of_bytes)?;
-    let cleaned_bytes: Vec<u8> = extracted_bytes
-        .into_iter()
-        .filter(|byte| byte.is_ascii() && !byte.is_zero() && !byte.is_ascii_control())
-        .collect();
-    Ok(String::from_utf8_lossy(&cleaned_bytes).to_string())
 }
 
 #[cfg(test)]

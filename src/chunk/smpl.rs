@@ -2,13 +2,14 @@ use crate::byteio::{
     take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
     take_first_number_of_bytes,
 };
-use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use crate::midi::note_name_from_midi_note_number;
 use crate::template::Template;
 use serde::Serialize;
 use std::error::Error;
-use std::fs::File;
+use upon::Value;
 
+const TEMPLATE_NAME: &str = "smpl";
+const TEMPLATE_PATH: &str = include_str!("../templates/wave/smpl.tmpl");
 const MANUFACTURER_ID_LENGTH_IN_BYTES: usize = 4;
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -23,6 +24,8 @@ pub struct SampleLoops {
 
 #[derive(Debug, Clone, Default)]
 pub struct SmplFields {
+    pub template_name: &'static str,
+    pub template_path: &'static str,
     pub manufacturer: String,
     pub product: u32,
     pub sample_period: u32,
@@ -36,37 +39,37 @@ pub struct SmplFields {
 }
 
 impl SmplFields {
-    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_chunk_size_from_file(wave_file)?;
-        let mut smpl_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         let mut sample_loops: Vec<SampleLoops> = vec![];
 
         let manufacturer = format_manufacturer_id(take_first_number_of_bytes(
-            &mut smpl_data,
+            &mut chunk_data,
             MANUFACTURER_ID_LENGTH_IN_BYTES,
         )?)?;
-        let product = take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?;
-        let sample_period = take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?;
+        let product = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let sample_period = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let midi_unity_note =
-            note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?);
-        let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?;
-        let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?;
-        let smpte_offset = format_smpte_offset(&mut smpl_data)?;
-        let number_of_sample_loops = take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?;
-        let sample_data_size_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?;
+            note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?);
+        let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let smpte_offset = format_smpte_offset(&mut chunk_data)?;
+        let number_of_sample_loops = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let sample_data_size_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
 
         for _ in 0..number_of_sample_loops {
             sample_loops.push(SampleLoops {
-                cue_point_id: take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?,
-                loop_type: take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?,
-                start_point: take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?,
-                end_point: take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?,
-                fraction: take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?,
-                number_of_time_to_play_the_loop: take_first_four_bytes_as_unsigned_integer(&mut smpl_data)?,
+                cue_point_id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                loop_type: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                start_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                end_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                fraction: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                number_of_time_to_play_the_loop: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
             })
         }
 
         Ok(Self {
+            template_name: TEMPLATE_NAME,
+            template_path: TEMPLATE_PATH,
             manufacturer,
             product,
             sample_period,
@@ -80,10 +83,11 @@ impl SmplFields {
         })
     }
 
-    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
-        let smpl_output: String = template.get_wave_chunk_output(
-            template_name,
-            upon::value! {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
+
+        let wave_output_values: Value = upon::value! {
+            template_name: self.template_name,
             manufacturer:  &self.manufacturer,
             product:  self.product,
             sample_period:  self.sample_period,
@@ -94,9 +98,9 @@ impl SmplFields {
             number_of_sample_loops:  self.number_of_sample_loops,
             sample_data_size_in_bytes:  self.sample_data_size_in_bytes,
             sample_loops: &self.sample_loops,
-            },
-        )?;
-        Ok(smpl_output)
+        };
+
+        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
     }
 }
 

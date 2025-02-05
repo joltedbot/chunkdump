@@ -2,11 +2,13 @@ use crate::byteio::{
     take_first_eight_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_number_of_bytes_as_string,
     take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer,
 };
-use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+
 use crate::template::Template;
 use std::error::Error;
-use std::fs::File;
 use upon::Value;
+
+const TEMPLATE_NAME: &str = "bext";
+const TEMPLATE_PATH: &str = include_str!("../templates/wave/bext.tmpl");
 
 const DESCRIPTION_LENGTH_IN_BYTES: usize = 256;
 const ORIGINATOR_LENGTH_IN_BYTES: usize = 32;
@@ -17,7 +19,9 @@ const UMID_LENGTH_IN_BYTES: usize = 64;
 const RESERVED_FIELD_LENGTH_IN_BYTES: usize = 180;
 
 #[derive(Debug, Clone, Default)]
-pub struct BextData {
+pub struct BextFields {
+    pub template_name: &'static str,
+    pub template_path: &'static str,
     pub description: String,
     pub originator: String,
     pub originator_reference: String,
@@ -35,34 +39,35 @@ pub struct BextData {
     pub coding_history: String,
 }
 
-impl BextData {
-    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_chunk_size_from_file(wave_file)?;
-        let mut bext_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
-
+impl BextFields {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
-            description: take_first_number_of_bytes_as_string(&mut bext_data, DESCRIPTION_LENGTH_IN_BYTES)?,
-            originator: take_first_number_of_bytes_as_string(&mut bext_data, ORIGINATOR_LENGTH_IN_BYTES)?,
+            template_name: TEMPLATE_NAME,
+            template_path: TEMPLATE_PATH,
+            description: take_first_number_of_bytes_as_string(&mut chunk_data, DESCRIPTION_LENGTH_IN_BYTES)?,
+            originator: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_LENGTH_IN_BYTES)?,
             originator_reference: take_first_number_of_bytes_as_string(
-                &mut bext_data,
+                &mut chunk_data,
                 ORIGINATOR_REFERENCE_LENGTH_IN_BYTES,
             )?,
-            originator_date: take_first_number_of_bytes_as_string(&mut bext_data, ORIGINATOR_DATA_LENGTH_IN_BYTES)?,
-            originator_time: take_first_number_of_bytes_as_string(&mut bext_data, ORIGINATOR_TIME_LENGTH_IN_BYTES)?,
-            time_reference: take_first_eight_bytes_as_unsigned_integer(&mut bext_data)?,
-            version: take_first_two_bytes_as_unsigned_integer(&mut bext_data)?,
-            umid: take_first_number_of_bytes(&mut bext_data, UMID_LENGTH_IN_BYTES)?,
-            loudness_value: take_first_two_bytes_as_signed_integer(&mut bext_data)?,
-            loudness_range: take_first_two_bytes_as_signed_integer(&mut bext_data)?,
-            max_true_peak_level: take_first_two_bytes_as_signed_integer(&mut bext_data)?,
-            max_momentary_loudness: take_first_two_bytes_as_signed_integer(&mut bext_data)?,
-            max_short_term_loudness: take_first_two_bytes_as_signed_integer(&mut bext_data)?,
-            reserved: take_first_number_of_bytes_as_string(&mut bext_data, RESERVED_FIELD_LENGTH_IN_BYTES)?,
-            coding_history: get_coding_history_from_bytes(bext_data)?,
+            originator_date: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_DATA_LENGTH_IN_BYTES)?,
+            originator_time: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_TIME_LENGTH_IN_BYTES)?,
+            time_reference: take_first_eight_bytes_as_unsigned_integer(&mut chunk_data)?,
+            version: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
+            umid: take_first_number_of_bytes(&mut chunk_data, UMID_LENGTH_IN_BYTES)?,
+            loudness_value: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            loudness_range: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            max_true_peak_level: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            max_momentary_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            max_short_term_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            reserved: take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_FIELD_LENGTH_IN_BYTES)?,
+            coding_history: get_coding_history_from_bytes(chunk_data)?,
         })
     }
 
-    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
+
         let wave_output_values: Value = upon::value! {
             description: &self.description,
             originator: &self.originator,
@@ -82,9 +87,10 @@ impl BextData {
 
         };
 
-        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
+        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
     }
 }
+
 fn get_coding_history_from_bytes(mut bext_data: Vec<u8>) -> Result<String, Box<dyn Error>> {
     let mut coding_history = "".to_string();
 

@@ -1,12 +1,14 @@
 use crate::byteio::{
     take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer,
 };
-use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
+
 use crate::midi::note_name_from_midi_note_number;
 use crate::template::Template;
 use std::error::Error;
-use std::fs::File;
 use upon::Value;
+
+const TEMPLATE_NAME: &str = "acid";
+const TEMPLATE_PATH: &str = include_str!("../templates/wave/acid.tmpl");
 
 const FILE_TYPE_BIT_POSITION: u8 = 0;
 const ROOT_NOTE_BIT_POSITION: u8 = 1;
@@ -24,7 +26,9 @@ pub struct FileType {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AcidData {
+pub struct AcidFields {
+    pub template_name: &'static str,
+    pub template_path: &'static str,
     file_type: FileType,
     root_note: String,
     mystery_one: u16,
@@ -35,24 +39,27 @@ pub struct AcidData {
     tempo: f32,
 }
 
-impl AcidData {
-    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_chunk_size_from_file(wave_file)?;
-        let mut acid_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
-
+impl AcidFields {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
-            file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(&mut acid_data)?)?,
-            root_note: note_name_from_midi_note_number(take_first_two_bytes_as_unsigned_integer(&mut acid_data)? as u32),
-            mystery_one: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
-            mystery_two: take_first_four_bytes_as_float(&mut acid_data)?,
-            number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut acid_data)?,
-            meter_denominator: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
-            meter_numerator: take_first_two_bytes_as_unsigned_integer(&mut acid_data)?,
-            tempo: take_first_four_bytes_as_float(&mut acid_data)?,
+            template_name: TEMPLATE_NAME,
+            template_path: TEMPLATE_PATH,
+            file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?)?,
+            root_note: note_name_from_midi_note_number(
+                take_first_two_bytes_as_unsigned_integer(&mut chunk_data)? as u32
+            ),
+            mystery_one: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
+            mystery_two: take_first_four_bytes_as_float(&mut chunk_data)?,
+            number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+            meter_denominator: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
+            meter_numerator: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
+            tempo: take_first_four_bytes_as_float(&mut chunk_data)?,
         })
     }
 
-    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
+
         let loop_on = match self.file_type.one_shot {
             true => "OneShot".to_string(),
             false => "Loop".to_string(),
@@ -93,7 +100,7 @@ impl AcidData {
             tempo: format!("{:2}", self.tempo),
         };
 
-        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
+        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
     }
 }
 
