@@ -12,7 +12,6 @@ pub fn write_out_file_data(file_data: Vec<String>, output_file: String) -> Resul
     } else {
         if Path::new(&output_file).exists() {
             return Err(Box::new(LocalError::OutputFileAlreadyExists(output_file)));
-            c
         }
 
         let mut file = File::create(output_file)?;
