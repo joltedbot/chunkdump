@@ -28,10 +28,4 @@ pub enum LocalError {
 
     #[error("Requested number of bytes {0} is greater than the available bytes: {1}")]
     InsufficientBytesToTake(usize, usize),
-
-    #[error("Could not create template store")]
-    CouldNotCreateTemplateStore,
-
-    #[error("Could note find the requested output template")]
-    InvalidOutputTemplate,
 }

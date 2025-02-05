@@ -1,11 +1,11 @@
 use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer};
-use crate::fileio::{read_bytes_from_file, read_chunk_size_from_file};
 use crate::template::Template;
 use std::error::Error;
-use std::fs::File;
 use upon::Value;
 
-const FORMAT_CHUNK_SIZE_IF_NO_EXTENSION: u32 = 16;
+const TEMPLATE_NAME: &str = "fmt";
+const TEMPLATE_PATH: &str = include_str!("../templates/wave/fmt.tmpl");
+const FORMAT_CHUNK_SIZE_IF_NO_EXTENSION: usize = 16;
 const PCM_FORMAT_ID: u16 = 1;
 const PCM_FORMAT_NAME: &str = "PCM";
 const IEEE_FORMAT_FLOAT_ID: u16 = 3;
@@ -42,6 +42,8 @@ const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
 
 #[derive(Debug, Clone, Default)]
 pub struct FmtFields {
+    pub template_name: &'static str,
+    pub template_path: &'static str,
     pub format_code: String,
     pub number_of_channels: u16,
     pub samples_per_second: u32,
@@ -50,38 +52,39 @@ pub struct FmtFields {
     pub bits_per_sample: u16,
     pub valid_bits_per_sample: u16,
     pub speaker_position_mask: u32,
-    pub subformat_guid: Vec<u8>,
+    pub subformat_guid: [u8; GUID_LENGTH_IN_BYTES],
 }
 
 impl FmtFields {
-    pub fn new(wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
-        let chunk_size = read_chunk_size_from_file(wave_file)?;
-        let mut fmt_data = read_bytes_from_file(wave_file, chunk_size as usize)?;
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+        let chunk_size = chunk_data.len();
 
-        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?);
-        let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
-        let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
-        let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
-        let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
-        let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
+        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?);
+        let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
 
         let mut extension_size: u16 = Default::default();
 
         if chunk_size > FORMAT_CHUNK_SIZE_IF_NO_EXTENSION {
-            extension_size = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
+            extension_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
         }
 
         let mut valid_bits_per_sample: u16 = Default::default();
         let mut speaker_position_mask: u32 = Default::default();
-        let mut subformat_guid: Vec<u8> = vec![];
+        let mut subformat_guid: [u8; GUID_LENGTH_IN_BYTES] = Default::default();
 
         if extension_size > 0 {
-            valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut fmt_data)?;
-            speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut fmt_data)?;
-            subformat_guid = fmt_data;
+            valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+            speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+            subformat_guid.copy_from_slice(chunk_data.as_slice());
         }
 
         Ok(Self {
+            template_name: TEMPLATE_NAME,
+            template_path: TEMPLATE_PATH,
             format_code,
             number_of_channels,
             samples_per_second,
@@ -94,7 +97,9 @@ impl FmtFields {
         })
     }
 
-    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
+
         let wave_output_values: Value = upon::value! {
             format_code: &self.format_code,
             number_of_channels: &self.number_of_channels,
@@ -107,7 +112,7 @@ impl FmtFields {
             subformat_guid: format_guid(self.subformat_guid.clone())
         };
 
-        Ok(template.get_wave_chunk_output(template_name, wave_output_values)?)
+        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
     }
 }
 
@@ -122,7 +127,7 @@ fn get_format_name_from_format_id(format_id: u16) -> String {
     }
 }
 
-fn format_guid(guid_bytes: Vec<u8>) -> String {
+fn format_guid(guid_bytes: [u8; GUID_LENGTH_IN_BYTES]) -> String {
     if guid_bytes.len() != GUID_LENGTH_IN_BYTES {
         return NO_GUID_FOUND_MESSAGE.to_string();
     }

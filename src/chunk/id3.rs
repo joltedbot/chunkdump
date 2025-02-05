@@ -1,10 +1,11 @@
-use crate::fileio::{read_chunk_size_from_file, skip_over_bytes_in_file};
 use crate::template::Template;
-use crate::wave::add_one_if_byte_size_is_odd;
 use id3::Tag;
 use serde::Serialize;
 use std::error::Error;
-use std::fs::File;
+use upon::Value;
+
+const TEMPLATE_NAME: &str = "id3";
+const TEMPLATE_PATH: &str = include_str!("../templates/wave/id3.tmpl");
 
 const TIME_FIELD_TITLE: &str = "Time";
 const TIME_HOUR_MINUTE_DIVIDER_POSITION: usize = 2;
@@ -17,18 +18,17 @@ pub struct ID3Tag {
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ID3Fields {
+    pub template_name: &'static str,
+    pub template_path: &'static str,
     pub tags: Vec<ID3Tag>,
 }
 
 impl ID3Fields {
-    pub fn new(wave_file: &mut File, wave_file_path: String) -> Result<Self, Box<dyn Error>> {
-        let mut chunk_size = read_chunk_size_from_file(wave_file)?;
-
-        chunk_size = add_one_if_byte_size_is_odd(chunk_size);
-
-        skip_over_bytes_in_file(wave_file, chunk_size as i64)?;
-
+    pub fn new(wave_file_path: String) -> Result<Self, Box<dyn Error>> {
         let mut id3_entries: Self = Default::default();
+        id3_entries.template_name = TEMPLATE_NAME;
+        id3_entries.template_path = TEMPLATE_PATH;
+
         let tag = Tag::read_from_path(wave_file_path)?;
 
         for frame in tag.frames() {
@@ -43,14 +43,13 @@ impl ID3Fields {
         Ok(id3_entries)
     }
 
-    pub fn get_metadata_output(&self, template: &Template, template_name: &str) -> Result<String, Box<dyn Error>> {
-        let id3_output = template.get_wave_chunk_output(
-            template_name,
-            upon::value! {
-                id3_tags: self.tags.clone(),
-            },
-        )?;
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
 
-        Ok(id3_output)
+        let wave_output_values: Value = upon::value! {
+            id3_tags: self.tags.clone(),
+        };
+
+        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
     }
 }
