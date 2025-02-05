@@ -38,5 +38,6 @@ Current List of Supported Chunks
 - list
 - resu
 - xmp
+- smpl
 
 ** the data chunk is just skipped. See your media player of choice to read that part.
