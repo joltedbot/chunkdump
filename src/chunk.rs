@@ -49,9 +49,9 @@ const SMPL_CHUNKID: &str = "smpl";
 #[derive(Default)]
 pub struct Chunk {
     path_to_file: String,
-    extra_chunks: ExtraChunk,
     pub found_chunk_ids: Vec<String>,
     pub ignore_data_for_chunks: [&'static str; 2],
+    pub extra_chunks: ExtraChunk,
     pub fact_data: FactFields,
     pub format_data: FmtFields,
     pub resu_data: ResuFields,
@@ -65,17 +65,17 @@ pub struct Chunk {
     pub cart_data: CartFields,
     pub acid_data: AcidFields,
     pub smpl_data: SmplFields,
-    pub extra_data: ExtraChunk,
 }
 
 impl Chunk {
     pub fn new(path_to_file: String) -> Self {
-        Chunk {
-            ignore_data_for_chunks: [DATA_CHUNKID, ID3_CHUNKID],
-            path_to_file,
-            extra_chunks: ExtraChunk::new(),
-            ..Default::default()
-        }
+        let mut chunk: Chunk = Default::default();
+
+        chunk.ignore_data_for_chunks = [crate::chunk::DATA_CHUNKID, ID3_CHUNKID];
+        chunk.path_to_file = path_to_file;
+        chunk.extra_chunks = ExtraChunk::new();
+
+        chunk
     }
 
     pub fn add_chunk(&mut self, chunk_id: String, chunk_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
@@ -138,7 +138,7 @@ impl Chunk {
             }
         }
 
-        let extra_chunks_output = self.extra_data.format_data_for_output(template)?;
+        let extra_chunks_output = self.extra_chunks.format_data_for_output(template)?;
 
         if !extra_chunks_output.is_empty() {
             data_output_lines.push(extra_chunks_output);

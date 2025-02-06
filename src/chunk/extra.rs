@@ -41,6 +41,8 @@ impl ExtraChunk {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        template.add_chunk_template(self.template_name, self.template_path)?;
+
         if self.chunks.is_empty() {
             return Ok("".to_string());
         }
