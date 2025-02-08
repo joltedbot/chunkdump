@@ -25,12 +25,11 @@ impl IXMLFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
-
         let wave_output_values: Value = upon::value! {
             ixml_xml: &self.ixml_xml,
         };
 
-        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
     }
 }

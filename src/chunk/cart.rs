@@ -32,6 +32,7 @@ const DW_USAGE_LENGTH_IN_BYTES: usize = 4;
 const RESERVED_LENGTH_IN_BYTES: usize = 64;
 const URL_LENGTH_IN_BYTES: usize = 64;
 const TAG_TEXT_LENGTH_IN_BYTES: usize = 64;
+const VERSION_STRING_DECIMAL_POSITION: usize = 2;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CartTimer {
@@ -89,10 +90,7 @@ impl CartFields {
             )?,
             user_def: take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?,
             dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data)?,
-            post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
-                &mut chunk_data,
-                POST_TIMER_LENGTH_IN_BYTES,
-            )?)?,
+            post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(&mut chunk_data, POST_TIMER_LENGTH_IN_BYTES)?)?,
             reserved: take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_LENGTH_IN_BYTES)?,
             url: take_first_number_of_bytes_as_string(&mut chunk_data, URL_LENGTH_IN_BYTES)?,
             tag_text: take_first_number_of_bytes_as_string(&mut chunk_data, TAG_TEXT_LENGTH_IN_BYTES)?,
@@ -100,8 +98,6 @@ impl CartFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
-
         let wave_output_values: Value = upon::value! {
            version: get_formated_version_from_version_string(self.version.clone()),
             title: &self.title,
@@ -125,7 +121,8 @@ impl CartFields {
             post_timer: &self.post_timer,
         };
 
-        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
     }
 }
 
@@ -145,7 +142,11 @@ fn get_post_timer_from_bytes(mut post_timer_data: Vec<u8>) -> Result<Vec<CartTim
 }
 
 fn get_formated_version_from_version_string(mut version: String) -> String {
-    version.insert(2, '.');
+    if version.len() <= VERSION_STRING_DECIMAL_POSITION {
+        return version;
+    }
+
+    version.insert(VERSION_STRING_DECIMAL_POSITION, '.');
 
     let formated_version = version.trim_start_matches("0").to_string();
     formated_version

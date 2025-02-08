@@ -8,17 +8,17 @@ pub enum LocalError {
     #[error("Could not extract the filename from the supplied path")]
     InvalidFileName,
 
+    #[error("{0} is not a supported file type")]
+    UnsupportedFileType(String),
+
     #[error("Could not read from the file {0}")]
     CouldNotReadFile(String),
 
     #[error("Incorrect WAVEID, file is not a valid RIFF WAVE file")]
     InvalidWaveID,
 
-    #[error("File {0} is not a valid WAVE file")]
-    InvalidWaveFile(String),
-
-    #[error("Could not extract metadata from the file: {0}")]
-    CouldNotExtractMetaData(String),
+    #[error("Could not read metadata from the file: {0}")]
+    CouldNotReadData(String),
 
     #[error("Incorrect INFO chunk type, {0}")]
     InvalidInfoTypeID(String),

@@ -89,10 +89,7 @@ pub fn take_first_four_bytes_as_float(byte_data: &mut Vec<u8>) -> Result<f32, Lo
     Ok(f32::from_le_bytes(byte_array))
 }
 
-pub fn take_first_number_of_bytes_as_string(
-    byte_data: &mut Vec<u8>,
-    number_of_bytes: usize,
-) -> Result<String, LocalError> {
+pub fn take_first_number_of_bytes_as_string(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<String, LocalError> {
     check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
 
     let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
@@ -113,16 +110,10 @@ pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usiz
     Ok(taken_bytes)
 }
 
-fn check_sufficient_bytes_are_available_to_take(
-    byte_data: &[u8],
-    number_of_bytes_to_take: usize,
-) -> Result<(), LocalError> {
+fn check_sufficient_bytes_are_available_to_take(byte_data: &[u8], number_of_bytes_to_take: usize) -> Result<(), LocalError> {
     let byte_data_length = byte_data.len();
     if byte_data_length < number_of_bytes_to_take {
-        return Err(LocalError::InsufficientBytesToTake(
-            number_of_bytes_to_take,
-            byte_data_length,
-        ));
+        return Err(LocalError::InsufficientBytesToTake(number_of_bytes_to_take, byte_data_length));
     }
 
     Ok(())

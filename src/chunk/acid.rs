@@ -45,9 +45,7 @@ impl AcidFields {
             template_name: TEMPLATE_NAME,
             template_path: TEMPLATE_PATH,
             file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?)?,
-            root_note: note_name_from_midi_note_number(
-                take_first_two_bytes_as_unsigned_integer(&mut chunk_data)? as u32
-            ),
+            root_note: note_name_from_midi_note_number(take_first_two_bytes_as_unsigned_integer(&mut chunk_data)? as u32),
             mystery_one: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
             mystery_two: take_first_four_bytes_as_float(&mut chunk_data)?,
             number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
@@ -100,7 +98,8 @@ impl AcidFields {
             tempo: format!("{:2}", self.tempo),
         };
 
-        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
     }
 }
 

@@ -18,19 +18,26 @@ pub fn open_file(path_of_file_to_read: &String) -> File {
     }
 }
 
-pub fn get_file_chunk_id(path_of_file_to_read: &str, file: &mut File) -> String {
+pub fn read_chunk_id_from_file(path_of_file_to_read: &str, file: &mut File) -> String {
     match read_bytes_from_file_as_string(file, FILE_CHUNKID_LENGTH_IN_BYTES) {
         Ok(chunk_id) => chunk_id,
         Err(e) => {
-            println!(
-                "\n{}: {}",
-                LocalError::CouldNotReadFile(path_of_file_to_read.to_string()),
-                e
-            );
+            println!("\n{}: {}", LocalError::CouldNotReadFile(path_of_file_to_read.to_string()), e);
             print_usage_message();
             exit(EXIT_CODE_ERROR);
         }
     }
+}
+
+pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
+    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
+    let mut byte_array: [u8; 4] = Default::default();
+    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
+
+    let mut chunk_size = u32::from_le_bytes(byte_array);
+    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
+
+    Ok(chunk_size as usize)
 }
 
 pub fn canonicalize_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
@@ -55,28 +62,17 @@ pub fn get_file_name_from_file_path(file_path: &String) -> Result<String, Box<dy
     Ok(file_name)
 }
 
-pub fn read_bytes_from_file(file: &mut File, number_of_bytes: usize) -> Result<Vec<u8>, Box<dyn Error>> {
-    let mut read_bytes: Vec<u8> = vec![0; number_of_bytes];
-    file.read_exact(&mut read_bytes)?;
-
-    Ok(read_bytes)
-}
-
 pub fn skip_over_bytes_in_file(file: &mut File, number_of_bytes: usize) -> Result<(), Box<dyn Error>> {
     file.seek_relative(number_of_bytes as i64)?;
 
     Ok(())
 }
 
-pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
-    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
-    let mut byte_array: [u8; 4] = Default::default();
-    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
+pub fn read_bytes_from_file(file: &mut File, number_of_bytes: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+    let mut read_bytes: Vec<u8> = vec![0; number_of_bytes];
+    file.read_exact(&mut read_bytes)?;
 
-    let mut chunk_size = u32::from_le_bytes(byte_array);
-    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
-
-    Ok(chunk_size as usize)
+    Ok(read_bytes)
 }
 
 pub fn read_bytes_from_file_as_string(file: &mut File, number_of_bytes: usize) -> Result<String, Box<dyn Error>> {

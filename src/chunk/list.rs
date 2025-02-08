@@ -93,19 +93,18 @@ impl ListFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.info_template_name, self.info_template_path)?;
-        template.add_chunk_template(self.adtl_template_name, self.adtl_template_path)?;
+        let info_output_values = upon::value! {
+                info_items: self.info_data.clone(),
+        };
 
-        let mut list_output: String = template.get_wave_chunk_output(
-            INFO_TEMPLATE_NAME,
-            upon::value! {
-                    info_items: self.info_data.clone(),
-            },
-        )?;
+        let info_output =
+            template.get_wave_chunk_output(self.info_template_name, self.info_template_path, info_output_values)?;
 
+        let mut adtl_output: String = String::new();
         for field in &self.adtl_data {
-            list_output += &template.get_wave_chunk_output(
-                ADTL_TEMPLATE_NAME,
+            adtl_output += &template.get_wave_chunk_output(
+                self.adtl_template_name,
+                self.adtl_template_path,
                 upon::value! {
                     labels: &field.labels,
                     notes: &field.notes,
@@ -114,7 +113,7 @@ impl ListFields {
             )?;
         }
 
-        Ok(list_output)
+        Ok(info_output + &adtl_output)
     }
 }
 
@@ -174,7 +173,7 @@ fn parse_label_data(list_data: &mut Vec<u8>) -> Result<LabelData, Box<dyn Error>
     let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
     let label_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok(LabelData {
-        cue_point_id: cue_point_id,
+        cue_point_id,
         data: label_data,
     })
 }
@@ -185,7 +184,7 @@ fn parse_note_data(list_data: &mut Vec<u8>) -> Result<NoteData, Box<dyn Error>> 
     let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
     let note_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok(NoteData {
-        cue_point_id: cue_point_id,
+        cue_point_id,
         data: note_data,
     })
 }
