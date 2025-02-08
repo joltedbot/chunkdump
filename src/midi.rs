@@ -1,6 +1,5 @@
-const NOTE_NAMES_WITHOUT_OCTAVES: [&str; 12] = [
-    "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B",
-];
+const NOTE_NAMES_WITHOUT_OCTAVES: [&str; 12] =
+    ["C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"];
 
 pub fn note_name_from_midi_note_number(midi_note_number: u32) -> String {
     let note_offset_from_c: usize = midi_note_number as usize % 12;

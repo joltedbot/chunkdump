@@ -27,7 +27,6 @@ use crate::chunk::list::ListFields;
 use crate::chunk::resu::ResuFields;
 use crate::chunk::smpl::SmplFields;
 use crate::chunk::xmp::XMPFields;
-
 use crate::template::Template;
 use std::error::Error;
 
@@ -45,12 +44,16 @@ const BEXT_CHUNKID: &str = "bext";
 const CART_CHUNKID: &str = "cart";
 const ACID_CHUNKID: &str = "acid";
 const SMPL_CHUNKID: &str = "smpl";
+const DISP_CHUNKID: &str = "disp";
+const LOGIC_PRO_CHUNKID: &str = "lgwv";
+
+const CHUNKS_TO_SKIP: [&str; 4] = [DATA_CHUNKID, ID3_CHUNKID, DISP_CHUNKID, LOGIC_PRO_CHUNKID];
 
 #[derive(Default)]
 pub struct Chunk {
     path_to_file: String,
+    pub ignore_data_for_chunks: [&'static str; 4],
     pub found_chunk_ids: Vec<String>,
-    pub ignore_data_for_chunks: [&'static str; 2],
     pub extra_chunks: ExtraChunk,
     pub fact_data: FactFields,
     pub format_data: FmtFields,
@@ -69,13 +72,12 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn new(path_to_file: String) -> Self {
-        let mut chunk: Chunk = Default::default();
-
-        chunk.ignore_data_for_chunks = [crate::chunk::DATA_CHUNKID, ID3_CHUNKID];
-        chunk.path_to_file = path_to_file;
-        chunk.extra_chunks = ExtraChunk::new();
-
-        chunk
+        Chunk {
+            path_to_file,
+            ignore_data_for_chunks: CHUNKS_TO_SKIP,
+            extra_chunks: ExtraChunk::new(),
+            ..Default::default()
+        }
     }
 
     pub fn add_chunk(&mut self, chunk_id: String, chunk_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
@@ -96,6 +98,8 @@ impl Chunk {
             CART_CHUNKID => self.cart_data = CartFields::new(chunk_data)?,
             ACID_CHUNKID => self.acid_data = AcidFields::new(chunk_data)?,
             SMPL_CHUNKID => self.smpl_data = SmplFields::new(chunk_data)?,
+            DISP_CHUNKID => {}
+            LOGIC_PRO_CHUNKID => {}
             _ => self.extra_chunks.add_chunk(chunk_id, chunk_data)?,
         }
 
@@ -124,7 +128,7 @@ impl Chunk {
                 CART_CHUNKID => self.cart_data.format_data_for_output(template)?,
                 SMPL_CHUNKID => self.smpl_data.format_data_for_output(template)?,
                 LIST_CHUNKID => {
-                    let mut list_metadata_output = Default::default();
+                    let mut list_metadata_output = String::new();
                     for list_field in self.list_data.iter() {
                         list_metadata_output += list_field.format_data_for_output(template)?.as_str();
                     }

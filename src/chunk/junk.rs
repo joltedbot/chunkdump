@@ -16,7 +16,7 @@ pub struct JunkFields {
 impl JunkFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         let chunk_size = chunk_data.len();
-        let junk_as_string = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size as usize)?;
+        let junk_as_string = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
         Ok(JunkFields {
             template_name: TEMPLATE_NAME,
             template_path: TEMPLATE_PATH,
@@ -25,7 +25,6 @@ impl JunkFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
         if self.junk_as_string.is_empty() {
             return Ok("".to_string());
         }
@@ -34,6 +33,7 @@ impl JunkFields {
             junk: self.junk_as_string.clone(),
         };
 
-        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
     }
 }

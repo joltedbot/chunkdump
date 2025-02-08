@@ -42,14 +42,11 @@ impl SmplFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         let mut sample_loops: Vec<SampleLoops> = vec![];
 
-        let manufacturer = format_manufacturer_id(take_first_number_of_bytes(
-            &mut chunk_data,
-            MANUFACTURER_ID_LENGTH_IN_BYTES,
-        )?)?;
+        let manufacturer =
+            format_manufacturer_id(take_first_number_of_bytes(&mut chunk_data, MANUFACTURER_ID_LENGTH_IN_BYTES)?)?;
         let product = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let sample_period = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let midi_unity_note =
-            note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?);
+        let midi_unity_note = note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?);
         let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let smpte_offset = format_smpte_offset(&mut chunk_data)?;
@@ -84,8 +81,6 @@ impl SmplFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
-
         let wave_output_values: Value = upon::value! {
             template_name: self.template_name,
             manufacturer:  &self.manufacturer,
@@ -100,7 +95,8 @@ impl SmplFields {
             sample_loops: &self.sample_loops,
         };
 
-        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
     }
 }
 

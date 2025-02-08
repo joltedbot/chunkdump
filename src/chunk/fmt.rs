@@ -98,8 +98,6 @@ impl FmtFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
-
         let wave_output_values: Value = upon::value! {
             format_code: &self.format_code,
             number_of_channels: &self.number_of_channels,
@@ -112,7 +110,8 @@ impl FmtFields {
             subformat_guid: format_guid(self.subformat_guid.clone())
         };
 
-        Ok(template.get_wave_chunk_output(self.template_name, wave_output_values)?)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
     }
 }
 
@@ -142,10 +141,7 @@ fn format_speaker_position(speaker_position_mask: u32) -> String {
 
     for position in 0..SPEAKER_POSITION_MASK_BIT_MEANING.len() {
         if (speaker_position_mask & (1 << position)) > 0 {
-            positions.push(format!(
-                " - {}",
-                SPEAKER_POSITION_MASK_BIT_MEANING[position].to_string()
-            ));
+            positions.push(format!(" - {}", SPEAKER_POSITION_MASK_BIT_MEANING[position].to_string()));
         }
     }
 

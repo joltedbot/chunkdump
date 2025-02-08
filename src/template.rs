@@ -20,7 +20,13 @@ impl Template {
         Ok(())
     }
 
-    pub fn get_wave_chunk_output(&self, template_name: &str, values: Value) -> Result<String, Box<dyn Error>> {
+    pub fn get_wave_chunk_output(
+        &mut self,
+        template_name: &'static str,
+        template_path: &'static str,
+        values: Value,
+    ) -> Result<String, Box<dyn Error>> {
+        self.add_chunk_template(template_name, template_path)?;
         let template = self.engine.template(template_name);
 
         match template.render(&values).to_string() {

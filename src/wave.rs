@@ -16,8 +16,9 @@ const TEMPLATE_NAME: &str = "riff";
 const TEMPLATE_PATH: &str = include_str!("templates/wave/riff.tmpl");
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
-const RIFF_CKSIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
-const WAVEID_IN_DECIMAL_LITTLE_ENDIAN_BYTES: [u8; 4] = [87, 65, 86, 69];
+const RIFF_CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
+const CORRECT_WAVE_ID: &str = "WAVE";
+const NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE: &str = "failed to fill whole buffer";
 
 #[derive(Default)]
 pub struct Wave {
@@ -32,55 +33,48 @@ pub struct Wave {
 }
 
 impl Wave {
-    pub fn new(file_path: String, mut wave_file: File, output_file_path: String) -> Result<Self, Box<dyn Error>> {
-        skip_over_bytes_in_file(&mut wave_file, RIFF_CKSIZE_FIELD_LENGTH_IN_BYTES)?;
+    pub fn new(wave_file_path: String, output_file_path: String, wave_file: &mut File) -> Result<Self, Box<dyn Error>> {
+        skip_over_bytes_in_file(wave_file, RIFF_CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
+        let wave_id = read_bytes_from_file_as_string(wave_file, WAVEID_FIELD_LENGTH_IN_BYTES)?;
 
-        let wave_id_bytes = read_bytes_from_file(&mut wave_file, WAVEID_FIELD_LENGTH_IN_BYTES)?;
-        if wave_id_bytes != WAVEID_IN_DECIMAL_LITTLE_ENDIAN_BYTES {
+        if wave_id != CORRECT_WAVE_ID {
             return Err(Box::new(LocalError::InvalidWaveID));
         }
 
-        let mut new_wave: Self = extract_file_metadata(file_path, wave_file)?;
+        let mut new_wave = Self {
+            size_in_bytes: wave_file.metadata()?.len(),
+            ..Default::default()
+        };
 
-        new_wave.output_file_path = output_file_path;
-        new_wave.template_name = TEMPLATE_NAME;
-        new_wave.template_path = TEMPLATE_PATH;
+        new_wave.extract_file_metadata(wave_file_path, output_file_path)?;
+        new_wave.extract_metadata_from_wave_chunks(wave_file)?;
 
         Ok(new_wave)
     }
 
-    pub fn display_wave_file_metadata(&self, mut template: Template) -> Result<(), Box<dyn Error>> {
-        let mut output_lines: Vec<String> = vec![];
-
-        output_lines.push(self.format_data_for_output(&mut template)?);
-        let wave_chunk_output_lines = self.chunks.format_data_for_output(&mut template)?;
-        output_lines.extend(wave_chunk_output_lines);
-
-        write_out_file_data(output_lines, self.output_file_path.clone())?;
+    fn extract_file_metadata(&mut self, file_path: String, output_file_path: String) -> Result<(), Box<dyn Error>> {
+        self.original_file_path = file_path.clone();
+        self.name = get_file_name_from_file_path(&file_path)?;
+        self.canonical_path = canonicalize_file_path(&file_path)?;
+        self.chunks = Chunk::new(self.canonical_path.clone());
+        self.template_name = TEMPLATE_NAME;
+        self.template_path = TEMPLATE_PATH;
+        self.output_file_path = output_file_path;
 
         Ok(())
     }
 
-    fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
-
-        let wave_output_values: Value = upon::value! {
-            file_name: self.name.clone(),
-            file_path: self.original_file_path.clone(),
-
-            file_size: format_file_size_as_string(self.size_in_bytes),
-            chunk_ids_found: self.chunks.found_chunk_ids.join(", "),
-        };
-
-        let wave_metadata_output = template.get_wave_chunk_output(self.template_name, wave_output_values)?;
-        Ok(wave_metadata_output)
-    }
-
-    fn parse_wave_chunks(&mut self, wave_file: &mut File) -> Result<(), Box<dyn Error>> {
+    fn extract_metadata_from_wave_chunks(&mut self, wave_file: &mut File) -> Result<(), Box<dyn Error>> {
         loop {
             let chunk_id: String = match read_bytes_from_file_as_string(wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES) {
-                Ok(chunkid) => chunkid.to_lowercase(),
-                Err(_) => break,
+                Ok(chunk_id) => chunk_id.to_lowercase(),
+                Err(error) => {
+                    if error.to_string() == NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE {
+                        break;
+                    } else {
+                        return Err(error);
+                    }
+                }
             };
 
             let chunk_size = read_chunk_size_from_file(wave_file)?;
@@ -97,19 +91,30 @@ impl Wave {
 
         Ok(())
     }
-}
 
-fn extract_file_metadata(file_path: String, mut wave_file: File) -> Result<Wave, Box<dyn Error>> {
-    let mut new_wave: Wave = Default::default();
-    new_wave.original_file_path = file_path.clone();
-    new_wave.name = get_file_name_from_file_path(&file_path)?;
-    new_wave.canonical_path = canonicalize_file_path(&file_path)?;
-    new_wave.size_in_bytes = wave_file.metadata()?.len();
-    new_wave.chunks = Chunk::new(new_wave.canonical_path.clone());
+    pub fn output_metadata(&self, mut template: Template) -> Result<(), Box<dyn Error>> {
+        let mut output_lines: Vec<String> = vec![];
 
-    new_wave.parse_wave_chunks(&mut wave_file)?;
+        output_lines.push(self.format_data_for_output(&mut template)?);
+        let wave_chunk_output_lines = self.chunks.format_data_for_output(&mut template)?;
+        output_lines.extend(wave_chunk_output_lines);
 
-    Ok(new_wave)
+        write_out_file_data(output_lines, self.output_file_path.clone())?;
+
+        Ok(())
+    }
+
+    fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+        let wave_output_values: Value = upon::value! {
+            file_name: self.name.clone(),
+            file_path: self.original_file_path.clone(),
+            file_size: format_file_size_as_string(self.size_in_bytes),
+            chunk_ids_found: self.chunks.found_chunk_ids.join(", "),
+        };
+
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        Ok(formated_output)
+    }
 }
 
 pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {

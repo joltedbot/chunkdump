@@ -2,6 +2,7 @@ use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number
 use crate::template::Template;
 use serde::Serialize;
 use std::error::Error;
+use upon::Value;
 
 const TEMPLATE_NAME: &str = "cue";
 const TEMPLATE_PATH: &str = include_str!("../templates/wave/cue.tmpl");
@@ -51,16 +52,13 @@ impl CueFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
-        template.add_chunk_template(self.template_name, self.template_path)?;
-
-        let cue_output: String = template.get_wave_chunk_output(
-            self.template_name,
-            upon::value! {
+        let wave_output_values: Value = upon::value! {
                 number_of_cue_points: &self.number_of_cue_points,
                 cue_points: &self.cue_points
-            },
-        )?;
+        };
 
-        Ok(cue_output)
+        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+
+        Ok(formated_output)
     }
 }
