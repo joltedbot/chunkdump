@@ -1,0 +1,34 @@
+
+ < Flac File Metadata >
+
+-------------
+File Details:
+-------------
+File Name: {{ file_name }}
+File Path: {{ file_path }}
+File Size: {{ file_size }}
+
+Steam Info
+----------
+Minimum Block Size:         {{ min_block_size }} Samples
+Maximum Block Size:         {{ max_block_size }} Samples
+Minimum Frame Size:         {{ min_frame_size }} Bytes
+Maximum Frame Size:         {{ max_frame_size }} Bytes
+Channels:                   {{ channels }}
+Sample Rate:                {{ sample_rate }} kHz
+Bit Depth:                  {{ bits_per_sample }} bits
+Total Interchannel Samples: {{ total_samples }}
+MD5 Sum:                    {{ md5_sum }}
+
+{% if vorbis_vendor %}
+Vorbis Comments
+---------------
+Vendor String: {{ vorbis_vendor }}
+{% if vorbis_comments %}
+Comments:
+---------
+{%- for id, comment in vorbis_comments %}
+{{ id }}: {{ comment }}
+{%- endfor %}
+{%- endif %}
+{% endif %}

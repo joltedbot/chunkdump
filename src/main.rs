@@ -2,6 +2,8 @@ mod byteio;
 mod chunk;
 mod errors;
 mod fileio;
+mod flac;
+mod formating;
 mod midi;
 mod output;
 mod template;
@@ -9,6 +11,7 @@ mod wave;
 
 use crate::errors::LocalError;
 use crate::fileio::{open_file, read_chunk_id_from_file};
+use crate::flac::output_flac_metadata;
 use crate::template::Template;
 use crate::wave::Wave;
 use argh::FromArgs;
@@ -18,6 +21,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const USAGE_MESSAGE: &str = " usage: chunkdump [-hv] file";
 const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
 const WAVE_FILE_CHUNKID: &str = "RIFF";
+const FLAC_FILE_CHUNKID: &str = "fLaC";
 const EXIT_CODE_ERROR: i32 = 1;
 const EXIT_CODE_SUCCESS: i32 = 0;
 
@@ -56,6 +60,12 @@ fn main() {
             });
 
             wave_file.output_metadata(Template::new()).unwrap_or_else(|error| {
+                println!("\n{}: {}", LocalError::CouldNotReadData(input_file_path.clone()), error);
+                exit(EXIT_CODE_ERROR);
+            });
+        }
+        FLAC_FILE_CHUNKID => {
+            output_flac_metadata(Template::new(), input_file_path.clone(), ouptut_file_path).unwrap_or_else(|error| {
                 println!("\n{}: {}", LocalError::CouldNotReadData(input_file_path.clone()), error);
                 exit(EXIT_CODE_ERROR);
             });

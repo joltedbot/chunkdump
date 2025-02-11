@@ -31,4 +31,10 @@ pub enum LocalError {
 
     #[error("Output File {0} Already Exists")]
     OutputFileAlreadyExists(String),
+
+    #[error("Could not open FLAC file {0}")]
+    InvalidFlacFile(String),
+
+    #[error("Could not parse FLAC metadata {0}")]
+    InvalidFlacMetadata(String),
 }
