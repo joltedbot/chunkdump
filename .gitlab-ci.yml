@@ -22,8 +22,5 @@ semgrep:
   stage: semgrep
   image: semgrep/semgrep
   script: semgrep ci --code
-  rules:
-    - if: "$CI_MERGE_REQUEST_IID"
-    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
   variables:
     SEMGREP_APP_TOKEN: "$SEMGREP_APP_TOKEN"

@@ -4,10 +4,10 @@ use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
     read_chunk_size_from_file, skip_over_bytes_in_file,
 };
+use crate::formating::format_file_size_as_string;
 use crate::output::write_out_file_data;
 use crate::template::Template;
 
-use byte_unit::{Byte, UnitType};
 use std::error::Error;
 use std::fs::File;
 use upon::Value;
@@ -107,7 +107,7 @@ impl Wave {
     fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
         let wave_output_values: Value = upon::value! {
             file_name: self.name.clone(),
-            file_path: self.original_file_path.clone(),
+            file_path: self.canonical_path.clone(),
             file_size: format_file_size_as_string(self.size_in_bytes),
             chunk_ids_found: self.chunks.found_chunk_ids.join(", "),
         };
@@ -123,11 +123,4 @@ pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
     }
 
     byte_size
-}
-
-fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
-    format!(
-        "{:#.2}",
-        Byte::from_u64(file_size_in_bytes).get_appropriate_unit(UnitType::Binary)
-    )
 }

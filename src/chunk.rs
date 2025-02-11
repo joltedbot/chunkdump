@@ -72,7 +72,7 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn new(path_to_file: String) -> Self {
-        Chunk {
+        Self {
             path_to_file,
             ignore_data_for_chunks: CHUNKS_TO_SKIP,
             extra_chunks: ExtraChunk::new(),
