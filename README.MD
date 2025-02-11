@@ -2,14 +2,8 @@
 
 **_In active and very unstable development._**
 
-**_"It works on my computer!"_**
-
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
-Resource Interchange File Format (RIFF) Wave files. Other file formats may follow starting with FLAC.
-
-Chunks that I do not currently have a spec for to decode will be output as lossy text similar to the strings
-command . . .
-sort of.
+Resource Interchange File Format (RIFF) Wave files as well as the standard metadata from Vorbis Flac files.
 
 To use just build as per Rust usual.
 > cargo build -r
@@ -18,12 +12,12 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav file with
-> chunkdump /path/to/file/file.wav
+Then point it at your .wav or .flac file with
+> chunkdump /path/to/file
 
 #### Usage
 
-> chunkdump [-v] [-o <output-file>] <file.wav>
+> chunkdump [-v] [-o <output-file>] <file>
 
 #### Flags:
 
@@ -34,7 +28,14 @@ Then point it at your .wav file with
 
 &nbsp;
 
-### Current List of Supported Chunks
+### Flac File Metadata Supported
+
+Flac files have much more standardized metadata than wave files so there shouldn't be a lot of unexpected metadata
+blocks.
+I am just extracting some basic file information and the StreamInfo and Vorbis Comment metadata blocks. Padding and Data
+blocks are skipped.
+
+### Current List of Supported Wave Chunks
 
 - **acid**
     - For "Acidized" wave files (*note: Meter seems to be set to 4/4 regardless of the meter of the file audio)
@@ -71,14 +72,14 @@ Then point it at your .wav file with
 - **smpl**
     - Metadata to allow samplers to use the wave file as a collection of samples.
 
-### Special Skipped Chunks:
+### Special Skipped Wave Chunks:
 
 - **data**: This is the audio portion which is just skipped. See your media player of choice to read that chunk.
 - **DISP**: This is a Windows Clipboard chunk and isn't useful here so it is skipped
 - **LGWV**: A Logic Pro proprietary chunk. This is unsupported in chunkdump as I can't find any specs online.
   Since the output doesn't produce any usable string data it is just skipped.
 
-### For Unsupported Chunks:
+### For Unsupported Wave Chunks:
 
 For any chunk that is not expressly supported, chunkdump will try and output the contents as a string.
 This is somewhat similar to running the "strings" command on the file.
