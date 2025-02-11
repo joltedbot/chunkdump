@@ -3,7 +3,7 @@
 **_In active and very unstable development._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
-Resource Interchange File Format (RIFF) Wave files as well as the standard metadata from Vorbis Flac files.
+Resource Interchange File Format (RIFF) Wave files as well as the standard metadata from Flac files.
 
 To use just build as per Rust usual.
 > cargo build -r
