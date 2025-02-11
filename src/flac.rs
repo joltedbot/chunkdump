@@ -6,17 +6,11 @@ use crate::template::Template;
 use flac::metadata::{get_vorbis_comment, VorbisComment};
 use flac::StreamReader;
 use std::error::Error;
-use std::fmt::Debug;
 use std::fs::File;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "flac";
 const TEMPLATE_PATH: &str = include_str!("templates/flac/flac.tmpl");
-const METADATA_BLOCK_HEADER_LENGTH_IN_BYTES: usize = 1;
-const METADATA_BLOCK_SIZE_LENGTH_IN_BYTES: usize = 3;
-const METADATA_BLOCK_SIZE_READ_ARRAY_SIZE: usize = 4;
-const BLOCK_HEADER_LAST_BLOCK_INDICATOR_VALUE: u8 = 128;
-const NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE: &str = "failed to fill whole buffer";
 
 pub fn output_flac_metadata(
     mut template: Template,
@@ -63,7 +57,7 @@ fn format_data_for_output(template: &mut Template, flac_file_path: String) -> Re
     let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_PATH, wave_output_values)?;
     Ok(formated_output)
 }
-c
+
 fn format_md5_sum_from_bytes(bytes: [u8; 16]) -> String {
     bytes
         .iter()

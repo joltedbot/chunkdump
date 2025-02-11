@@ -34,7 +34,4 @@ pub enum LocalError {
 
     #[error("Could not open FLAC file {0}")]
     InvalidFlacFile(String),
-
-    #[error("Could not parse FLAC metadata {0}")]
-    InvalidFlacMetadata(String),
 }
