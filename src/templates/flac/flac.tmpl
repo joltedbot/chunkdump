@@ -24,11 +24,11 @@ MD5 Sum:            {{ md5_sum }}
 Vorbis Comments
 ---------------
 Vendor String: {{ vorbis_vendor }}
-{% if vorbis_comments %}
+{% if vorbis_tags %}
 Comments:
 ---------
-{%- for id, comment in vorbis_comments %}
-{{ id }}: {{ comment }}
+{%- for comment in vorbis_tags %}
+{{ comment.id }}: {{ comment.value }}
 {%- endfor %}
 {%- endif %}
 {% endif %}

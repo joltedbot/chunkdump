@@ -15,6 +15,6 @@ upon = "0.8.1"
 serde = { version = "1.0.217", features = ["derive"] }
 argh = "0.1.13"
 bitvec = "1.0.1"
-flac = "0.5.0"
+claxon = "0.4.3"
 
 
