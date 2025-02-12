@@ -8,8 +8,8 @@ pub enum LocalError {
     #[error("Could not extract the filename from the supplied path")]
     InvalidFileName,
 
-    #[error("{0} is not a supported file type")]
-    UnsupportedFileType(String),
+    #[error("Unsupported file type. Only Wave and Flac files are supported")]
+    UnsupportedFileType(),
 
     #[error("Could not read from the file {0}")]
     CouldNotReadFile(String),
@@ -34,4 +34,8 @@ pub enum LocalError {
 
     #[error("Could not open FLAC file {0}")]
     InvalidFlacFile(String),
+}
+
+pub fn handle_local_error(local_error: LocalError, specific_error: String) {
+    println!("\n{}: {}", local_error, specific_error);
 }

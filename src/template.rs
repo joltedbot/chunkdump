@@ -35,3 +35,20 @@ impl Template {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sucessfully_adds_template_into_the_engine_template_store() {
+        let test_template_name: &'static str = "test_template";
+        let test_template_location: &'static str = "tests/testw.tmpl";
+        let mut template = Template::new();
+        template
+            .add_chunk_template(test_template_name, test_template_location)
+            .unwrap();
+
+        assert!(template.engine.get_template(test_template_name).is_some());
+    }
+}
