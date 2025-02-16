@@ -14,9 +14,10 @@ use crate::cli::process_cli_arguments;
 use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::handle_local_error;
 use crate::errors::LocalError;
-use crate::fileio::{open_file, read_chunk_id_from_file};
+use crate::fileio::{read_bytes_from_file_as_string, FILE_CHUNKID_LENGTH_IN_BYTES};
 use crate::flac::output_flac_metadata;
 use crate::wave::output_wave_metadata;
+use std::fs::File;
 use std::process::exit;
 
 const WAVE_FILE_CHUNKID: &str = "RIFF";
@@ -25,8 +26,18 @@ const FLAC_FILE_CHUNKID: &str = "fLaC";
 fn main() {
     let cli_args = process_cli_arguments();
 
-    let mut input_file = open_file(&cli_args.input_file_path);
-    let file_chunk_id = read_chunk_id_from_file(&cli_args.input_file_path, &mut input_file);
+    let mut input_file = File::open(&cli_args.input_file_path).unwrap_or_else(|e| {
+        handle_local_error(LocalError::InvalidPath(cli_args.input_file_path.clone()), e.to_string());
+        exit(EXIT_CODE_ERROR);
+    });
+
+    let file_chunk_id = match read_bytes_from_file_as_string(&mut input_file, FILE_CHUNKID_LENGTH_IN_BYTES) {
+        Ok(chunk_id) => chunk_id,
+        Err(e) => {
+            handle_local_error(LocalError::CouldNotReadFile(cli_args.input_file_path), e.to_string());
+            exit(EXIT_CODE_ERROR);
+        }
+    };
 
     match file_chunk_id.as_str() {
         WAVE_FILE_CHUNKID => {
@@ -48,7 +59,7 @@ fn main() {
             });
         }
         _ => {
-            handle_local_error(LocalError::UnsupportedFileType(), "".to_string());
+            handle_local_error(LocalError::UnsupportedFileType, "".to_string());
             print_usage_message();
             exit(EXIT_CODE_ERROR);
         }

@@ -1,4 +1,3 @@
-use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::LocalError;
 use crate::formating::add_one_if_byte_size_is_odd;
 use crate::wave::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
@@ -6,35 +5,8 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::Path;
-use std::process::exit;
 
 pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
-
-pub fn open_file(path_of_file_to_read: &str) -> File {
-    match File::open(path_of_file_to_read) {
-        Ok(file) => file,
-        Err(e) => {
-            println!("\n{}: {}\n  {}", LocalError::InvalidPath, path_of_file_to_read, e);
-            print_usage_message();
-            exit(EXIT_CODE_ERROR);
-        }
-    }
-}
-
-pub fn read_chunk_id_from_file(path_of_file_to_read: &str, file: &mut File) -> String {
-    match read_bytes_from_file_as_string(file, FILE_CHUNKID_LENGTH_IN_BYTES) {
-        Ok(chunk_id) => chunk_id,
-        Err(e) => {
-            println!(
-                "\n{}: {}",
-                LocalError::CouldNotReadFile(path_of_file_to_read.to_string()),
-                e
-            );
-            print_usage_message();
-            exit(EXIT_CODE_ERROR);
-        }
-    }
-}
 
 pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
@@ -52,7 +24,7 @@ pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>>
 
     let canonical_path = match path.to_str() {
         Some(path) => path.to_string(),
-        None => return Err(Box::new(LocalError::InvalidPath)),
+        None => return Err(Box::new(LocalError::InvalidPath(file_path.to_string()))),
     };
 
     Ok(canonical_path)
@@ -96,7 +68,7 @@ mod tests {
     #[test]
     fn return_correct_canonicalize_path_when_given_path_is_valid() {
         let correct_result = env::current_dir().unwrap().to_str().unwrap().to_string() + "/src/main.rs";
-        let result = canonicalize_file_path(&"./src/main.rs".to_string()).unwrap();
+        let result = canonicalize_file_path("./src/main.rs").unwrap();
 
         assert_eq!(result, correct_result);
     }
@@ -111,7 +83,7 @@ mod tests {
 
     #[test]
     fn get_file_name_from_file_path_returns_correct_result() {
-        let result = get_file_name_from_file_path(&"/test/path/filename".to_string()).unwrap();
+        let result = get_file_name_from_file_path("/test/path/filename").unwrap();
         assert_eq!(result, "filename")
     }
 }

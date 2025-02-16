@@ -1,8 +1,8 @@
 use crate::chunk::Chunk;
 use crate::errors::LocalError;
 use crate::fileio::{
-    canonicalize_file_path, get_file_name_from_file_path, open_file, read_bytes_from_file,
-    read_bytes_from_file_as_string, read_chunk_size_from_file, skip_over_bytes_in_file,
+    canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
+    read_chunk_size_from_file, skip_over_bytes_in_file,
 };
 use crate::formating::format_file_size_as_string;
 use crate::output::write_out_file_data;
@@ -91,7 +91,7 @@ impl Wave {
 }
 
 pub fn output_wave_metadata(wave_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
-    let mut wave_file = open_file(wave_file_path);
+    let mut wave_file = File::open(wave_file_path)?;
     validate_riff_wave_header(&mut wave_file)?;
 
     let mut wave: Wave = Default::default();
