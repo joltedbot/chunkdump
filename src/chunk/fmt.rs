@@ -1,10 +1,10 @@
 use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer};
+use crate::errors::LocalError;
 use crate::template::Template;
-use std::error::Error;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "fmt";
-const TEMPLATE_PATH: &str = include_str!("../templates/wave/fmt.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/fmt.tmpl");
 const FORMAT_CHUNK_SIZE_IF_NO_EXTENSION: usize = 16;
 const PCM_FORMAT_ID: u16 = 1;
 const PCM_FORMAT_NAME: &str = "PCM";
@@ -42,21 +42,21 @@ const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
 
 #[derive(Debug, Clone, Default)]
 pub struct FmtFields {
-    pub template_name: &'static str,
-    pub template_path: &'static str,
-    pub format_code: String,
-    pub number_of_channels: u16,
-    pub samples_per_second: u32,
-    pub average_data_rate: u32,
-    pub data_block_size: u16,
-    pub bits_per_sample: u16,
-    pub valid_bits_per_sample: u16,
-    pub speaker_position_mask: u32,
-    pub subformat_guid: [u8; GUID_LENGTH_IN_BYTES],
+    template_name: &'static str,
+    template_content: &'static str,
+    format_code: String,
+    number_of_channels: u16,
+    samples_per_second: u32,
+    average_data_rate: u32,
+    data_block_size: u16,
+    bits_per_sample: u16,
+    valid_bits_per_sample: u16,
+    speaker_position_mask: u32,
+    subformat_guid: [u8; GUID_LENGTH_IN_BYTES],
 }
 
 impl FmtFields {
-    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let chunk_size = chunk_data.len();
 
         let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?);
@@ -84,7 +84,7 @@ impl FmtFields {
 
         Ok(Self {
             template_name: TEMPLATE_NAME,
-            template_path: TEMPLATE_PATH,
+            template_content: TEMPLATE_CONTENT,
             format_code,
             number_of_channels,
             samples_per_second,
@@ -97,7 +97,7 @@ impl FmtFields {
         })
     }
 
-    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         let wave_output_values: Value = upon::value! {
             format_code: &self.format_code,
             number_of_channels: &self.number_of_channels,
@@ -110,7 +110,8 @@ impl FmtFields {
             subformat_guid: format_guid(self.subformat_guid.clone())
         };
 
-        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        let formated_output =
+            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
         Ok(formated_output)
     }
 }
@@ -141,7 +142,10 @@ fn format_speaker_position(speaker_position_mask: u32) -> String {
 
     for position in 0..SPEAKER_POSITION_MASK_BIT_MEANING.len() {
         if (speaker_position_mask & (1 << position)) > 0 {
-            positions.push(format!(" - {}", SPEAKER_POSITION_MASK_BIT_MEANING[position].to_string()));
+            positions.push(format!(
+                " - {}",
+                SPEAKER_POSITION_MASK_BIT_MEANING[position].to_string()
+            ));
         }
     }
 

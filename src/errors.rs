@@ -26,6 +26,12 @@ pub enum LocalError {
     #[error("Incorrect ADTL chunk type, {0}")]
     InvalidADTLTypeID(String),
 
+    #[error("Could not unzip ResU chunk JSON data: {0}")]
+    InvalidZipDataFound(String),
+
+    #[error("Could not extract ID3 tags from the file: {0}")]
+    InvalidID3TagDataFound(String),
+
     #[error("Requested number of bytes {0} is greater than the available bytes: {1}")]
     InsufficientBytesToTake(usize, usize),
 

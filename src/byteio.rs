@@ -89,7 +89,10 @@ pub fn take_first_four_bytes_as_float(byte_data: &mut Vec<u8>) -> Result<f32, Lo
     Ok(f32::from_le_bytes(byte_array))
 }
 
-pub fn take_first_number_of_bytes_as_string(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<String, LocalError> {
+pub fn take_first_number_of_bytes_as_string(
+    byte_data: &mut Vec<u8>,
+    number_of_bytes: usize,
+) -> Result<String, LocalError> {
     check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
 
     let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
@@ -110,10 +113,16 @@ pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usiz
     Ok(taken_bytes)
 }
 
-fn check_sufficient_bytes_are_available_to_take(byte_data: &[u8], number_of_bytes_to_take: usize) -> Result<(), LocalError> {
+fn check_sufficient_bytes_are_available_to_take(
+    byte_data: &[u8],
+    number_of_bytes_to_take: usize,
+) -> Result<(), LocalError> {
     let byte_data_length = byte_data.len();
     if byte_data_length < number_of_bytes_to_take {
-        return Err(LocalError::InsufficientBytesToTake(number_of_bytes_to_take, byte_data_length));
+        return Err(LocalError::InsufficientBytesToTake(
+            number_of_bytes_to_take,
+            byte_data_length,
+        ));
     }
 
     Ok(())
@@ -143,6 +152,14 @@ mod tests {
             test_bytes_length_after_function_call,
             test_bytes_length_before_function_call - 4
         );
+    }
+
+    #[test]
+    fn return_correct_integer_when_taking_eight_bytes_as_integer() {
+        let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01, 0x10, 0x01, 0x01, 0x01, 0x01];
+        let result_integer: u64 = take_first_eight_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
+        let correct_result: u64 = 72356665512493328;
+        assert_eq!(result_integer, correct_result);
     }
 
     #[test]

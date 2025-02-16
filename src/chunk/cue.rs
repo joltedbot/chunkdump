@@ -1,18 +1,17 @@
 use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string};
+use crate::errors::LocalError;
 use crate::template::Template;
 use serde::Serialize;
-use std::error::Error;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "cue";
-const TEMPLATE_PATH: &str = include_str!("../templates/wave/cue.tmpl");
-
+const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/cue.tmpl");
 const DATA_CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
 
 #[derive(Debug, Clone, Default)]
 pub struct CueFields {
     pub template_name: &'static str,
-    pub template_path: &'static str,
+    pub template_content: &'static str,
     pub number_of_cue_points: u32,
     pub cue_points: Vec<CuePoint>,
 }
@@ -28,7 +27,7 @@ pub struct CuePoint {
 }
 
 impl CueFields {
-    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let mut cue_points: Vec<CuePoint> = vec![];
         let number_of_cue_points: u32 = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
 
@@ -45,19 +44,20 @@ impl CueFields {
 
         Ok(Self {
             template_name: TEMPLATE_NAME,
-            template_path: TEMPLATE_PATH,
+            template_content: TEMPLATE_CONTENT,
             number_of_cue_points,
             cue_points,
         })
     }
 
-    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         let wave_output_values: Value = upon::value! {
                 number_of_cue_points: &self.number_of_cue_points,
                 cue_points: &self.cue_points
         };
 
-        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        let formated_output =
+            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
 
         Ok(formated_output)
     }

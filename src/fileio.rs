@@ -1,13 +1,16 @@
+use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::LocalError;
-use crate::wave::add_one_if_byte_size_is_odd;
-use crate::{print_usage_message, EXIT_CODE_ERROR, FILE_CHUNKID_LENGTH_IN_BYTES};
+use crate::formating::add_one_if_byte_size_is_odd;
+use crate::wave::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::Path;
 use std::process::exit;
 
-pub fn open_file(path_of_file_to_read: &String) -> File {
+pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
+
+pub fn open_file(path_of_file_to_read: &str) -> File {
     match File::open(path_of_file_to_read) {
         Ok(file) => file,
         Err(e) => {
@@ -22,7 +25,11 @@ pub fn read_chunk_id_from_file(path_of_file_to_read: &str, file: &mut File) -> S
     match read_bytes_from_file_as_string(file, FILE_CHUNKID_LENGTH_IN_BYTES) {
         Ok(chunk_id) => chunk_id,
         Err(e) => {
-            println!("\n{}: {}", LocalError::CouldNotReadFile(path_of_file_to_read.to_string()), e);
+            println!(
+                "\n{}: {}",
+                LocalError::CouldNotReadFile(path_of_file_to_read.to_string()),
+                e
+            );
             print_usage_message();
             exit(EXIT_CODE_ERROR);
         }
@@ -31,7 +38,7 @@ pub fn read_chunk_id_from_file(path_of_file_to_read: &str, file: &mut File) -> S
 
 pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
-    let mut byte_array: [u8; 4] = Default::default();
+    let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
 
     let mut chunk_size = u32::from_le_bytes(byte_array);
@@ -40,7 +47,7 @@ pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error
     Ok(chunk_size as usize)
 }
 
-pub fn canonicalize_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
+pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
     let path = Path::new(file_path).canonicalize()?;
 
     let canonical_path = match path.to_str() {
@@ -51,7 +58,7 @@ pub fn canonicalize_file_path(file_path: &String) -> Result<String, Box<dyn Erro
     Ok(canonical_path)
 }
 
-pub fn get_file_name_from_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
+pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
     let path = Path::new(file_path);
 
     let file_name = match path.file_name() {
