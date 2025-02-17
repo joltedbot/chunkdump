@@ -4,6 +4,7 @@ use crate::byteio::{
 };
 
 use crate::errors::LocalError;
+use crate::formating::format_bytes_as_string;
 use crate::template::Template;
 use serde::Serialize;
 use upon::Value;
@@ -144,25 +145,9 @@ fn get_umid_from_bytes(umid_data: &mut Vec<u8>) -> Result<UmidComponent, LocalEr
     })
 }
 
-fn format_bytes_as_string(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .fold("".to_string(), |umid: String, byte| format!("{} 0x{:02X?}", umid, byte))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn correct_string_is_returned_from_bytes() {
-        let input_byte_array_in_decimal: &[u8] = &[1, 2, 58, 75];
-        let correct_result_string: String = " 0x01 0x02 0x3A 0x4B".to_string();
-        assert_eq!(
-            format_bytes_as_string(input_byte_array_in_decimal),
-            correct_result_string
-        );
-    }
 
     #[test]
     fn correct_umid_struct_from_bytes() {

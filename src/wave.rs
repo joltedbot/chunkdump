@@ -17,7 +17,7 @@ const TEMPLATE_CONTENT: &str = include_str!("templates/wave/riff.tmpl");
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
 pub const CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
-const CORRECT_WAVE_ID: &str = "WAVE";
+const CORRECT_WAVE_ID: &[u8; 4] = b"WAVE";
 const NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE: &str = "failed to fill whole buffer";
 
 #[derive(Default)]
@@ -111,8 +111,9 @@ fn validate_riff_wave_header(wave_file: &mut File) -> Result<(), Box<dyn Error>>
     skip_over_bytes_in_file(wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES)?;
     skip_over_bytes_in_file(wave_file, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
 
-    let wave_id = read_bytes_from_file_as_string(wave_file, WAVEID_FIELD_LENGTH_IN_BYTES)?;
-    if wave_id != CORRECT_WAVE_ID {
+    let wave_id_bytes = read_bytes_from_file(wave_file, WAVEID_FIELD_LENGTH_IN_BYTES)?;
+
+    if wave_id_bytes.as_slice() != CORRECT_WAVE_ID {
         return Err(Box::new(LocalError::InvalidWaveID));
     }
 

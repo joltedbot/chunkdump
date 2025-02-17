@@ -6,6 +6,7 @@ use upon::Value;
 
 const TEMPLATE_NAME: &str = "extra";
 const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/extra.tmpl");
+const EMPTY_DATA_MESSAGE: &str = "[No text data found in this field]";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ExtraChunk {
@@ -31,7 +32,12 @@ impl ExtraChunk {
 
     pub fn add_chunk(&mut self, chunk_id: String, mut chunk_data: Vec<u8>) -> Result<(), LocalError> {
         let chunk_size = chunk_data.len();
-        let chunk_data = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
+        let mut chunk_data = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
+
+        if chunk_data.is_empty() {
+            chunk_data = EMPTY_DATA_MESSAGE.to_string();
+        }
+
         self.chunks.push(Chunk {
             id: chunk_id,
             data: chunk_data,

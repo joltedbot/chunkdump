@@ -11,6 +11,7 @@ mod junk;
 mod list;
 mod resu;
 mod smpl;
+mod umid;
 mod xmp;
 
 use crate::chunk::acid::AcidFields;
@@ -26,6 +27,7 @@ use crate::chunk::junk::JunkFields;
 use crate::chunk::list::ListFields;
 use crate::chunk::resu::ResuFields;
 use crate::chunk::smpl::SmplFields;
+use crate::chunk::umid::UMIDFields;
 use crate::chunk::xmp::XMPFields;
 use crate::template::Template;
 use std::error::Error;
@@ -46,6 +48,7 @@ const ACID_CHUNKID: &str = "acid";
 const SMPL_CHUNKID: &str = "smpl";
 const DISP_CHUNKID: &str = "disp";
 const LOGIC_PRO_CHUNKID: &str = "lgwv";
+const PRO_TOOL_UMID_CHUNKID: &str = "umid";
 
 const CHUNKS_TO_SKIP: [&str; 4] = [DATA_CHUNKID, ID3_CHUNKID, DISP_CHUNKID, LOGIC_PRO_CHUNKID];
 
@@ -68,6 +71,7 @@ pub struct Chunk {
     cart_data: CartFields,
     acid_data: AcidFields,
     smpl_data: SmplFields,
+    umid_data: UMIDFields,
 }
 
 impl Chunk {
@@ -98,6 +102,7 @@ impl Chunk {
             CART_CHUNKID => self.cart_data = CartFields::new(chunk_data)?,
             ACID_CHUNKID => self.acid_data = AcidFields::new(chunk_data)?,
             SMPL_CHUNKID => self.smpl_data = SmplFields::new(chunk_data)?,
+            PRO_TOOL_UMID_CHUNKID => self.umid_data = UMIDFields::new(chunk_data)?,
             DISP_CHUNKID => {}
             LOGIC_PRO_CHUNKID => {}
             _ => self.extra_chunks.add_chunk(chunk_id, chunk_data)?,
@@ -127,6 +132,7 @@ impl Chunk {
                 RESU_CHUNKID => self.resu_data.format_data_for_output(template)?,
                 CART_CHUNKID => self.cart_data.format_data_for_output(template)?,
                 SMPL_CHUNKID => self.smpl_data.format_data_for_output(template)?,
+                PRO_TOOL_UMID_CHUNKID => self.umid_data.format_data_for_output(template)?,
                 LIST_CHUNKID => {
                     let mut list_metadata_output = String::new();
                     for list_field in self.list_data.iter() {

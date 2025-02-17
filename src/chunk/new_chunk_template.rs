@@ -18,13 +18,12 @@ pub struct PlaceholderFields {
 
 // Rename the struct to reflect your struct name
 impl PlaceholderFields {
-    pub fn new(mut chunk_data: Vec<u8>) -> Self {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let chunk_size = chunk_data.len();
 
         // Insert Code to process the data fields of your chunk from the provided chunk data. Chunk data is a vec of u8 bytes
 
-        // Rename the struct to reflect your struct name
-        PlaceholderFieldsFields {
+        Self {
             template_name: TEMPLATE_NAME,
             template_content: TEMPLATE_CONTENT,
             // Assign the data fields you processed above to the struct fields in your struct
