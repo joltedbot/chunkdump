@@ -1,5 +1,6 @@
 mod byteio;
 mod chunk;
+mod cli;
 mod errors;
 mod fileio;
 mod flac;
@@ -9,89 +10,58 @@ mod output;
 mod template;
 mod wave;
 
+use crate::cli::process_cli_arguments;
+use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::handle_local_error;
 use crate::errors::LocalError;
-use crate::fileio::{open_file, read_chunk_id_from_file};
+use crate::fileio::{read_bytes_from_file_as_string, FILE_CHUNKID_LENGTH_IN_BYTES};
 use crate::flac::output_flac_metadata;
-use crate::template::Template;
-use crate::wave::Wave;
-use argh::FromArgs;
+use crate::wave::output_wave_metadata;
+use std::fs::File;
 use std::process::exit;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const USAGE_MESSAGE: &str = " usage: chunkdump [-hv] file";
-const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
 const WAVE_FILE_CHUNKID: &str = "RIFF";
 const FLAC_FILE_CHUNKID: &str = "fLaC";
-const EXIT_CODE_ERROR: i32 = 1;
-const EXIT_CODE_SUCCESS: i32 = 0;
-
-#[derive(FromArgs)]
-/// Chunkdump - Extract Metadata From Wave and Flac Files
-#[argh(help_triggers("-h", "--help", "help"))]
-struct CliArguments {
-    /// print the version
-    #[argh(switch, short = 'v')]
-    version: bool,
-
-    /// a file path to output the data to rather than stdout
-    #[argh(option, short = 'o')]
-    output_file: Option<String>,
-
-    #[argh(positional)]
-    file: Option<String>,
-}
 
 fn main() {
-    let args: CliArguments = argh::from_env();
+    let cli_args = process_cli_arguments();
 
-    process_cli_switches(&args);
+    let mut input_file = File::open(&cli_args.input_file_path).unwrap_or_else(|e| {
+        handle_local_error(LocalError::InvalidPath(cli_args.input_file_path.clone()), e.to_string());
+        exit(EXIT_CODE_ERROR);
+    });
 
-    let input_file_path = args.file.unwrap();
-    let ouptut_file_path: String = args.output_file.unwrap_or_else(|| String::new());
-
-    let mut input_file = open_file(&input_file_path);
-    let file_chunk_id = read_chunk_id_from_file(&input_file_path, &mut input_file);
+    let file_chunk_id = match read_bytes_from_file_as_string(&mut input_file, FILE_CHUNKID_LENGTH_IN_BYTES) {
+        Ok(chunk_id) => chunk_id,
+        Err(e) => {
+            handle_local_error(LocalError::CouldNotReadFile(cli_args.input_file_path), e.to_string());
+            exit(EXIT_CODE_ERROR);
+        }
+    };
 
     match file_chunk_id.as_str() {
         WAVE_FILE_CHUNKID => {
-            let wave_file =
-                Wave::new(input_file_path.clone(), ouptut_file_path, &mut input_file).unwrap_or_else(|error| {
-                    handle_local_error(LocalError::CouldNotReadFile(input_file_path.clone()), error.to_string());
-                    exit(EXIT_CODE_ERROR);
-                });
-
-            wave_file.output_metadata(Template::new()).unwrap_or_else(|error| {
-                handle_local_error(LocalError::CouldNotReadData(input_file_path.clone()), error.to_string());
+            output_wave_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
+                handle_local_error(
+                    LocalError::CouldNotReadData(cli_args.input_file_path),
+                    error.to_string(),
+                );
                 exit(EXIT_CODE_ERROR);
             });
         }
         FLAC_FILE_CHUNKID => {
-            output_flac_metadata(Template::new(), input_file_path.clone(), ouptut_file_path).unwrap_or_else(|error| {
-                handle_local_error(LocalError::CouldNotReadData(input_file_path.clone()), error.to_string());
+            output_flac_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
+                handle_local_error(
+                    LocalError::CouldNotReadData(cli_args.input_file_path),
+                    error.to_string(),
+                );
                 exit(EXIT_CODE_ERROR);
             });
         }
         _ => {
-            handle_local_error(LocalError::UnsupportedFileType(), "".to_string());
+            handle_local_error(LocalError::UnsupportedFileType, "".to_string());
             print_usage_message();
             exit(EXIT_CODE_ERROR);
         }
     }
-}
-
-fn process_cli_switches(args: &CliArguments) {
-    if args.version {
-        println!("{}", VERSION);
-        exit(EXIT_CODE_SUCCESS);
-    }
-
-    if args.file.is_none() {
-        print_usage_message();
-        exit(EXIT_CODE_ERROR);
-    }
-}
-
-fn print_usage_message() {
-    println!("\n{}\n", USAGE_MESSAGE);
 }

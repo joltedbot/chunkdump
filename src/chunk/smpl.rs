@@ -2,51 +2,54 @@ use crate::byteio::{
     take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
     take_first_number_of_bytes,
 };
+use crate::errors::LocalError;
 use crate::midi::note_name_from_midi_note_number;
 use crate::template::Template;
 use serde::Serialize;
-use std::error::Error;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "smpl";
-const TEMPLATE_PATH: &str = include_str!("../templates/wave/smpl.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/smpl.tmpl");
 const MANUFACTURER_ID_LENGTH_IN_BYTES: usize = 4;
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct SampleLoops {
-    pub cue_point_id: u32,
-    pub loop_type: u32,
-    pub start_point: u32,
-    pub end_point: u32,
-    pub fraction: u32,
-    pub number_of_time_to_play_the_loop: u32,
+struct SampleLoops {
+    cue_point_id: u32,
+    loop_type: u32,
+    start_point: u32,
+    end_point: u32,
+    fraction: u32,
+    number_of_time_to_play_the_loop: u32,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct SmplFields {
-    pub template_name: &'static str,
-    pub template_path: &'static str,
-    pub manufacturer: String,
-    pub product: u32,
-    pub sample_period: u32,
-    pub midi_unity_note: String,
-    pub midi_pitch_fraction: u32,
-    pub smpte_format: u32,
-    pub smpte_offset: String,
-    pub number_of_sample_loops: u32,
-    pub sample_data_size_in_bytes: u32,
-    pub sample_loops: Vec<SampleLoops>,
+    template_name: &'static str,
+    template_content: &'static str,
+    manufacturer: String,
+    product: u32,
+    sample_period: u32,
+    midi_unity_note: String,
+    midi_pitch_fraction: u32,
+    smpte_format: u32,
+    smpte_offset: String,
+    number_of_sample_loops: u32,
+    sample_data_size_in_bytes: u32,
+    sample_loops: Vec<SampleLoops>,
 }
 
 impl SmplFields {
-    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let mut sample_loops: Vec<SampleLoops> = vec![];
 
-        let manufacturer =
-            format_manufacturer_id(take_first_number_of_bytes(&mut chunk_data, MANUFACTURER_ID_LENGTH_IN_BYTES)?)?;
+        let manufacturer = format_manufacturer_id(take_first_number_of_bytes(
+            &mut chunk_data,
+            MANUFACTURER_ID_LENGTH_IN_BYTES,
+        )?)?;
         let product = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let sample_period = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let midi_unity_note = note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?);
+        let midi_unity_note =
+            note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?);
         let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
         let smpte_offset = format_smpte_offset(&mut chunk_data)?;
@@ -66,7 +69,7 @@ impl SmplFields {
 
         Ok(Self {
             template_name: TEMPLATE_NAME,
-            template_path: TEMPLATE_PATH,
+            template_content: TEMPLATE_CONTENT,
             manufacturer,
             product,
             sample_period,
@@ -80,7 +83,7 @@ impl SmplFields {
         })
     }
 
-    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         let wave_output_values: Value = upon::value! {
             template_name: self.template_name,
             manufacturer:  &self.manufacturer,
@@ -95,15 +98,16 @@ impl SmplFields {
             sample_loops: &self.sample_loops,
         };
 
-        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        let formated_output =
+            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
         Ok(formated_output)
     }
 }
 
-fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, Box<dyn Error>> {
+fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
     let manufacturer_id_bytes: Vec<u8> = match take_first_byte_as_unsigned_integer(&mut bytes) {
         Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
-        Err(e) => return Err(Box::new(e)),
+        Err(e) => return Err(e),
     };
 
     let mut manufacturer_id: Vec<String> = vec![];
@@ -115,8 +119,8 @@ fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, Box<dyn Error>> 
     Ok(manufacturer_id.join(" "))
 }
 
-fn format_smpte_offset(mut smpte_offset_bytes: &mut Vec<u8>) -> Result<String, Box<dyn Error>> {
-    let hours = take_first_byte_as_signed_integer(&mut smpte_offset_bytes)?;
+fn format_smpte_offset(smpte_offset_bytes: &mut Vec<u8>) -> Result<String, LocalError> {
+    let hours = take_first_byte_as_signed_integer(smpte_offset_bytes)?;
     let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
     let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
     let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;

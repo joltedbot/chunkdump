@@ -11,7 +11,7 @@ use std::fs::File;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "flac";
-const TEMPLATE_PATH: &str = include_str!("templates/flac/flac.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("templates/flac/flac.tmpl");
 const SECONDS_PER_MINUTE: u64 = 60;
 
 #[derive(Debug, Serialize)]
@@ -20,21 +20,18 @@ struct VorbisTag {
     value: String,
 }
 
-pub fn output_flac_metadata(
-    mut template: Template,
-    flac_file_path: String,
-    output_file_path: String,
-) -> Result<(), Box<dyn Error>> {
+pub fn output_flac_metadata(flac_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+    let mut template = Template::new();
     let output_lines: Vec<String> = vec![format_data_for_output(&mut template, flac_file_path)?];
-    write_out_file_data(output_lines, output_file_path.clone())?;
+    write_out_file_data(output_lines, output_file_path)?;
 
     Ok(())
 }
 
-fn format_data_for_output(template: &mut Template, flac_file_path: String) -> Result<String, Box<dyn Error>> {
-    let file_size = format_file_size_as_string(std::fs::metadata(flac_file_path.clone())?.len());
+fn format_data_for_output(template: &mut Template, flac_file_path: &str) -> Result<String, Box<dyn Error>> {
+    let file_size = format_file_size_as_string(std::fs::metadata(flac_file_path)?.len());
 
-    let file_stream = match open_flac_file(flac_file_path.clone()) {
+    let file_stream = match open_flac_file(flac_file_path) {
         Ok(value) => value,
         Err(e) => return e,
     };
@@ -45,8 +42,8 @@ fn format_data_for_output(template: &mut Template, flac_file_path: String) -> Re
     let total_samples = stream_info.samples.unwrap_or_default();
 
     let wave_output_values: Value = upon::value! {
-        file_name: get_file_name_from_file_path(&flac_file_path)?,
-        file_path: canonicalize_file_path(&flac_file_path)?,
+        file_name: get_file_name_from_file_path(flac_file_path)?,
+        file_path: canonicalize_file_path(flac_file_path)?,
         file_size: file_size,
         duration: format_estimated_duration(total_samples, stream_info.sample_rate),
         min_block_size: stream_info.min_block_size,
@@ -62,20 +59,20 @@ fn format_data_for_output(template: &mut Template, flac_file_path: String) -> Re
         vorbis_tags: vorbis_tags,
     };
 
-    let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_PATH, wave_output_values)?;
+    let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
     Ok(formated_output)
 }
 
-fn open_flac_file(flac_file_path: String) -> Result<FlacReader<File>, Result<String, Box<dyn Error>>> {
+fn open_flac_file(flac_file_path: &str) -> Result<FlacReader<File>, Result<String, Box<dyn Error>>> {
     let file_stream = match FlacReader::open_ext(
-        flac_file_path.as_str(),
+        flac_file_path,
         FlacReaderOptions {
             metadata_only: true,
             read_vorbis_comment: true,
         },
     ) {
         Ok(stream_reader) => stream_reader,
-        Err(_) => return Err(Err(Box::new(LocalError::InvalidFlacFile(flac_file_path)))),
+        Err(_) => return Err(Err(Box::new(LocalError::InvalidFlacFile(flac_file_path.to_string())))),
     };
     Ok(file_stream)
 }

@@ -1,37 +1,16 @@
 use crate::errors::LocalError;
-use crate::wave::add_one_if_byte_size_is_odd;
-use crate::{print_usage_message, EXIT_CODE_ERROR, FILE_CHUNKID_LENGTH_IN_BYTES};
+use crate::formating::add_one_if_byte_size_is_odd;
+use crate::wave::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek};
 use std::path::Path;
-use std::process::exit;
 
-pub fn open_file(path_of_file_to_read: &String) -> File {
-    match File::open(path_of_file_to_read) {
-        Ok(file) => file,
-        Err(e) => {
-            println!("\n{}: {}\n  {}", LocalError::InvalidPath, path_of_file_to_read, e);
-            print_usage_message();
-            exit(EXIT_CODE_ERROR);
-        }
-    }
-}
-
-pub fn read_chunk_id_from_file(path_of_file_to_read: &str, file: &mut File) -> String {
-    match read_bytes_from_file_as_string(file, FILE_CHUNKID_LENGTH_IN_BYTES) {
-        Ok(chunk_id) => chunk_id,
-        Err(e) => {
-            println!("\n{}: {}", LocalError::CouldNotReadFile(path_of_file_to_read.to_string()), e);
-            print_usage_message();
-            exit(EXIT_CODE_ERROR);
-        }
-    }
-}
+pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
 
 pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
-    let mut byte_array: [u8; 4] = Default::default();
+    let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
 
     let mut chunk_size = u32::from_le_bytes(byte_array);
@@ -40,23 +19,23 @@ pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error
     Ok(chunk_size as usize)
 }
 
-pub fn canonicalize_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
+pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
     let path = Path::new(file_path).canonicalize()?;
 
     let canonical_path = match path.to_str() {
         Some(path) => path.to_string(),
-        None => return Err(Box::new(LocalError::InvalidPath)),
+        None => return Err(Box::new(LocalError::InvalidPath(file_path.to_string()))),
     };
 
     Ok(canonical_path)
 }
 
-pub fn get_file_name_from_file_path(file_path: &String) -> Result<String, Box<dyn Error>> {
+pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalError> {
     let path = Path::new(file_path);
 
     let file_name = match path.file_name() {
         Some(name) => name.to_string_lossy().to_string(),
-        None => return Err(Box::new(LocalError::InvalidFileName)),
+        None => return Err(LocalError::InvalidFileName),
     };
 
     Ok(file_name)
@@ -89,13 +68,13 @@ mod tests {
     #[test]
     fn return_correct_canonicalize_path_when_given_path_is_valid() {
         let correct_result = env::current_dir().unwrap().to_str().unwrap().to_string() + "/src/main.rs";
-        let result = canonicalize_file_path(&"./src/main.rs".to_string()).unwrap();
+        let result = canonicalize_file_path("./src/main.rs").unwrap();
 
         assert_eq!(result, correct_result);
     }
 
     #[test]
-    fn throws_error_when_given_path_is_invalid() {
+    fn canonicalize_file_path_throws_error_when_given_path_is_invalid() {
         let invalid_test_path = "/not/a/real/path".to_string();
         let result = canonicalize_file_path(&invalid_test_path);
 
@@ -104,7 +83,13 @@ mod tests {
 
     #[test]
     fn get_file_name_from_file_path_returns_correct_result() {
-        let result = get_file_name_from_file_path(&"/test/path/filename".to_string()).unwrap();
-        assert_eq!(result, "filename")
+        let result = get_file_name_from_file_path("/test/path/filename.wav").unwrap();
+        assert_eq!(result, "filename.wav")
+    }
+
+    #[test]
+    fn errors_when_geting_filename_from_filepath_if_path_is_invalid() {
+        let result = get_file_name_from_file_path("/");
+        assert_eq!(result.unwrap_err(), LocalError::InvalidFileName);
     }
 }

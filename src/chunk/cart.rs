@@ -3,13 +3,13 @@ use crate::byteio::{
     take_first_number_of_bytes_as_string,
 };
 
+use crate::errors::LocalError;
 use crate::template::Template;
 use serde::Serialize;
-use std::error::Error;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "cart";
-const TEMPLATE_PATH: &str = include_str!("../templates/wave/cart.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/cart.tmpl");
 
 const VERSION_LENGTH_IN_BYTES: usize = 4;
 const TITLE_LENGTH_IN_BYTES: usize = 64;
@@ -35,42 +35,42 @@ const TAG_TEXT_LENGTH_IN_BYTES: usize = 64;
 const VERSION_STRING_DECIMAL_POSITION: usize = 2;
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct CartTimer {
-    pub dw_usage: String,
-    pub dw_value: u32,
+struct CartTimer {
+    dw_usage: String,
+    dw_value: u32,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct CartFields {
-    pub template_name: &'static str,
-    pub template_path: &'static str,
-    pub version: String,
-    pub title: String,
-    pub artist: String,
-    pub cue_id: String,
-    pub client_id: String,
-    pub category: String,
-    pub classification: String,
-    pub out_cue: String,
-    pub start_date: String,
-    pub start_time: String,
-    pub end_date: String,
-    pub end_time: String,
-    pub producer_app_id: String,
-    pub producer_app_version: String,
-    pub user_def: String,
-    pub dw_level_reference: i32,
-    pub post_timer: Vec<CartTimer>,
-    pub reserved: String,
-    pub url: String,
-    pub tag_text: String,
+    template_name: &'static str,
+    template_content: &'static str,
+    version: String,
+    title: String,
+    artist: String,
+    cue_id: String,
+    client_id: String,
+    category: String,
+    classification: String,
+    out_cue: String,
+    start_date: String,
+    start_time: String,
+    end_date: String,
+    end_time: String,
+    producer_app_id: String,
+    producer_app_version: String,
+    user_def: String,
+    dw_level_reference: i32,
+    post_timer: Vec<CartTimer>,
+    reserved: String,
+    url: String,
+    tag_text: String,
 }
 
 impl CartFields {
-    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         Ok(Self {
             template_name: TEMPLATE_NAME,
-            template_path: TEMPLATE_PATH,
+            template_content: TEMPLATE_CONTENT,
             version: take_first_number_of_bytes_as_string(&mut chunk_data, VERSION_LENGTH_IN_BYTES)?,
             title: take_first_number_of_bytes_as_string(&mut chunk_data, TITLE_LENGTH_IN_BYTES)?,
             artist: take_first_number_of_bytes_as_string(&mut chunk_data, ARTIST_LENGTH_IN_BYTES)?,
@@ -90,14 +90,17 @@ impl CartFields {
             )?,
             user_def: take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?,
             dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data)?,
-            post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(&mut chunk_data, POST_TIMER_LENGTH_IN_BYTES)?)?,
+            post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
+                &mut chunk_data,
+                POST_TIMER_LENGTH_IN_BYTES,
+            )?)?,
             reserved: take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_LENGTH_IN_BYTES)?,
             url: take_first_number_of_bytes_as_string(&mut chunk_data, URL_LENGTH_IN_BYTES)?,
             tag_text: take_first_number_of_bytes_as_string(&mut chunk_data, TAG_TEXT_LENGTH_IN_BYTES)?,
         })
     }
 
-    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         let wave_output_values: Value = upon::value! {
            version: get_formated_version_from_version_string(self.version.clone()),
             title: &self.title,
@@ -121,12 +124,13 @@ impl CartFields {
             post_timer: &self.post_timer,
         };
 
-        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        let formated_output =
+            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
         Ok(formated_output)
     }
 }
 
-fn get_post_timer_from_bytes(mut post_timer_data: Vec<u8>) -> Result<Vec<CartTimer>, Box<dyn Error>> {
+fn get_post_timer_from_bytes(mut post_timer_data: Vec<u8>) -> Result<Vec<CartTimer>, LocalError> {
     let mut post_timer: Vec<CartTimer> = vec![];
 
     for _ in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
@@ -150,4 +154,17 @@ fn get_formated_version_from_version_string(mut version: String) -> String {
 
     let formated_version = version.trim_start_matches("0").to_string();
     formated_version
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn return_correct_integer_when_taking_four_bytes_as_integer() {
+        assert_eq!(
+            get_formated_version_from_version_string("0234".to_string()),
+            "2.34".to_string()
+        );
+    }
 }

@@ -3,13 +3,14 @@ use crate::byteio::{
     take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer,
 };
 
+use crate::errors::LocalError;
+use crate::formating::format_bytes_as_string;
 use crate::template::Template;
 use serde::Serialize;
-use std::error::Error;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "bext";
-const TEMPLATE_PATH: &str = include_str!("../templates/wave/bext.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/bext.tmpl");
 
 const DESCRIPTION_LENGTH_IN_BYTES: usize = 256;
 const ORIGINATOR_LENGTH_IN_BYTES: usize = 32;
@@ -27,8 +28,8 @@ const UMID_COUNTRY_LENGTH_IN_BYTES: usize = 4;
 const UMID_ORGANIZATION_LENGTH_IN_BYTES: usize = 4;
 const UMID_USER_LENGTH_IN_BYTES: usize = 4;
 
-#[derive(Debug, Clone, Default, Serialize)]
-pub struct UmidComponent {
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+struct UmidComponent {
     universal_label: Vec<u8>,
     length: Vec<u8>,
     instance_number: Vec<u8>,
@@ -42,30 +43,30 @@ pub struct UmidComponent {
 
 #[derive(Debug, Clone, Default)]
 pub struct BextFields {
-    pub template_name: &'static str,
-    pub template_path: &'static str,
-    pub description: String,
-    pub originator: String,
-    pub originator_reference: String,
-    pub originator_date: String,
-    pub originator_time: String,
-    pub time_reference: u64,
-    pub version: u16,
-    pub umid: UmidComponent,
-    pub loudness_value: i16,
-    pub loudness_range: i16,
-    pub max_true_peak_level: i16,
-    pub max_momentary_loudness: i16,
-    pub max_short_term_loudness: i16,
-    pub reserved: String,
-    pub coding_history: String,
+    template_name: &'static str,
+    template_content: &'static str,
+    description: String,
+    originator: String,
+    originator_reference: String,
+    originator_date: String,
+    originator_time: String,
+    time_reference: u64,
+    version: u16,
+    umid: UmidComponent,
+    loudness_value: i16,
+    loudness_range: i16,
+    max_true_peak_level: i16,
+    max_momentary_loudness: i16,
+    max_short_term_loudness: i16,
+    reserved: String,
+    coding_history: String,
 }
 
 impl BextFields {
-    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         Ok(Self {
             template_name: TEMPLATE_NAME,
-            template_path: TEMPLATE_PATH,
+            template_content: TEMPLATE_CONTENT,
             description: take_first_number_of_bytes_as_string(&mut chunk_data, DESCRIPTION_LENGTH_IN_BYTES)?,
             originator: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_LENGTH_IN_BYTES)?,
             originator_reference: take_first_number_of_bytes_as_string(
@@ -87,7 +88,7 @@ impl BextFields {
         })
     }
 
-    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         let wave_output_values: Value = upon::value! {
             description: &self.description,
             originator: &self.originator,
@@ -103,22 +104,23 @@ impl BextFields {
             max_short_term_loudness: self.max_short_term_loudness / 100,
             reserved: &self.reserved,
             coding_history: &self.coding_history,
-            universal_label: format_bytes_as_sting(&self.umid.universal_label),
-            instance_number: format_bytes_as_sting(&self.umid.instance_number),
-            material_number: format_bytes_as_sting(&self.umid.material_number),
-            time_and_date: format_bytes_as_sting(&self.umid.time_and_date),
-            spatial_coordinates: format_bytes_as_sting(&self.umid.spatial_coordinates),
-            country: format_bytes_as_sting(&self.umid.country),
-            organization: format_bytes_as_sting(&self.umid.organization),
-            user: format_bytes_as_sting(&self.umid.user),
+            universal_label: format_bytes_as_string(&self.umid.universal_label),
+            instance_number: format_bytes_as_string(&self.umid.instance_number),
+            material_number: format_bytes_as_string(&self.umid.material_number),
+            time_and_date: format_bytes_as_string(&self.umid.time_and_date),
+            spatial_coordinates: format_bytes_as_string(&self.umid.spatial_coordinates),
+            country: format_bytes_as_string(&self.umid.country),
+            organization: format_bytes_as_string(&self.umid.organization),
+            user: format_bytes_as_string(&self.umid.user),
         };
 
-        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        let formated_output =
+            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
         Ok(formated_output)
     }
 }
 
-fn get_coding_history_from_bytes(mut bext_data: Vec<u8>) -> Result<String, Box<dyn Error>> {
+fn get_coding_history_from_bytes(mut bext_data: Vec<u8>) -> Result<String, LocalError> {
     let mut coding_history = "".to_string();
 
     if !bext_data.is_empty() {
@@ -129,7 +131,7 @@ fn get_coding_history_from_bytes(mut bext_data: Vec<u8>) -> Result<String, Box<d
     Ok(coding_history)
 }
 
-fn get_umid_from_bytes(umid_data: &mut Vec<u8>) -> Result<UmidComponent, Box<dyn Error>> {
+fn get_umid_from_bytes(umid_data: &mut Vec<u8>) -> Result<UmidComponent, LocalError> {
     Ok(UmidComponent {
         universal_label: take_first_number_of_bytes(umid_data, UMID_UNIVERSAL_LABEL_LENGTH_IN_BYTES)?,
         length: take_first_number_of_bytes(umid_data, UMID_LENGTH_LENGTH_IN_BYTES)?,
@@ -143,8 +145,39 @@ fn get_umid_from_bytes(umid_data: &mut Vec<u8>) -> Result<UmidComponent, Box<dyn
     })
 }
 
-fn format_bytes_as_sting(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .fold("".to_string(), |umid: String, byte| format!("{} 0x{:02X?}", umid, byte))
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn correct_umid_struct_from_bytes() {
+        let mut input_byte_vector: Vec<u8> = vec![
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+            30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+            57, 58, 59, 60,
+        ];
+        let expected_result: UmidComponent = UmidComponent {
+            universal_label: vec![1, 2, 3, 4, 5, 6, 7, 8],
+            length: vec![9],
+            instance_number: vec![10, 11, 12],
+            material_number: vec![13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
+            time_and_date: vec![29, 30, 31, 32, 33, 34, 35, 36],
+            spatial_coordinates: vec![37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48],
+            country: vec![49, 50, 51, 52],
+            organization: vec![53, 54, 55, 56],
+            user: vec![57, 58, 59, 60],
+        };
+
+        assert_eq!(get_umid_from_bytes(&mut input_byte_vector).unwrap(), expected_result);
+    }
+
+    #[test]
+    fn correct_coding_history_from_bytes() {
+        let input_byte_vector: Vec<u8> = vec![84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 84, 101, 115, 116];
+        let correct_result_string: String = "This is a Test".to_string();
+        assert_eq!(
+            get_coding_history_from_bytes(input_byte_vector).unwrap(),
+            correct_result_string
+        );
+    }
 }

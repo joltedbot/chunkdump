@@ -1,37 +1,43 @@
 use crate::byteio::take_first_number_of_bytes_as_string;
+use crate::errors::LocalError;
 use crate::template::Template;
 use serde::Serialize;
-use std::error::Error;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "extra";
-const TEMPLATE_PATH: &str = include_str!("../templates/wave/extra.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/extra.tmpl");
+const EMPTY_DATA_MESSAGE: &str = "[No text data found in this field]";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ExtraChunk {
-    pub template_name: &'static str,
-    pub template_path: &'static str,
-    pub chunks: Vec<Chunk>,
+    template_name: &'static str,
+    template_content: &'static str,
+    chunks: Vec<Chunk>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Chunk {
-    pub id: String,
-    pub data: String,
+    id: String,
+    data: String,
 }
 
 impl ExtraChunk {
     pub fn new() -> Self {
         Self {
             template_name: TEMPLATE_NAME,
-            template_path: TEMPLATE_PATH,
+            template_content: TEMPLATE_CONTENT,
             chunks: Default::default(),
         }
     }
 
-    pub fn add_chunk(&mut self, chunk_id: String, mut chunk_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
+    pub fn add_chunk(&mut self, chunk_id: String, mut chunk_data: Vec<u8>) -> Result<(), LocalError> {
         let chunk_size = chunk_data.len();
-        let chunk_data = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
+        let mut chunk_data = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
+
+        if chunk_data.is_empty() {
+            chunk_data = EMPTY_DATA_MESSAGE.to_string();
+        }
+
         self.chunks.push(Chunk {
             id: chunk_id,
             data: chunk_data,
@@ -40,7 +46,7 @@ impl ExtraChunk {
         Ok(())
     }
 
-    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, Box<dyn Error>> {
+    pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         if self.chunks.is_empty() {
             return Ok("".to_string());
         }
@@ -49,7 +55,8 @@ impl ExtraChunk {
             extra_chunks: &self.chunks
         };
 
-        let formated_output = template.get_wave_chunk_output(self.template_name, self.template_path, wave_output_values)?;
+        let formated_output =
+            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
         Ok(formated_output)
     }
 }
