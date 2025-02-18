@@ -6,7 +6,7 @@ use upon::Value;
 
 const TEMPLATE_NAME: &str = "extra";
 const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/extra.tmpl");
-const EMPTY_DATA_MESSAGE: &str = "[No text data found in this field]";
+const EMPTY_DATA_MESSAGE: &str = "[The chunk exists but is empty]";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ExtraChunk {

@@ -1,12 +1,16 @@
 ---------------------------
 Format (fmt) Chunk Details:
 ---------------------------
-Format Code: {{ format_code }}
-Number of Channels: {{ number_of_channels }}
-Sample Rate: {{ samples_per_second }} kHz
-Bit Depth: {{ bits_per_sample }} bits
-Average Data Rate: {{ average_data_rate }} kB/Second
-Data Block Size: {{ data_block_size }} bytes
+Format Code:           {{ format_code }}
+Number of Channels:    {{ number_of_channels }}
+Sample Rate:           {{ samples_per_second }} kHz
+Bit Depth:             {{ bits_per_sample }} bits
+Average Data Rate:     {{ average_data_rate }} kB/Second
+Data Block Size:       {{ data_block_size }} bytes
+{%- if valid_bits_per_sample %}
 Valid Bits per Sample: {{ valid_bits_per_sample }} bits
+{%- endif %}
+{%- if speaker_position_mask %}
 Speaker Position Mask: {{ speaker_position_mask }}
-GUID: {{ subformat_guid }}
+{%- endif %}
+GUID:                  {{ subformat_guid }}

@@ -161,10 +161,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn return_correct_integer_when_taking_four_bytes_as_integer() {
+    fn correctly_formats_the_version_string_when_passed_a_four_digit_version() {
         assert_eq!(
             get_formated_version_from_version_string("0234".to_string()),
             "2.34".to_string()
+        );
+    }
+
+    #[test]
+    fn returns_the_passed_version_unaltered_if_it_is_less_than_3_digits() {
+        assert_eq!(
+            get_formated_version_from_version_string("34".to_string()),
+            "34".to_string()
         );
     }
 }

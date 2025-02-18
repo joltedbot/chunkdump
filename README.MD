@@ -71,6 +71,8 @@ blocks are skipped.
     - The XML based Adobe XMP metadata standard
 - **smpl**
     - Metadata to allow samplers to use the wave file as a collection of samples.
+- **umid**
+    - A basic UMID filed added by Pro Tools
 
 ### Special Skipped Wave Chunks:
 
@@ -78,6 +80,8 @@ blocks are skipped.
 - **DISP**: This is a Windows Clipboard chunk and isn't useful here so it is skipped
 - **LGWV**: A Logic Pro proprietary chunk. This is unsupported in chunkdump as I can't find any specs online.
   Since the output doesn't produce any usable string data it is just skipped.
+- **DGDA, minf, elm1, regn**: Proprietary Pro Tools chunks that don't seem to have documentation or obvious formats.
+  DGDA might eventually be reverse engineerable though we shall see what happens.
 
 ### For Unsupported Wave Chunks:
 
