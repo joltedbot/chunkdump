@@ -48,15 +48,30 @@ const ACID_CHUNKID: &str = "acid";
 const SMPL_CHUNKID: &str = "smpl";
 const DISP_CHUNKID: &str = "disp";
 const LOGIC_PRO_CHUNKID: &str = "lgwv";
-const PRO_TOOL_UMID_CHUNKID: &str = "umid";
+const PRO_TOOLS_UMID_CHUNKID: &str = "umid";
+const PRO_TOOLS_DGDA_CHUNKID: &str = "dgda";
+const PRO_TOOLS_MINF_CHUNKID: &str = "minf";
+const PRO_TOOLS_ELM1_CHUNKID: &str = "elm1";
+const PRO_TOOLS_REGN_CHUNKID: &str = "regn";
 
-const CHUNKS_TO_SKIP: [&str; 4] = [DATA_CHUNKID, ID3_CHUNKID, DISP_CHUNKID, LOGIC_PRO_CHUNKID];
+const NUMBER_OF_CHUNKS_TO_SKIP: usize = 8;
+const CHUNKS_TO_SKIP: [&str; NUMBER_OF_CHUNKS_TO_SKIP] = [
+    DATA_CHUNKID,
+    ID3_CHUNKID,
+    DISP_CHUNKID,
+    LOGIC_PRO_CHUNKID,
+    PRO_TOOLS_DGDA_CHUNKID,
+    PRO_TOOLS_MINF_CHUNKID,
+    PRO_TOOLS_ELM1_CHUNKID,
+    PRO_TOOLS_REGN_CHUNKID,
+];
 
 #[derive(Default)]
 pub struct Chunk {
     path_to_file: String,
-    pub ignore_data_for_chunks: [&'static str; 4],
+    pub ignore_data_for_chunks: [&'static str; NUMBER_OF_CHUNKS_TO_SKIP],
     pub found_chunk_ids: Vec<String>,
+    pub skipped_chunk_ids: Vec<String>,
     extra_chunks: ExtraChunk,
     fact_data: FactFields,
     format_data: FmtFields,
@@ -102,13 +117,19 @@ impl Chunk {
             CART_CHUNKID => self.cart_data = CartFields::new(chunk_data)?,
             ACID_CHUNKID => self.acid_data = AcidFields::new(chunk_data)?,
             SMPL_CHUNKID => self.smpl_data = SmplFields::new(chunk_data)?,
-            PRO_TOOL_UMID_CHUNKID => self.umid_data = UMIDFields::new(chunk_data)?,
+            PRO_TOOLS_UMID_CHUNKID => self.umid_data = UMIDFields::new(chunk_data)?,
+            PRO_TOOLS_ELM1_CHUNKID => {}
+            PRO_TOOLS_MINF_CHUNKID => {}
+            PRO_TOOLS_DGDA_CHUNKID => {}
+            PRO_TOOLS_REGN_CHUNKID => {}
             DISP_CHUNKID => {}
             LOGIC_PRO_CHUNKID => {}
             _ => self.extra_chunks.add_chunk(chunk_id, chunk_data)?,
         }
 
-        if !self.found_chunk_ids.contains(&found_chunk_id) {
+        if CHUNKS_TO_SKIP.contains(&found_chunk_id.as_str()) {
+            self.skipped_chunk_ids.push(found_chunk_id);
+        } else if !self.found_chunk_ids.contains(&found_chunk_id) {
             self.found_chunk_ids.push(found_chunk_id);
         }
 
@@ -132,7 +153,7 @@ impl Chunk {
                 RESU_CHUNKID => self.resu_data.format_data_for_output(template)?,
                 CART_CHUNKID => self.cart_data.format_data_for_output(template)?,
                 SMPL_CHUNKID => self.smpl_data.format_data_for_output(template)?,
-                PRO_TOOL_UMID_CHUNKID => self.umid_data.format_data_for_output(template)?,
+                PRO_TOOLS_UMID_CHUNKID => self.umid_data.format_data_for_output(template)?,
                 LIST_CHUNKID => {
                     let mut list_metadata_output = String::new();
                     for list_field in self.list_data.iter() {

@@ -12,8 +12,8 @@ use std::error::Error;
 use std::fs::{File, Metadata};
 use upon::Value;
 
-const TEMPLATE_NAME: &str = "riff";
-const TEMPLATE_CONTENT: &str = include_str!("templates/wave/riff.tmpl");
+const TEMPLATE_NAME: &str = "wave";
+const TEMPLATE_CONTENT: &str = include_str!("templates/wave/wave.tmpl");
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
 pub const CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
@@ -80,7 +80,8 @@ impl Wave {
             file_name: self.name.clone(),
             file_path: self.canonical_path.clone(),
             file_size: format_file_size_as_string(self.size_in_bytes),
-            chunk_ids_found: self.chunks.found_chunk_ids.join(", "),
+            chunk_ids_found: self.chunks.found_chunk_ids.join("', '"),
+            chunk_ids_skipped: self.chunks.skipped_chunk_ids.join("', '"),
         };
 
         let formated_wave_output: String =

@@ -1,16 +1,16 @@
 ------------------
 Cue Chunk Details:
 ------------------
-Number of Cue Points: {{ number_of_cue_points }}
+Number of Cue Points:  {{ number_of_cue_points }}
 {% if cue_points %}
 {%- for cue in cue_points %}
 ---------------------------------
-Cue Point ID: {{ cue.id }}
+Cue Point ID:    {{ cue.id }}
 Position: Sample {{ cue.position }}
-Data Chunk ID: {{ cue.data_chunk_id }}
-Chunk Start: Byte Position {{ cue.chunk_start }}
-Block Start: Byte Position {{ cue.block_start }}
-Sample Start: Byte Position {{ cue.sample_start }}
+Data Chunk ID:   {{ cue.data_chunk_id }}
+Chunk Start:     Byte Position {{ cue.chunk_start }}
+Block Start:     Byte Position {{ cue.block_start }}
+Sample Start:    Byte Position {{ cue.sample_start }}
 {%- endfor %}
 ---------------------------------
 {% endif %}

@@ -1,28 +1,29 @@
 -------------------
 Cart Chunk Details:
 -------------------
-Version: v{{ version }}
-Title: {{ title }}
-Artist: {{ artist }}
-Cue ID: {{ cue_id }}
-Client ID: {{ client_id }}
-Category: {{ category }}
-Classification: {{ classification }}
-Out Cue: {{ out_cue }}
-Start Date: {{ start_date }}
-Start Time: {{ start_time }}
-End Date: {{ end_date }}
-End Time: {{ end_time }}
-Producer App ID: {{ producer_app_id }}
-User Defined: {{ user_def }}
-DW Level Reference: {{ dw_level_reference }}
-URL: {{ url }}
-Tag Text: {{ tag_text }}
-Reserved Chunk As String: {{ reserved }}
+Version:              v{{ version }}
+Title:                {{ title }}
+Artist:               {{ artist }}
+Cue ID:               {{ cue_id }}
+Client ID:            {{ client_id }}
+Category:             {{ category }}
+Classification:       {{ classification }}
+Out Cue:              {{ out_cue }}
+Start Date:           {{ start_date }}
+Start Time:           {{ start_time }}
+End Date:             {{ end_date }}
+End Time:             {{ end_time }}
+Producer App ID:      {{ producer_app_id }}
+User Defined:         {{ user_def }}
+DW Level Reference:   {{ dw_level_reference }}
+URL:                  {{ url }}
+Tag Text:             {{ tag_text }}
+Reserved Chunk As String:  
+{{ reserved }}
 
 {% if post_timer %}
-Post Timer:
------------
+  Post Timer:
+  -----------
 {% for item in post_timer %}
-{{ dw_usage }} - {{ dw_value }}{% endfor %}
+  {{ dw_usage }} - {{ dw_value }}{% endfor %}
 {% endif %}
