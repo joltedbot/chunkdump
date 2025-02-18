@@ -30,12 +30,12 @@ pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>>
     Ok(canonical_path)
 }
 
-pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
+pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalError> {
     let path = Path::new(file_path);
 
     let file_name = match path.file_name() {
         Some(name) => name.to_string_lossy().to_string(),
-        None => return Err(Box::new(LocalError::InvalidFileName)),
+        None => return Err(LocalError::InvalidFileName),
     };
 
     Ok(file_name)
@@ -74,7 +74,7 @@ mod tests {
     }
 
     #[test]
-    fn throws_error_when_given_path_is_invalid() {
+    fn canonicalize_file_path_throws_error_when_given_path_is_invalid() {
         let invalid_test_path = "/not/a/real/path".to_string();
         let result = canonicalize_file_path(&invalid_test_path);
 
@@ -83,7 +83,13 @@ mod tests {
 
     #[test]
     fn get_file_name_from_file_path_returns_correct_result() {
-        let result = get_file_name_from_file_path("/test/path/filename").unwrap();
-        assert_eq!(result, "filename")
+        let result = get_file_name_from_file_path("/test/path/filename.wav").unwrap();
+        assert_eq!(result, "filename.wav")
+    }
+
+    #[test]
+    fn errors_when_geting_filename_from_filepath_if_path_is_invalid() {
+        let result = get_file_name_from_file_path("/");
+        assert_eq!(result.unwrap_err(), LocalError::InvalidFileName);
     }
 }

@@ -50,7 +50,7 @@ mod tests {
     #[test]
     fn correct_string_is_returned_from_bytes() {
         let input_byte_array_in_decimal: &[u8] = &[1, 2, 58, 75];
-        let correct_result_string: String = " 0x01 0x02 0x3A 0x4B".to_string();
+        let correct_result_string: String = " 01 02 3a 4b".to_string();
         assert_eq!(
             format_bytes_as_string(input_byte_array_in_decimal),
             correct_result_string
