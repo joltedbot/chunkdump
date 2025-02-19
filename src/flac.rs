@@ -7,16 +7,18 @@ use byte_unit::rust_decimal::prelude::Zero;
 use claxon::{FlacReader, FlacReaderOptions};
 use serde::Serialize;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{metadata, File};
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "flac";
 const TEMPLATE_CONTENT: &str = include_str!("templates/flac/flac.tmpl");
 const SECONDS_PER_MINUTE: u64 = 60;
+const VORBIS_TAG_ID_PLUS_SPACER_TOTAL_CHARACTERS: &str = "                    ";
 
 #[derive(Debug, Serialize)]
 struct VorbisTag {
     id: String,
+    spacer: String,
     value: String,
 }
 
@@ -29,7 +31,7 @@ pub fn output_flac_metadata(flac_file_path: &str, output_file_path: &str) -> Res
 }
 
 fn format_data_for_output(template: &mut Template, flac_file_path: &str) -> Result<String, Box<dyn Error>> {
-    let file_size = format_file_size_as_string(std::fs::metadata(flac_file_path)?.len());
+    let file_size = format_file_size_as_string(metadata(flac_file_path)?.len());
 
     let file_stream = match open_flac_file(flac_file_path) {
         Ok(value) => value,
@@ -82,8 +84,12 @@ fn get_vorbis_comment_tags(file_stream: &FlacReader<File>) -> Vec<VorbisTag> {
     let mut vorbis_tags: Vec<VorbisTag> = vec![];
 
     vorbis_comments.into_iter().for_each(|(k, v)| {
+        let mut spacer = VORBIS_TAG_ID_PLUS_SPACER_TOTAL_CHARACTERS.to_string();
+        spacer.truncate(VORBIS_TAG_ID_PLUS_SPACER_TOTAL_CHARACTERS.len() - k.len());
+
         vorbis_tags.push(VorbisTag {
             id: k.to_string(),
+            spacer,
             value: v.to_string(),
         });
     });
