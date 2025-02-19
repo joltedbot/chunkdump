@@ -19,6 +19,17 @@ pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error
     Ok(chunk_size as usize)
 }
 
+pub fn read_aiff_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
+    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
+    let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
+    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
+
+    let mut chunk_size = u32::from_be_bytes(byte_array);
+    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
+
+    Ok(chunk_size as usize)
+}
+
 pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
     let path = Path::new(file_path).canonicalize()?;
 

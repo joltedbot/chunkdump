@@ -154,18 +154,18 @@ mod tests {
         let mut input_byte_vector: Vec<u8> = vec![
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
             30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
-            57, 58, 59, 60,
+            57, 58, 59, 60, 61, 62, 63, 64,
         ];
         let expected_result: UmidComponent = UmidComponent {
-            universal_label: vec![1, 2, 3, 4, 5, 6, 7, 8],
-            length: vec![9],
-            instance_number: vec![10, 11, 12],
-            material_number: vec![13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
-            time_and_date: vec![29, 30, 31, 32, 33, 34, 35, 36],
-            spatial_coordinates: vec![37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48],
-            country: vec![49, 50, 51, 52],
-            organization: vec![53, 54, 55, 56],
-            user: vec![57, 58, 59, 60],
+            universal_label: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            length: vec![13],
+            instance_number: vec![14, 15, 16],
+            material_number: vec![17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+            time_and_date: vec![33, 34, 35, 36, 37, 38, 39, 40],
+            spatial_coordinates: vec![41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],
+            country: vec![53, 54, 55, 56],
+            organization: vec![57, 58, 59, 60],
+            user: vec![61, 62, 63, 64],
         };
 
         assert_eq!(get_umid_from_bytes(&mut input_byte_vector).unwrap(), expected_result);

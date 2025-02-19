@@ -1,4 +1,20 @@
-use crate::chunk::Chunk;
+mod acid;
+mod bext;
+mod cart;
+mod chunk;
+mod cue;
+mod extra;
+mod fact;
+mod fmt;
+mod id3;
+mod ixml;
+mod junk;
+mod list;
+mod resu;
+mod smpl;
+mod umid;
+mod xmp;
+
 use crate::errors::LocalError;
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
@@ -7,6 +23,7 @@ use crate::fileio::{
 use crate::formating::format_file_size_as_string;
 use crate::output::write_out_file_data;
 use crate::template::Template;
+use crate::wave::chunk::Chunk;
 
 use std::error::Error;
 use std::fs::{File, Metadata};
