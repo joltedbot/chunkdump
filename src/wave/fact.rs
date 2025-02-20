@@ -1,4 +1,4 @@
-use crate::byteio::take_first_four_bytes_as_unsigned_integer;
+use crate::byteio::{take_first_four_bytes_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use crate::template::Template;
 use upon::Value;
@@ -15,7 +15,7 @@ pub struct FactFields {
 
 impl FactFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
-        let samples_per_channel = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let samples_per_channel = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
         Ok(Self {
             template_name: TEMPLATE_NAME,

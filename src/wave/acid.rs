@@ -1,5 +1,6 @@
 use crate::byteio::{
-    take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer,
+    take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer,
+    take_first_two_bytes_as_unsigned_integer, Endian,
 };
 
 use crate::errors::LocalError;
@@ -55,13 +56,16 @@ impl AcidFields {
         Ok(Self {
             template_name: TEMPLATE_NAME,
             template_content: TEMPLATE_CONTENT,
-            file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?),
+            file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(
+                &mut chunk_data,
+                Endian::Little,
+            )?),
             root_note: note_name_from_midi_note_number(
                 take_first_two_bytes_as_unsigned_integer(&mut chunk_data)? as u32
             ),
             mystery_one: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
             mystery_two: take_first_four_bytes_as_float(&mut chunk_data)?,
-            number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+            number_of_beats: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             meter_denominator: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
             meter_numerator: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
             tempo: take_first_four_bytes_as_float(&mut chunk_data)?,

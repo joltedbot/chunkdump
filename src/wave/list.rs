@@ -1,4 +1,4 @@
-use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string};
+use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
 use crate::errors::LocalError;
 use crate::formating::add_one_if_byte_size_is_odd;
 use crate::template::Template;
@@ -124,7 +124,7 @@ fn parse_info_data(list_data: &mut Vec<u8>) -> Result<Vec<InfoData>, LocalError>
         }
 
         let id = take_first_number_of_bytes_as_string(list_data, INFO_ITEM_ID_LENGTH_IN_BYTES)?;
-        let mut size = take_first_four_bytes_as_unsigned_integer(list_data)?;
+        let mut size = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
         size = add_one_if_byte_size_is_odd(size);
         let data = take_first_number_of_bytes_as_string(list_data, size as usize)?;
 
@@ -167,9 +167,9 @@ fn parse_adtl_data(list_data: &mut Vec<u8>) -> Result<Vec<AssociatedData>, Local
 }
 
 fn parse_label_data(list_data: &mut Vec<u8>) -> Result<LabelData, LocalError> {
-    let label_size: usize = take_first_four_bytes_as_unsigned_integer(list_data)? as usize;
+    let label_size: usize = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
     let data_size: usize = label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
-    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
+    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let label_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok(LabelData {
         cue_point_id,
@@ -178,9 +178,9 @@ fn parse_label_data(list_data: &mut Vec<u8>) -> Result<LabelData, LocalError> {
 }
 
 fn parse_note_data(list_data: &mut Vec<u8>) -> Result<NoteData, LocalError> {
-    let note_size: usize = take_first_four_bytes_as_unsigned_integer(list_data)? as usize;
+    let note_size: usize = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
     let data_size: usize = note_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
-    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
+    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let note_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok(NoteData {
         cue_point_id,
@@ -189,8 +189,8 @@ fn parse_note_data(list_data: &mut Vec<u8>) -> Result<NoteData, LocalError> {
 }
 
 fn data_labeled_text_data(list_data: &mut Vec<u8>) -> Result<LabeledText, LocalError> {
-    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
-    let sample_length: u32 = take_first_four_bytes_as_unsigned_integer(list_data)?;
+    let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
+    let sample_length: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let purpose_id: String = take_first_number_of_bytes_as_string(list_data, ADTL_PURPOSE_ID_LENGTH_IN_BYTES)?;
     let country: String = take_first_number_of_bytes_as_string(list_data, ADTL_COUNTRY_LENGTH_IN_BYTES)?;
     let language: String = take_first_number_of_bytes_as_string(list_data, ADTL_LANGUAGE_LENGTH_IN_BYTES)?;

@@ -41,9 +41,10 @@ impl Aiff {
         self.extract_metadata_from_aiff_chunks(&mut aiff_file)?;
 
         let wave_output_values: Value = upon::value! {
-            file_name: self.name.clone(),
-            file_path: self.canonical_path.clone(),
+            file_name: &self.name,
+            file_path: &self.canonical_path,
             file_size: format_file_size_as_string(self.size_in_bytes),
+            form_type: &self.form_type,
             chunk_ids_found: self.chunks.found_chunk_ids.join("', '"),
         };
 

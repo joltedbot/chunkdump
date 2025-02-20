@@ -135,7 +135,7 @@ fn get_post_timer_from_bytes(mut post_timer_data: Vec<u8>) -> Result<Vec<CartTim
 
     for _ in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
         let dw_usage = take_first_number_of_bytes_as_string(&mut post_timer_data, DW_USAGE_LENGTH_IN_BYTES)?;
-        let dw_value = take_first_four_bytes_as_unsigned_integer(&mut post_timer_data)?;
+        let dw_value = take_first_four_bytes_as_unsigned_integer(&mut post_timer_data, Endian::Little)?;
 
         if !dw_usage.is_empty() || dw_value != 0 {
             post_timer.push(CartTimer { dw_usage, dw_value });

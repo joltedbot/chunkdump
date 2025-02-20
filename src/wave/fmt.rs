@@ -1,4 +1,4 @@
-use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer};
+use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use crate::template::Template;
 use upon::Value;
@@ -61,8 +61,8 @@ impl FmtFields {
 
         let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?);
         let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
         let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
         let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
 
@@ -78,7 +78,7 @@ impl FmtFields {
 
         if extension_size > 0 {
             valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
-            speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+            speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
             subformat_guid.copy_from_slice(chunk_data.as_slice());
         }
 
