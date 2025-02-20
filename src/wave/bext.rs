@@ -1,6 +1,6 @@
 use crate::byteio::{
     take_first_eight_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_number_of_bytes_as_string,
-    take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer,
+    take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer, Endian,
 };
 
 use crate::errors::LocalError;
@@ -78,11 +78,11 @@ impl BextFields {
             time_reference: take_first_eight_bytes_as_unsigned_integer(&mut chunk_data)?,
             version: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
             umid: get_umid_from_bytes(&mut chunk_data)?,
-            loudness_value: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            loudness_range: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            max_true_peak_level: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            max_momentary_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            max_short_term_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            loudness_value: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            loudness_range: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            max_true_peak_level: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            max_momentary_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            max_short_term_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
             reserved: take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_FIELD_LENGTH_IN_BYTES)?,
             coding_history: get_coding_history_from_bytes(chunk_data)?,
         })

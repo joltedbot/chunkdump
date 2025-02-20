@@ -1,6 +1,13 @@
 use crate::errors::LocalError;
+use extended::Extended;
 
-pub fn take_first_byte_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
+#[derive(PartialEq)]
+pub enum Endian {
+    Little,
+    Big,
+}
+
+pub fn take_first_byte_as_unsigned_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<u8, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -8,7 +15,12 @@ pub fn take_first_byte_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u8
     let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
-    Ok(u8::from_le_bytes(byte_array))
+    let result = match endianness {
+        Endian::Little => u8::from_le_bytes(byte_array),
+        Endian::Big => u8::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
 }
 
 pub fn take_first_two_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u16, LocalError> {
@@ -55,7 +67,7 @@ pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i8, 
     Ok(i8::from_le_bytes(byte_array))
 }
 
-pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i16, LocalError> {
+pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i16, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 2;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -63,10 +75,15 @@ pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result
     let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
-    Ok(i16::from_le_bytes(byte_array))
+    let result = match endianness {
+        Endian::Little => i16::from_le_bytes(byte_array),
+        Endian::Big => i16::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
 }
 
-pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i32, LocalError> {
+pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i32, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -75,7 +92,24 @@ pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>) -> Resul
 
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
-    Ok(i32::from_le_bytes(byte_array))
+    let result = match endianness {
+        Endian::Little => i32::from_le_bytes(byte_array),
+        Endian::Big => i32::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
+}
+
+pub fn take_first_ten_bytes_as_an_apple_extended_integer(byte_data: &mut Vec<u8>) -> Result<Extended, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 10;
+    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(Extended::from_be_bytes(byte_array))
 }
 
 pub fn take_first_four_bytes_as_float(byte_data: &mut Vec<u8>) -> Result<f32, LocalError> {
@@ -135,7 +169,8 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_one_byte_as_unsigned_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x11, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: u8 = take_first_byte_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: u8 =
+            take_first_byte_as_unsigned_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: u8 = 17;
         assert_eq!(result_integer, correct_result);
     }
@@ -159,7 +194,8 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_two_bytes_as_signed_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: i16 = take_first_two_bytes_as_signed_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: i16 =
+            take_first_two_bytes_as_signed_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: i16 = 272;
         assert_eq!(result_integer, correct_result);
     }
@@ -175,7 +211,8 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_four_bytes_as_signed_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0xDD, 0xCC, 0xBB, 0xAA, 0xFF];
-        let result_integer: i32 = take_first_four_bytes_as_signed_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: i32 =
+            take_first_four_bytes_as_signed_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: i32 = -1430532899;
         assert_eq!(result_integer, correct_result);
     }

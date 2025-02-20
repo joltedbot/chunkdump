@@ -23,11 +23,11 @@ impl PlaceholderFields {
 
         // Insert Code to process the data fields of your chunk from the provided chunk data. Chunk data is a vec of u8 bytes
 
-        Self {
+        Ok(Self {
             template_name: TEMPLATE_NAME,
             template_content: TEMPLATE_CONTENT,
             // Assign the data fields you processed above to the struct fields in your struct
-        }
+        })
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {

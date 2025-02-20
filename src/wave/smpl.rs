@@ -1,6 +1,6 @@
 use crate::byteio::{
     take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
-    take_first_number_of_bytes,
+    take_first_number_of_bytes, Endian,
 };
 use crate::errors::LocalError;
 use crate::midi::note_name_from_midi_note_number;
@@ -105,7 +105,7 @@ impl SmplFields {
 }
 
 fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
-    let manufacturer_id_bytes: Vec<u8> = match take_first_byte_as_unsigned_integer(&mut bytes) {
+    let manufacturer_id_bytes: Vec<u8> = match take_first_byte_as_unsigned_integer(&mut bytes, Endian::Little) {
         Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
         Err(e) => return Err(e),
     };
@@ -121,9 +121,9 @@ fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
 
 fn format_smpte_offset(smpte_offset_bytes: &mut Vec<u8>) -> Result<String, LocalError> {
     let hours = take_first_byte_as_signed_integer(smpte_offset_bytes)?;
-    let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
-    let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
-    let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
+    let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+    let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+    let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
 
     Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
 }

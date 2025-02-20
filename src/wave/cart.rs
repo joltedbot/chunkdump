@@ -1,6 +1,6 @@
 use crate::byteio::{
     take_first_four_bytes_as_signed_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes,
-    take_first_number_of_bytes_as_string,
+    take_first_number_of_bytes_as_string, Endian,
 };
 
 use crate::errors::LocalError;
@@ -89,7 +89,7 @@ impl CartFields {
                 PRODUCER_APP_VERSION_LENGTH_IN_BYTES,
             )?,
             user_def: take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?,
-            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data)?,
+            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
             post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
                 &mut chunk_data,
                 POST_TIMER_LENGTH_IN_BYTES,
