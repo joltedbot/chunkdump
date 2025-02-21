@@ -59,17 +59,20 @@ impl FmtFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let chunk_size = chunk_data.len();
 
-        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?);
-        let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(
+            &mut chunk_data,
+            Endian::Little,
+        )?);
+        let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
         let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
         let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-        let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
         let mut extension_size: u16 = Default::default();
 
         if chunk_size > FORMAT_CHUNK_SIZE_IF_NO_EXTENSION {
-            extension_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+            extension_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
         }
 
         let mut valid_bits_per_sample: u16 = Default::default();
@@ -77,7 +80,7 @@ impl FmtFields {
         let mut subformat_guid: [u8; GUID_LENGTH_IN_BYTES] = Default::default();
 
         if extension_size > 0 {
-            valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?;
+            valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
             speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
             subformat_guid.copy_from_slice(chunk_data.as_slice());
         }

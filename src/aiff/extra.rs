@@ -10,8 +10,6 @@ const EMPTY_DATA_MESSAGE: &str = "[The chunk exists but is empty]";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ExtraChunks {
-    template_name: &'static str,
-    template_content: &'static str,
     chunks: Vec<Chunk>,
 }
 
@@ -24,8 +22,6 @@ pub struct Chunk {
 impl ExtraChunks {
     pub fn new() -> Self {
         Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             chunks: Default::default(),
         }
     }
@@ -55,8 +51,7 @@ impl ExtraChunks {
             extra_chunks: &self.chunks
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

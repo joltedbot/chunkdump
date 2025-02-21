@@ -41,6 +41,9 @@ pub enum LocalError {
 
     #[error("Could not open FLAC file {0}")]
     InvalidFlacFile(String),
+
+    #[error("Provided Mac HFS Timestamp is too small. Not a valid date.")]
+    HFSTimestampTooSmall,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

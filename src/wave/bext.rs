@@ -76,7 +76,7 @@ impl BextFields {
             originator_date: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_DATA_LENGTH_IN_BYTES)?,
             originator_time: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_TIME_LENGTH_IN_BYTES)?,
             time_reference: take_first_eight_bytes_as_unsigned_integer(&mut chunk_data)?,
-            version: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
+            version: take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             umid: get_umid_from_bytes(&mut chunk_data)?,
             loudness_value: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
             loudness_range: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,

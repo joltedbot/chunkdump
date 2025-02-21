@@ -1,9 +1,11 @@
 mod chunk;
 mod comm;
+mod comt;
 mod extra;
 mod fver;
+mod mark;
 
-use crate::aiff::chunk::{Chunk, AUDIO_SAMPLES_CHUNK_ID};
+use crate::aiff::chunk::Chunk;
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_aiff_chunk_size_from_file, read_bytes_from_file,
     read_bytes_from_file_as_string, skip_over_bytes_in_file,
@@ -46,6 +48,7 @@ impl Aiff {
             file_size: format_file_size_as_string(self.size_in_bytes),
             form_type: &self.form_type,
             chunk_ids_found: self.chunks.found_chunk_ids.join("', '"),
+            chunk_ids_skipped: self.chunks.skipped_chunk_ids.join("', '"),
         };
 
         let formated_wave_output: String =
@@ -82,7 +85,7 @@ impl Aiff {
             let chunk_size = read_aiff_chunk_size_from_file(aiff_file)?;
             let mut chunk_data: Vec<u8> = vec![];
 
-            if chunk_id == AUDIO_SAMPLES_CHUNK_ID {
+            if self.chunks.ignore_data_for_chunks.contains(&chunk_id.as_str()) {
                 skip_over_bytes_in_file(aiff_file, chunk_size)?;
             } else {
                 chunk_data = read_bytes_from_file(aiff_file, chunk_size)?;

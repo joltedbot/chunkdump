@@ -44,9 +44,16 @@ impl CommonFields {
         let sample_frames = take_first_four_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
         let sample_size = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
         let sample_rate = take_first_ten_bytes_as_an_apple_extended_integer(&mut chunk_data)?;
-        let compression_type = take_first_number_of_bytes_as_string(&mut chunk_data, COMPRESSION_NAME_LENGTH_IN_BYTES)?;
-        let compression_name_size = take_first_byte_as_unsigned_integer(&mut chunk_data, Endian::Big)? as usize;
-        let compression_name = take_first_number_of_bytes_as_string(&mut chunk_data, compression_name_size)?;
+
+        let mut compression_type = String::new();
+        let mut compression_name = String::new();
+
+        if !chunk_data.is_empty() {
+            compression_type = take_first_number_of_bytes_as_string(&mut chunk_data, COMPRESSION_NAME_LENGTH_IN_BYTES)?;
+
+            let compression_name_size = take_first_byte_as_unsigned_integer(&mut chunk_data, Endian::Big)? as usize;
+            compression_name = take_first_number_of_bytes_as_string(&mut chunk_data, compression_name_size)?;
+        }
 
         Ok(Self {
             number_of_channels,

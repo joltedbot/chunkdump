@@ -1,10 +1,13 @@
--------------------
+---------------------
 Common Chunk Details:
--------------------
-
-Number of Channels:     {{ number_of_channels }},
-Sample Frames:          {{ sample_frames }} samples/channel,
-Sample Rate:            {{ sample_rate }} kHz,
-Sample Size:            {{ sample_size }} bits/sample,
-Compression Type ID:    {{ compression_type }},
-Compression Type Name:  {{ compression_name }},
+---------------------
+Number of Channels:     {{ number_of_channels }}
+Sample Frames:          {{ sample_frames }} samples/channel
+Sample Rate:            {{ sample_rate }} kHz
+Sample Size:            {{ sample_size }} bits/sample
+{%- if compression_type %}
+Compression Type ID:    {{ compression_type }}
+{%- endif %}
+{%- if compression_name %}
+Compression Type Name:  {{ compression_name }}
+{%- endif %}

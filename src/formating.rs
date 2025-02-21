@@ -1,4 +1,9 @@
+use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
+use chrono::DateTime;
+
+const BAD_TIMESTAMP_MESSAGE: &str = "Unexpected bad timestamp format";
+const MAC_HFS_FORMAT_TIMESTAMP_OFFSET: u32 = 2082844800;
 
 pub fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
     format!(
@@ -19,6 +24,19 @@ pub fn format_bytes_as_string(bytes: &[u8]) -> String {
     bytes
         .iter()
         .fold("".to_string(), |umid: String, byte| format!("{} {:02x?}", umid, byte))
+}
+
+pub fn format_mac_hfs_timestamp_as_date_time_string(timestamp: u32) -> Result<String, LocalError> {
+    if timestamp < MAC_HFS_FORMAT_TIMESTAMP_OFFSET {
+        return Err(LocalError::HFSTimestampTooSmall);
+    }
+
+    let date = match DateTime::from_timestamp((timestamp - MAC_HFS_FORMAT_TIMESTAMP_OFFSET) as i64, 0) {
+        Some(ts) => ts.to_string(),
+        None => BAD_TIMESTAMP_MESSAGE.to_string(),
+    };
+
+    Ok(date)
 }
 
 #[cfg(test)]
