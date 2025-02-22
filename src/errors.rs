@@ -44,6 +44,9 @@ pub enum LocalError {
 
     #[error("Provided Mac HFS Timestamp is too small. Not a valid date.")]
     HFSTimestampTooSmall,
+
+    #[error("Could not process the ID3 tag IDs")]
+    ErrorParsingID3TagIDs,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

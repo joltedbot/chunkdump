@@ -5,7 +5,7 @@ mod errors;
 mod fileio;
 mod flac;
 mod formating;
-mod midi;
+
 mod output;
 mod template;
 mod wave;

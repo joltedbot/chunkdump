@@ -38,10 +38,9 @@ const PRO_TOOLS_MINF_CHUNKID: &str = "minf";
 const PRO_TOOLS_ELM1_CHUNKID: &str = "elm1";
 const PRO_TOOLS_REGN_CHUNKID: &str = "regn";
 
-const NUMBER_OF_CHUNKS_TO_SKIP: usize = 8;
+const NUMBER_OF_CHUNKS_TO_SKIP: usize = 7;
 const CHUNKS_TO_SKIP: [&str; NUMBER_OF_CHUNKS_TO_SKIP] = [
     DATA_CHUNKID,
-    ID3_CHUNKID,
     DISP_CHUNKID,
     LOGIC_PRO_CHUNKID,
     PRO_TOOLS_DGDA_CHUNKID,

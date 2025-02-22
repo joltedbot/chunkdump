@@ -13,21 +13,24 @@
     Annotation Chunk - ANNO
     Audio Recording Chunk - AESD
     MIDI Data Chunk - MIDI
-    Application Chunk - APPL
+    - Application Chunk - APPL
     ID3 Chunk - 'ID3 '
 */
 use crate::aiff::comm::CommonFields;
 use crate::aiff::comt::CommentFields;
 use crate::aiff::extra::ExtraChunks;
 use crate::aiff::fver::FormatVersionFields;
+use crate::aiff::id3::ID3Fields;
 use crate::aiff::mark::MarkerFields;
 use crate::template::Template;
 use std::error::Error;
 
+const APPL_CHUNK_ID: &str = "appl";
 const CHAN_CHUNK_ID: &str = "chan";
 const COMMON_CHUNK_ID: &str = "comm";
 const COMMENT_CHUNK_ID: &str = "comt";
 const FORMAT_VERSION_CHUNK_ID: &str = "fver";
+pub const ID3_CHUNK_ID: &str = "id3 ";
 const LOGIC_PRO_CHUNK_ID: &str = "lgwv";
 const MARKER_CHUNK_ID: &str = "mark";
 pub const AUDIO_SAMPLES_CHUNK_ID: &str = "ssnd";
@@ -40,16 +43,19 @@ pub struct Chunk {
     pub found_chunk_ids: Vec<String>,
     pub skipped_chunk_ids: Vec<String>,
     pub ignore_data_for_chunks: [&'static str; NUMBER_OF_CHUNKS_TO_SKIP],
+    file_path: String,
     extra_chunks: ExtraChunks,
     format_version: FormatVersionFields,
     common: CommonFields,
     comments: CommentFields,
     markers: MarkerFields,
+    id3: ID3Fields,
 }
 
 impl Chunk {
-    pub fn new() -> Self {
+    pub fn new(aiff_file_path: String) -> Self {
         Self {
+            file_path: aiff_file_path,
             ignore_data_for_chunks: CHUNKS_TO_SKIP,
             extra_chunks: ExtraChunks::new(),
             ..Default::default()
@@ -64,9 +70,11 @@ impl Chunk {
             COMMON_CHUNK_ID => self.common = CommonFields::new(chunk_data)?,
             COMMENT_CHUNK_ID => self.comments = CommentFields::new(chunk_data)?,
             MARKER_CHUNK_ID => self.markers = MarkerFields::new(chunk_data)?,
+            ID3_CHUNK_ID => self.id3 = ID3Fields::new(self.file_path.clone())?,
             LOGIC_PRO_CHUNK_ID => {}
             AUDIO_SAMPLES_CHUNK_ID => {}
             CHAN_CHUNK_ID => {}
+
             _ => self.extra_chunks.add_chunk(chunk_id, chunk_data)?,
         }
 
@@ -87,6 +95,7 @@ impl Chunk {
                 COMMON_CHUNK_ID => self.common.format_data_for_output(template)?,
                 COMMENT_CHUNK_ID => self.comments.format_data_for_output(template)?,
                 MARKER_CHUNK_ID => self.markers.format_data_for_output(template)?,
+                ID3_CHUNK_ID => self.id3.format_data_for_output(template)?,
                 _ => continue,
             };
 

@@ -3,12 +3,13 @@ mod comm;
 mod comt;
 mod extra;
 mod fver;
+mod id3;
 mod mark;
 
-use crate::aiff::chunk::Chunk;
+use crate::aiff::chunk::{Chunk, ID3_CHUNK_ID};
 use crate::fileio::{
-    canonicalize_file_path, get_file_name_from_file_path, read_aiff_chunk_size_from_file, read_bytes_from_file,
-    read_bytes_from_file_as_string, skip_over_bytes_in_file,
+    canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
+    read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
 };
 use crate::formating::format_file_size_as_string;
 use crate::output::write_out_file_data;
@@ -69,7 +70,7 @@ impl Aiff {
         self.form_type = form_type;
         self.template_name = TEMPLATE_NAME;
         self.template_content = TEMPLATE_CONTENT;
-        self.chunks = Chunk::new();
+        self.chunks = Chunk::new(file_path.to_string());
 
         Ok(())
     }
@@ -82,7 +83,11 @@ impl Aiff {
                 Err(error) => return Err(error),
             };
 
-            let chunk_size = read_aiff_chunk_size_from_file(aiff_file)?;
+            let chunk_size = match chunk_id.as_str() {
+                ID3_CHUNK_ID => read_chunk_size_from_file(aiff_file, Endian::Little)?,
+                _ => read_chunk_size_from_file(aiff_file, Endian::Big)?,
+            };
+
             let mut chunk_data: Vec<u8> = vec![];
 
             if self.chunks.ignore_data_for_chunks.contains(&chunk_id.as_str()) {

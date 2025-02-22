@@ -101,6 +101,8 @@ blocks are skipped.
 - **COMT**
     - Comment Chunk. This stores text comments for any provided markers in the MARK chunk. Marker IDs in this chuck
       reference the same Marker ID from the MARK chunk.
+- **id3**
+    - ID3 format metadata tags
 
 ### Special Skipped AIFF/AIFF-C Chunks:
 
