@@ -1,9 +1,9 @@
 use crate::byteio::{
     take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
-    take_first_number_of_bytes,
+    take_first_number_of_bytes, Endian,
 };
 use crate::errors::LocalError;
-use crate::midi::note_name_from_midi_note_number;
+use crate::formating::get_note_name_from_midi_note_number;
 use crate::template::Template;
 use serde::Serialize;
 use upon::Value;
@@ -46,24 +46,29 @@ impl SmplFields {
             &mut chunk_data,
             MANUFACTURER_ID_LENGTH_IN_BYTES,
         )?)?;
-        let product = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let sample_period = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let midi_unity_note =
-            note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?);
-        let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let product = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        let sample_period = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        let midi_unity_note = get_note_name_from_midi_note_number(take_first_four_bytes_as_unsigned_integer(
+            &mut chunk_data,
+            Endian::Little,
+        )?);
+        let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
         let smpte_offset = format_smpte_offset(&mut chunk_data)?;
-        let number_of_sample_loops = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
-        let sample_data_size_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let number_of_sample_loops = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        let sample_data_size_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
         for _ in 0..number_of_sample_loops {
             sample_loops.push(SampleLoops {
-                cue_point_id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                loop_type: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                start_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                end_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                fraction: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                number_of_time_to_play_the_loop: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                cue_point_id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                loop_type: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                start_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                end_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                fraction: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                number_of_time_to_play_the_loop: take_first_four_bytes_as_unsigned_integer(
+                    &mut chunk_data,
+                    Endian::Little,
+                )?,
             })
         }
 
@@ -105,7 +110,7 @@ impl SmplFields {
 }
 
 fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
-    let manufacturer_id_bytes: Vec<u8> = match take_first_byte_as_unsigned_integer(&mut bytes) {
+    let manufacturer_id_bytes: Vec<u8> = match take_first_byte_as_unsigned_integer(&mut bytes, Endian::Little) {
         Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
         Err(e) => return Err(e),
     };
@@ -121,9 +126,9 @@ fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
 
 fn format_smpte_offset(smpte_offset_bytes: &mut Vec<u8>) -> Result<String, LocalError> {
     let hours = take_first_byte_as_signed_integer(smpte_offset_bytes)?;
-    let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
-    let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
-    let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes)?;
+    let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+    let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+    let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
 
     Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
 }

@@ -1,12 +1,29 @@
-use crate::chunk::Chunk;
+mod acid;
+mod bext;
+mod cart;
+mod chunk;
+mod cue;
+mod extra;
+mod fact;
+mod fmt;
+mod id3;
+mod ixml;
+mod junk;
+mod list;
+mod resu;
+mod smpl;
+mod umid;
+mod xmp;
+
 use crate::errors::LocalError;
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
-    read_chunk_size_from_file, skip_over_bytes_in_file,
+    read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
 };
 use crate::formating::format_file_size_as_string;
 use crate::output::write_out_file_data;
 use crate::template::Template;
+use crate::wave::chunk::Chunk;
 
 use std::error::Error;
 use std::fs::{File, Metadata};
@@ -52,7 +69,7 @@ impl Wave {
                 Err(error) => return Err(error),
             };
 
-            let chunk_size = read_chunk_size_from_file(wave_file)?;
+            let chunk_size = read_chunk_size_from_file(wave_file, Endian::Little)?;
             let mut chunk_data: Vec<u8> = vec![];
 
             if self.chunks.ignore_data_for_chunks.contains(&chunk_id.as_str()) {

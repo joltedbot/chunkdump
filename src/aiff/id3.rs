@@ -5,7 +5,7 @@ use serde::Serialize;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "id3";
-const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/id3.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/aiff/id3.tmpl");
 
 const TIME_FIELD_TITLE: &str = "Time";
 const TIME_HOUR_MINUTE_DIVIDER_POSITION: usize = 2;
@@ -13,25 +13,22 @@ const TIME_HOUR_MINUTE_DIVIDER_POSITION: usize = 2;
 #[derive(Debug, Clone, Default, Serialize)]
 struct ID3Tag {
     id: String,
+    spacer: String,
     content: String,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ID3Fields {
-    template_name: &'static str,
-    template_content: &'static str,
     tags: Vec<ID3Tag>,
 }
 
 impl ID3Fields {
     pub fn new(wave_file_path: String) -> Result<Self, LocalError> {
-        let mut id3_entries = Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
-            tags: Vec::new(),
-        };
+        let mut id3_entries = Self { tags: Vec::new() };
 
         let tag = Tag::read_from_path(wave_file_path).map_err(|e| LocalError::InvalidID3TagDataFound(e.to_string()))?;
+
+        let longest_tag_id = get_longest_tag_id(&tag)?;
 
         for frame in tag.frames() {
             let mut content: String = frame.content().to_string();
@@ -39,7 +36,9 @@ impl ID3Fields {
             if id == TIME_FIELD_TITLE {
                 content.insert(TIME_HOUR_MINUTE_DIVIDER_POSITION, ':');
             }
-            id3_entries.tags.push(ID3Tag { id, content });
+            let spacer = " ".repeat(longest_tag_id - id.len());
+
+            id3_entries.tags.push(ID3Tag { id, spacer, content });
         }
 
         Ok(id3_entries)
@@ -50,8 +49,14 @@ impl ID3Fields {
             id3_tags: self.tags.clone(),
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
+    }
+}
+
+fn get_longest_tag_id(tags: &Tag) -> Result<usize, LocalError> {
+    match tags.frames().max_by_key(|tag| tag.name().len()) {
+        Some(tag) => Ok(tag.name().len()),
+        None => return Err(LocalError::ErrorParsingID3TagIDs),
     }
 }

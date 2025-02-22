@@ -1,6 +1,6 @@
 use crate::byteio::{
     take_first_eight_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_number_of_bytes_as_string,
-    take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer,
+    take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer, Endian,
 };
 
 use crate::errors::LocalError;
@@ -76,13 +76,13 @@ impl BextFields {
             originator_date: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_DATA_LENGTH_IN_BYTES)?,
             originator_time: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_TIME_LENGTH_IN_BYTES)?,
             time_reference: take_first_eight_bytes_as_unsigned_integer(&mut chunk_data)?,
-            version: take_first_two_bytes_as_unsigned_integer(&mut chunk_data)?,
+            version: take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             umid: get_umid_from_bytes(&mut chunk_data)?,
-            loudness_value: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            loudness_range: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            max_true_peak_level: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            max_momentary_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
-            max_short_term_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data)?,
+            loudness_value: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            loudness_range: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            max_true_peak_level: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            max_momentary_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
+            max_short_term_loudness: take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
             reserved: take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_FIELD_LENGTH_IN_BYTES)?,
             coding_history: get_coding_history_from_bytes(chunk_data)?,
         })
@@ -154,18 +154,18 @@ mod tests {
         let mut input_byte_vector: Vec<u8> = vec![
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
             30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
-            57, 58, 59, 60,
+            57, 58, 59, 60, 61, 62, 63, 64,
         ];
         let expected_result: UmidComponent = UmidComponent {
-            universal_label: vec![1, 2, 3, 4, 5, 6, 7, 8],
-            length: vec![9],
-            instance_number: vec![10, 11, 12],
-            material_number: vec![13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
-            time_and_date: vec![29, 30, 31, 32, 33, 34, 35, 36],
-            spatial_coordinates: vec![37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48],
-            country: vec![49, 50, 51, 52],
-            organization: vec![53, 54, 55, 56],
-            user: vec![57, 58, 59, 60],
+            universal_label: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            length: vec![13],
+            instance_number: vec![14, 15, 16],
+            material_number: vec![17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+            time_and_date: vec![33, 34, 35, 36, 37, 38, 39, 40],
+            spatial_coordinates: vec![41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],
+            country: vec![53, 54, 55, 56],
+            organization: vec![57, 58, 59, 60],
+            user: vec![61, 62, 63, 64],
         };
 
         assert_eq!(get_umid_from_bytes(&mut input_byte_vector).unwrap(), expected_result);

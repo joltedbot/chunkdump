@@ -1,35 +1,19 @@
-mod acid;
-mod bext;
-mod cart;
-mod cue;
-mod extra;
-mod fact;
-mod fmt;
-mod id3;
-mod ixml;
-mod junk;
-mod list;
-mod resu;
-mod smpl;
-mod umid;
-mod xmp;
-
-use crate::chunk::acid::AcidFields;
-use crate::chunk::bext::BextFields;
-use crate::chunk::cart::CartFields;
-use crate::chunk::cue::CueFields;
-use crate::chunk::extra::ExtraChunk;
-use crate::chunk::fact::FactFields;
-use crate::chunk::fmt::FmtFields;
-use crate::chunk::id3::ID3Fields;
-use crate::chunk::ixml::IXMLFields;
-use crate::chunk::junk::JunkFields;
-use crate::chunk::list::ListFields;
-use crate::chunk::resu::ResuFields;
-use crate::chunk::smpl::SmplFields;
-use crate::chunk::umid::UMIDFields;
-use crate::chunk::xmp::XMPFields;
 use crate::template::Template;
+use crate::wave::acid::AcidFields;
+use crate::wave::bext::BextFields;
+use crate::wave::cart::CartFields;
+use crate::wave::cue::CueFields;
+use crate::wave::extra::ExtraChunk;
+use crate::wave::fact::FactFields;
+use crate::wave::fmt::FmtFields;
+use crate::wave::id3::ID3Fields;
+use crate::wave::ixml::IXMLFields;
+use crate::wave::junk::JunkFields;
+use crate::wave::list::ListFields;
+use crate::wave::resu::ResuFields;
+use crate::wave::smpl::SmplFields;
+use crate::wave::umid::UMIDFields;
+use crate::wave::xmp::XMPFields;
 use std::error::Error;
 
 const FMT_CHUNKID: &str = "fmt ";
@@ -54,10 +38,9 @@ const PRO_TOOLS_MINF_CHUNKID: &str = "minf";
 const PRO_TOOLS_ELM1_CHUNKID: &str = "elm1";
 const PRO_TOOLS_REGN_CHUNKID: &str = "regn";
 
-const NUMBER_OF_CHUNKS_TO_SKIP: usize = 8;
+const NUMBER_OF_CHUNKS_TO_SKIP: usize = 7;
 const CHUNKS_TO_SKIP: [&str; NUMBER_OF_CHUNKS_TO_SKIP] = [
     DATA_CHUNKID,
-    ID3_CHUNKID,
     DISP_CHUNKID,
     LOGIC_PRO_CHUNKID,
     PRO_TOOLS_DGDA_CHUNKID,

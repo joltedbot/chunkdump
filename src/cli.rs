@@ -12,7 +12,7 @@ pub struct Args {
 }
 
 #[derive(FromArgs)]
-/// Chunkdump - Extract Metadata From Wave and Flac Files
+/// Chunkdump - Extract Metadata From Wave, AIFF, and Flac Files
 #[argh(help_triggers("-h", "--help", "help"))]
 pub struct CliArguments {
     /// print the version

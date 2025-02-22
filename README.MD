@@ -3,7 +3,8 @@
 **_In active and very unstable development._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
-Resource Interchange File Format (RIFF) Wave files as well as the standard metadata from Flac files.
+Resource Interchange File Format (RIFF) Wave files and Audio Interchange File Format AIFF/AIFF-C .aif files as well as
+the standard metadata from Flac files.
 
 To use just build as per Rust usual.
 > cargo build -r
@@ -12,7 +13,7 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav or .flac file with
+Then point it at your .wav, .aif, or .flac file with
 > chunkdump /path/to/file
 
 #### Usage
@@ -83,7 +84,34 @@ blocks are skipped.
 - **DGDA, minf, elm1, regn**: Proprietary Pro Tools chunks that don't seem to have documentation or obvious formats.
   DGDA might eventually be reverse engineerable though we shall see what happens.
 
-### For Unsupported Wave Chunks:
+### Current List of Supported AIFF/AIFF-C Chunks
+
+- **FVER**
+    - Format Version Chunk. The Format Version Chunk contains a date field to indicate the format rules for an AIFF-C
+      specification.
+    - The idea is apparently to compare this timestamp against that of the AIFF spec your app supports to see if it is  
+      compatible.
+    - I have converted it to a human readable data for you the humans.
+- **COMM**
+    - Common Chunk. This describes the basic format data for the file. Like the "fmt " chunk in .wav files.
+- **MARK**
+    - Marker Chunk. The Marker Chunk provides positional markers, like cues or cuepoints in other formats, that
+      reference
+      specific positions in the SSND audio section.
+- **COMT**
+    - Comment Chunk. This stores text comments for any provided markers in the MARK chunk. Marker IDs in this chuck
+      reference the same Marker ID from the MARK chunk.
+- **id3**
+    - ID3 format metadata tags
+
+### Special Skipped AIFF/AIFF-C Chunks:
+
+- **SSND**: This is the audio portion which is just skipped. See your media player of choice to read that chunk.
+- **LGWV**: A Logic Pro proprietary chunk. This is unsupported in chunkdump as I can't find any specs online.
+  Since the output doesn't produce any usable string data it is just skipped.
+- **CHAN**: I haven't worked out a format for this one and most apps just skip it so for now that is what I am doing.
+
+### For Unsupported Wave and AIFF Chunks:
 
 For any chunk that is not expressly supported, chunkdump will try and output the contents as a string.
 This is somewhat similar to running the "strings" command on the file.

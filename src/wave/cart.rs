@@ -1,6 +1,6 @@
 use crate::byteio::{
     take_first_four_bytes_as_signed_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes,
-    take_first_number_of_bytes_as_string,
+    take_first_number_of_bytes_as_string, Endian,
 };
 
 use crate::errors::LocalError;
@@ -89,7 +89,7 @@ impl CartFields {
                 PRODUCER_APP_VERSION_LENGTH_IN_BYTES,
             )?,
             user_def: take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?,
-            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data)?,
+            dw_level_reference: take_first_four_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?,
             post_timer: get_post_timer_from_bytes(take_first_number_of_bytes(
                 &mut chunk_data,
                 POST_TIMER_LENGTH_IN_BYTES,
@@ -135,7 +135,7 @@ fn get_post_timer_from_bytes(mut post_timer_data: Vec<u8>) -> Result<Vec<CartTim
 
     for _ in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
         let dw_usage = take_first_number_of_bytes_as_string(&mut post_timer_data, DW_USAGE_LENGTH_IN_BYTES)?;
-        let dw_value = take_first_four_bytes_as_unsigned_integer(&mut post_timer_data)?;
+        let dw_value = take_first_four_bytes_as_unsigned_integer(&mut post_timer_data, Endian::Little)?;
 
         if !dw_usage.is_empty() || dw_value != 0 {
             post_timer.push(CartTimer { dw_usage, dw_value });

@@ -1,4 +1,4 @@
-use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string};
+use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
 use crate::errors::LocalError;
 use crate::template::Template;
 use serde::Serialize;
@@ -29,16 +29,16 @@ pub struct CuePoint {
 impl CueFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let mut cue_points: Vec<CuePoint> = vec![];
-        let number_of_cue_points: u32 = take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?;
+        let number_of_cue_points: u32 = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
         for _ in 0..number_of_cue_points {
             cue_points.push(CuePoint {
-                id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                position: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                position: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
                 data_chunk_id: take_first_number_of_bytes_as_string(&mut chunk_data, DATA_CHUNK_ID_LENGTH_IN_BYTES)?,
-                chunk_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                block_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
-                sample_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data)?,
+                chunk_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                block_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+                sample_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             })
         }
 

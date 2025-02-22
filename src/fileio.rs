@@ -8,12 +8,22 @@ use std::path::Path;
 
 pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
 
-pub fn read_chunk_size_from_file(file: &mut File) -> Result<usize, Box<dyn Error>> {
+#[derive(PartialEq)]
+pub enum Endian {
+    Little,
+    Big,
+}
+
+pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
     let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
 
-    let mut chunk_size = u32::from_le_bytes(byte_array);
+    let mut chunk_size = match endianness {
+        Endian::Little => u32::from_le_bytes(byte_array),
+        Endian::Big => u32::from_be_bytes(byte_array),
+    };
+
     chunk_size = add_one_if_byte_size_is_odd(chunk_size);
 
     Ok(chunk_size as usize)

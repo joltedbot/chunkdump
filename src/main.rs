@@ -1,15 +1,16 @@
+mod aiff;
 mod byteio;
-mod chunk;
 mod cli;
 mod errors;
 mod fileio;
 mod flac;
 mod formating;
-mod midi;
+
 mod output;
 mod template;
 mod wave;
 
+use crate::aiff::output_aiff_metadata;
 use crate::cli::process_cli_arguments;
 use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::handle_local_error;
@@ -22,6 +23,7 @@ use std::process::exit;
 
 const WAVE_FILE_CHUNKID: &str = "RIFF";
 const FLAC_FILE_CHUNKID: &str = "fLaC";
+const AIFF_FILE_CHUNKID: &str = "FORM";
 
 fn main() {
     let cli_args = process_cli_arguments();
@@ -51,6 +53,15 @@ fn main() {
         }
         FLAC_FILE_CHUNKID => {
             output_flac_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
+                handle_local_error(
+                    LocalError::CouldNotReadData(cli_args.input_file_path),
+                    error.to_string(),
+                );
+                exit(EXIT_CODE_ERROR);
+            });
+        }
+        AIFF_FILE_CHUNKID => {
+            output_aiff_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
                 handle_local_error(
                     LocalError::CouldNotReadData(cli_args.input_file_path),
                     error.to_string(),
