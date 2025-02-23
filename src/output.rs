@@ -27,7 +27,8 @@ fn write_to_file(file_data: Vec<String>, output_file_path: &str) -> Result<(), B
     check_if_file_already_exists(output_file_path)?;
 
     let mut output_file = File::create(output_file_path)?;
-    for line in file_data {
+    for data in file_data {
+        let line = data + "\n";
         output_file.write_all(line.as_bytes())?;
     }
 
