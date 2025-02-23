@@ -24,8 +24,6 @@ struct SampleLoops {
 
 #[derive(Debug, Clone, Default)]
 pub struct SmplFields {
-    template_name: &'static str,
-    template_content: &'static str,
     manufacturer: String,
     product: u32,
     sample_period: u32,
@@ -73,8 +71,6 @@ impl SmplFields {
         }
 
         Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             manufacturer,
             product,
             sample_period,
@@ -90,7 +86,6 @@ impl SmplFields {
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
         let wave_output_values: Value = upon::value! {
-            template_name: self.template_name,
             manufacturer:  &self.manufacturer,
             product:  self.product,
             sample_period:  self.sample_period,
@@ -103,8 +98,7 @@ impl SmplFields {
             sample_loops: &self.sample_loops,
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

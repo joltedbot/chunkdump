@@ -7,6 +7,7 @@ mod flac;
 mod formating;
 
 mod output;
+mod shared;
 mod template;
 mod wave;
 

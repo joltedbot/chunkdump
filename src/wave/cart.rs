@@ -42,8 +42,6 @@ struct CartTimer {
 
 #[derive(Debug, Clone, Default)]
 pub struct CartFields {
-    template_name: &'static str,
-    template_content: &'static str,
     version: String,
     title: String,
     artist: String,
@@ -69,8 +67,6 @@ pub struct CartFields {
 impl CartFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             version: take_first_number_of_bytes_as_string(&mut chunk_data, VERSION_LENGTH_IN_BYTES)?,
             title: take_first_number_of_bytes_as_string(&mut chunk_data, TITLE_LENGTH_IN_BYTES)?,
             artist: take_first_number_of_bytes_as_string(&mut chunk_data, ARTIST_LENGTH_IN_BYTES)?,
@@ -124,8 +120,7 @@ impl CartFields {
             post_timer: &self.post_timer,
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

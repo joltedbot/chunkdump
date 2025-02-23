@@ -49,8 +49,6 @@ impl MarkerFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
-        template.add_chunk_template(TEMPLATE_NAME, TEMPLATE_CONTENT)?;
-
         let aiff_output_values: Value = upon::value! {
             markers: &self.markers,
         };

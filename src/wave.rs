@@ -3,12 +3,8 @@ mod bext;
 mod cart;
 mod chunk;
 mod cue;
-mod extra;
 mod fact;
 mod fmt;
-mod id3;
-mod ixml;
-mod junk;
 mod list;
 mod resu;
 mod smpl;
@@ -39,8 +35,6 @@ const NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE: &str = "failed to fill whole 
 
 #[derive(Default)]
 struct Wave {
-    template_name: &'static str,
-    template_content: &'static str,
     name: String,
     original_file_path: String,
     canonical_path: String,
@@ -55,8 +49,6 @@ impl Wave {
         self.name = get_file_name_from_file_path(file_path)?;
         self.canonical_path = canonicalize_file_path(file_path)?;
         self.chunks = Chunk::new(self.canonical_path.clone());
-        self.template_name = TEMPLATE_NAME;
-        self.template_content = TEMPLATE_CONTENT;
 
         Ok(())
     }
@@ -102,7 +94,7 @@ impl Wave {
         };
 
         let formated_wave_output: String =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+            template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
 
         Ok(formated_wave_output)
     }

@@ -10,8 +10,6 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/umid.tmpl"); // T
 // Rename the struct to reflect your new chunk nmae
 #[derive(Debug, Clone, Default)]
 pub struct UMIDFields {
-    template_name: &'static str,
-    template_content: &'static str,
     umid_bytes: Vec<u8>,
 }
 
@@ -22,11 +20,7 @@ impl UMIDFields {
 
         let umid = take_first_number_of_bytes(&mut chunk_data, chunk_size)?;
 
-        Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
-            umid_bytes: umid,
-        })
+        Ok(Self { umid_bytes: umid })
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
@@ -34,8 +28,7 @@ impl UMIDFields {
             umid: format_bytes_as_string(&self.umid_bytes),
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

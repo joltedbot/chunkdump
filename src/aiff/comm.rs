@@ -66,8 +66,6 @@ impl CommonFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
-        template.add_chunk_template(TEMPLATE_NAME, TEMPLATE_CONTENT)?;
-
         let sample_rate = format!("{:#.1}", self.sample_rate.to_f64() / 1000.0);
 
         let aiff_output_values: Value = upon::value! {

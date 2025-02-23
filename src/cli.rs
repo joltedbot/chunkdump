@@ -42,7 +42,7 @@ pub fn process_cli_arguments() -> Args {
 
     Args {
         input_file_path: args.file.unwrap(),
-        output_file_path: args.output_file.unwrap_or_else(|| String::new()),
+        output_file_path: args.output_file.unwrap_or_default(),
     }
 }
 

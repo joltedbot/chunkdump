@@ -5,13 +5,11 @@ use serde::Serialize;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "extra";
-const TEMPLATE_CONTENT: &str = include_str!("../templates/wave/extra.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/shared/extra.tmpl");
 const EMPTY_DATA_MESSAGE: &str = "[The chunk exists but is empty]";
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct ExtraChunk {
-    template_name: &'static str,
-    template_content: &'static str,
+pub struct ExtraChunks {
     chunks: Vec<Chunk>,
 }
 
@@ -21,16 +19,14 @@ pub struct Chunk {
     data: String,
 }
 
-impl ExtraChunk {
+impl ExtraChunks {
     pub fn new() -> Self {
         Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             chunks: Default::default(),
         }
     }
 
-    pub fn add_chunk(&mut self, chunk_id: String, mut chunk_data: Vec<u8>) -> Result<(), LocalError> {
+    pub fn add_chunk(&mut self, chunk_id: &str, mut chunk_data: Vec<u8>) -> Result<(), LocalError> {
         let chunk_size = chunk_data.len();
         let mut chunk_data = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
 
@@ -39,7 +35,7 @@ impl ExtraChunk {
         }
 
         self.chunks.push(Chunk {
-            id: chunk_id,
+            id: chunk_id.to_string(),
             data: chunk_data,
         });
 
@@ -55,8 +51,7 @@ impl ExtraChunk {
             extra_chunks: &self.chunks
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

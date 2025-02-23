@@ -43,8 +43,6 @@ struct UmidComponent {
 
 #[derive(Debug, Clone, Default)]
 pub struct BextFields {
-    template_name: &'static str,
-    template_content: &'static str,
     description: String,
     originator: String,
     originator_reference: String,
@@ -65,8 +63,6 @@ pub struct BextFields {
 impl BextFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             description: take_first_number_of_bytes_as_string(&mut chunk_data, DESCRIPTION_LENGTH_IN_BYTES)?,
             originator: take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_LENGTH_IN_BYTES)?,
             originator_reference: take_first_number_of_bytes_as_string(
@@ -114,8 +110,7 @@ impl BextFields {
             user: format_bytes_as_string(&self.umid.user),
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

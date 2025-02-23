@@ -1,9 +1,7 @@
 mod chunk;
 mod comm;
 mod comt;
-mod extra;
 mod fver;
-mod id3;
 mod mark;
 
 use crate::aiff::chunk::{Chunk, ID3_CHUNK_ID};
@@ -27,8 +25,6 @@ const NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE: &str = "failed to fill whole 
 
 #[derive(Default)]
 struct Aiff {
-    template_name: &'static str,
-    template_content: &'static str,
     name: String,
     original_file_path: String,
     canonical_path: String,
@@ -53,7 +49,7 @@ impl Aiff {
         };
 
         let formated_wave_output: String =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+            template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_wave_output)
     }
 
@@ -68,8 +64,6 @@ impl Aiff {
         self.name = get_file_name_from_file_path(file_path)?;
         self.canonical_path = canonicalize_file_path(file_path)?;
         self.form_type = form_type;
-        self.template_name = TEMPLATE_NAME;
-        self.template_content = TEMPLATE_CONTENT;
         self.chunks = Chunk::new(file_path.to_string());
 
         Ok(())

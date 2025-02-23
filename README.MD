@@ -103,6 +103,20 @@ blocks are skipped.
       reference the same Marker ID from the MARK chunk.
 - **id3**
     - ID3 format metadata tags
+- **APPL**
+    - The Application Chunk. This is text data specific to application that created or modified the aiff/aiff-c file.
+- **junk**
+    - An optional chunk generally used for padding the file size and is supposed to be ignored.
+      Unlike with the wave files I haven't found any "secret" message stored in junk chunks for aiffs but you never
+      know.
+- **ANNO**
+    - A simple text chunk storing a free form text comment or annotation about the recorded sound.
+- **NAME**
+    - A simple text chunk storing the name of the recorded sound.
+- **AUTH**
+    - A simple text chunk storing the author of the recorded sound.
+- **(c) **
+    - A simple text chunk storing a copyright notice for the recorded sound.
 
 ### Special Skipped AIFF/AIFF-C Chunks:
 
@@ -115,3 +129,13 @@ blocks are skipped.
 
 For any chunk that is not expressly supported, chunkdump will try and output the contents as a string.
 This is somewhat similar to running the "strings" command on the file.
+
+For AIFF/AIFF-C these unsupported (or not yet supported) chunks include the following. They are in the formal spec but
+I can't find files that contain them or an app to create files that contain to test an implementation.
+For now they will show up in "Extra Chunks" until I actually have something to work with.
+
+- **Instrument Chunk - INST**
+- **Audio Recording Chunk - AESD**
+- **MIDI Data Chunk - MIDI**
+    
+    
