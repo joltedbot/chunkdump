@@ -10,8 +10,6 @@ const DATA_CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
 
 #[derive(Debug, Clone, Default)]
 pub struct CueFields {
-    pub template_name: &'static str,
-    pub template_content: &'static str,
     pub number_of_cue_points: u32,
     pub cue_points: Vec<CuePoint>,
 }
@@ -43,8 +41,6 @@ impl CueFields {
         }
 
         Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             number_of_cue_points,
             cue_points,
         })
@@ -56,8 +52,7 @@ impl CueFields {
                 cue_points: &self.cue_points
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
 
         Ok(formated_output)
     }

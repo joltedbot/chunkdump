@@ -5,7 +5,7 @@ use serde::Serialize;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "id3";
-const TEMPLATE_CONTENT: &str = include_str!("../templates/aiff/id3.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/shared/id3.tmpl");
 
 const TIME_FIELD_TITLE: &str = "Time";
 const TIME_HOUR_MINUTE_DIVIDER_POSITION: usize = 2;
@@ -57,6 +57,6 @@ impl ID3Fields {
 fn get_longest_tag_id(tags: &Tag) -> Result<usize, LocalError> {
     match tags.frames().max_by_key(|tag| tag.name().len()) {
         Some(tag) => Ok(tag.name().len()),
-        None => return Err(LocalError::ErrorParsingID3TagIDs),
+        None => Err(LocalError::ErrorParsingID3TagIDs),
     }
 }

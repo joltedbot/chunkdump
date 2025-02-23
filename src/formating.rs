@@ -86,6 +86,19 @@ mod tests {
     }
 
     #[test]
+    fn return_correct_data_time_string_from_mac_hfs_timestamp() {
+        let correct_date_time_string = "2001-09-09 01:46:40 UTC";
+        let result = format_mac_hfs_timestamp_as_date_time_string(3082844800).unwrap();
+        assert_eq!(result, correct_date_time_string);
+    }
+
+    #[test]
+    fn return_error_if_mac_hfs_timestamp_is_below_the_valid_range() {
+        let result = format_mac_hfs_timestamp_as_date_time_string(1).err().unwrap();
+        assert_eq!(result, LocalError::HFSTimestampTooSmall);
+    }
+
+    #[test]
     fn return_note_c_minus_2_when_midi_note_number_is_0() {
         assert_eq!(get_note_name_from_midi_note_number(0), "C-2");
     }

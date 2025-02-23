@@ -39,8 +39,6 @@ struct FileType {
 
 #[derive(Debug, Clone, Default)]
 pub struct AcidFields {
-    template_name: &'static str,
-    template_content: &'static str,
     file_type: FileType,
     root_note: String,
     mystery_one: u16,
@@ -54,8 +52,6 @@ pub struct AcidFields {
 impl AcidFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             file_type: get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(
                 &mut chunk_data,
                 Endian::Little,
@@ -74,8 +70,6 @@ impl AcidFields {
     }
 
     pub fn format_data_for_output(&self, template: &mut Template) -> Result<String, upon::Error> {
-        template.add_chunk_template(self.template_name, self.template_content)?;
-
         let loop_on = match self.file_type.one_shot {
             true => ONE_SHOT_FILE_TYPE_MESSAGE,
             false => LOOP_FILE_TYPE_MESSAGE,
@@ -116,8 +110,7 @@ impl AcidFields {
             tempo: format!("{:2}", self.tempo),
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }

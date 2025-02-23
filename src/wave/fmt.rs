@@ -42,8 +42,6 @@ const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
 
 #[derive(Debug, Clone, Default)]
 pub struct FmtFields {
-    template_name: &'static str,
-    template_content: &'static str,
     format_code: String,
     number_of_channels: u16,
     samples_per_second: u32,
@@ -86,8 +84,6 @@ impl FmtFields {
         }
 
         Ok(Self {
-            template_name: TEMPLATE_NAME,
-            template_content: TEMPLATE_CONTENT,
             format_code,
             number_of_channels,
             samples_per_second,
@@ -110,11 +106,10 @@ impl FmtFields {
             data_block_size: self.data_block_size,
             valid_bits_per_sample: &self.valid_bits_per_sample,
             speaker_position_mask: format_speaker_position(self.speaker_position_mask),
-            subformat_guid: format_guid(self.subformat_guid.clone())
+            subformat_guid: format_guid(self.subformat_guid)
         };
 
-        let formated_output =
-            template.get_wave_chunk_output(self.template_name, self.template_content, wave_output_values)?;
+        let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
         Ok(formated_output)
     }
 }
@@ -143,14 +138,14 @@ fn format_guid(guid_bytes: [u8; GUID_LENGTH_IN_BYTES]) -> String {
 fn format_speaker_position(speaker_position_mask: u32) -> String {
     let mut positions: Vec<String> = Default::default();
 
-    for position in 0..SPEAKER_POSITION_MASK_BIT_MEANING.len() {
-        if (speaker_position_mask & (1 << position)) > 0 {
-            positions.push(format!(
-                " - {}",
-                SPEAKER_POSITION_MASK_BIT_MEANING[position].to_string()
-            ));
-        }
-    }
+    SPEAKER_POSITION_MASK_BIT_MEANING
+        .iter()
+        .enumerate()
+        .for_each(|(index, mask)| {
+            if (speaker_position_mask & (1 << index)) > 0 {
+                positions.push(format!(" - {}", mask));
+            }
+        });
 
     if !positions.is_empty() {
         positions.insert(0, "".to_string());
