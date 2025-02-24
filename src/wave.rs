@@ -8,6 +8,7 @@ mod fmt;
 mod list;
 mod resu;
 mod smpl;
+pub mod sndm;
 mod umid;
 mod xmp;
 

@@ -168,7 +168,8 @@ fn parse_adtl_data(list_data: &mut Vec<u8>) -> Result<Vec<AssociatedData>, Local
 
 fn parse_label_data(list_data: &mut Vec<u8>) -> Result<LabelData, LocalError> {
     let label_size: usize = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
-    let data_size: usize = label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
+    let data_size: usize =
+        add_one_if_byte_size_is_odd((label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES) as u32) as usize;
     let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let label_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok(LabelData {

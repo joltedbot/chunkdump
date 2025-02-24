@@ -40,6 +40,9 @@ blocks are skipped.
 
 - **acid**
     - For "Acidized" wave files (*note: Meter seems to be set to 4/4 regardless of the meter of the file audio)
+- **AXML**
+    - EBU standard XML based metadata format for storing core metadata for BWF format files.
+    - Used for the transfer of core metadata according to either or both EBU documents Tech 3293 and Tech 3295.
 - **bext**
     - Broadcast Wave Format (BWF)
     - European Broadcast Union EBU - Tech 3285
@@ -72,6 +75,10 @@ blocks are skipped.
     - The XML based Adobe XMP metadata standard
 - **smpl**
     - Metadata to allow samplers to use the wave file as a collection of samples.
+- **SNDM**
+    - I am not sure what this is and I haven't found a spec for it but I worked out how to read it to generate what
+      seems like correct output based on the bytes present and the output I fields that I found in the sole reference
+      to the the chunk online. I hope it is transferable as I only have a couple files to test with that chunk
 - **umid**
     - A basic UMID filed added by Pro Tools
 
@@ -86,37 +93,37 @@ blocks are skipped.
 
 ### Current List of Supported AIFF/AIFF-C Chunks
 
+- **ANNO**
+    - A simple text chunk storing a free form text comment or annotation about the recorded sound.
+- **APPL**
+    - The Application Chunk. This is text data specific to application that created or modified the aiff/aiff-c file.
+- **AUTH**
+    - A simple text chunk storing the author of the recorded sound.
+- **COMM**
+    - Common Chunk. This describes the basic format data for the file. Like the "fmt " chunk in .wav files.
+- **COMT**
+    - Comment Chunk. This stores text comments for any provided markers in the MARK chunk. Marker IDs in this chuck
+      reference the same Marker ID from the MARK chunk.
+- **(c) **
+    - A simple text chunk storing a copyright notice for the recorded sound.
 - **FVER**
     - Format Version Chunk. The Format Version Chunk contains a date field to indicate the format rules for an AIFF-C
       specification.
     - The idea is apparently to compare this timestamp against that of the AIFF spec your app supports to see if it is  
       compatible.
     - I have converted it to a human readable data for you the humans.
-- **COMM**
-    - Common Chunk. This describes the basic format data for the file. Like the "fmt " chunk in .wav files.
-- **MARK**
-    - Marker Chunk. The Marker Chunk provides positional markers, like cues or cuepoints in other formats, that
-      reference
-      specific positions in the SSND audio section.
-- **COMT**
-    - Comment Chunk. This stores text comments for any provided markers in the MARK chunk. Marker IDs in this chuck
-      reference the same Marker ID from the MARK chunk.
 - **id3**
     - ID3 format metadata tags
-- **APPL**
-    - The Application Chunk. This is text data specific to application that created or modified the aiff/aiff-c file.
 - **junk**
     - An optional chunk generally used for padding the file size and is supposed to be ignored.
       Unlike with the wave files I haven't found any "secret" message stored in junk chunks for aiffs but you never
       know.
-- **ANNO**
-    - A simple text chunk storing a free form text comment or annotation about the recorded sound.
+- **MARK**
+    - Marker Chunk. The Marker Chunk provides positional markers, like cues or cuepoints in other formats, that
+      reference
+      specific positions in the SSND audio section.
 - **NAME**
     - A simple text chunk storing the name of the recorded sound.
-- **AUTH**
-    - A simple text chunk storing the author of the recorded sound.
-- **(c) **
-    - A simple text chunk storing a copyright notice for the recorded sound.
 
 ### Special Skipped AIFF/AIFF-C Chunks:
 
@@ -134,8 +141,8 @@ For AIFF/AIFF-C these unsupported (or not yet supported) chunks include the foll
 I can't find files that contain them or an app to create files that contain to test an implementation.
 For now they will show up in "Extra Chunks" until I actually have something to work with.
 
-- **Instrument Chunk - INST**
 - **Audio Recording Chunk - AESD**
+- **Instrument Chunk - INST**
 - **MIDI Data Chunk - MIDI**
     
     
