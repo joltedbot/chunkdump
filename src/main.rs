@@ -5,20 +5,18 @@ mod errors;
 mod fileio;
 mod flac;
 mod formating;
-
-mod output;
 mod shared;
 mod template;
 mod wave;
 
-use crate::aiff::output_aiff_metadata;
+use crate::aiff::extract_and_output_aiff_metadata;
 use crate::cli::process_cli_arguments;
 use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::handle_local_error;
 use crate::errors::LocalError;
 use crate::fileio::{read_bytes_from_file_as_string, FILE_CHUNKID_LENGTH_IN_BYTES};
-use crate::flac::output_flac_metadata;
-use crate::wave::output_wave_metadata;
+use crate::flac::extract_and_output_flac_metadata;
+use crate::wave::extract_and_output_wave_metadata;
 use std::fs::File;
 use std::process::exit;
 
@@ -44,31 +42,37 @@ fn main() {
 
     match file_chunk_id.as_str() {
         WAVE_FILE_CHUNKID => {
-            output_wave_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
-                handle_local_error(
-                    LocalError::CouldNotReadData(cli_args.input_file_path),
-                    error.to_string(),
-                );
-                exit(EXIT_CODE_ERROR);
-            });
+            extract_and_output_wave_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(
+                |error| {
+                    handle_local_error(
+                        LocalError::CouldNotReadData(cli_args.input_file_path),
+                        error.to_string(),
+                    );
+                    exit(EXIT_CODE_ERROR);
+                },
+            );
         }
         FLAC_FILE_CHUNKID => {
-            output_flac_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
-                handle_local_error(
-                    LocalError::CouldNotReadData(cli_args.input_file_path),
-                    error.to_string(),
-                );
-                exit(EXIT_CODE_ERROR);
-            });
+            extract_and_output_flac_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(
+                |error| {
+                    handle_local_error(
+                        LocalError::CouldNotReadData(cli_args.input_file_path),
+                        error.to_string(),
+                    );
+                    exit(EXIT_CODE_ERROR);
+                },
+            );
         }
         AIFF_FILE_CHUNKID => {
-            output_aiff_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(|error| {
-                handle_local_error(
-                    LocalError::CouldNotReadData(cli_args.input_file_path),
-                    error.to_string(),
-                );
-                exit(EXIT_CODE_ERROR);
-            });
+            extract_and_output_aiff_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(
+                |error| {
+                    handle_local_error(
+                        LocalError::CouldNotReadData(cli_args.input_file_path),
+                        error.to_string(),
+                    );
+                    exit(EXIT_CODE_ERROR);
+                },
+            );
         }
         _ => {
             handle_local_error(LocalError::UnsupportedFileType, "".to_string());

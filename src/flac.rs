@@ -1,7 +1,6 @@
 use crate::errors::LocalError;
-use crate::fileio::{canonicalize_file_path, get_file_name_from_file_path};
+use crate::fileio::{canonicalize_file_path, get_file_name_from_file_path, write_out_file_data};
 use crate::formating::format_file_size_as_string;
-use crate::output::write_out_file_data;
 use crate::template::Template;
 use byte_unit::rust_decimal::prelude::Zero;
 use claxon::{FlacReader, FlacReaderOptions};
@@ -22,7 +21,7 @@ struct VorbisTag {
     value: String,
 }
 
-pub fn output_flac_metadata(flac_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn extract_and_output_flac_metadata(flac_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
     let mut template = Template::new();
     let output_lines: Vec<String> = vec![format_data_for_output(&mut template, flac_file_path)?];
     write_out_file_data(output_lines, output_file_path)?;

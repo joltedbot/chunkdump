@@ -1,9 +1,8 @@
 use crate::errors::LocalError;
-use crate::formating::add_one_if_byte_size_is_odd;
 use crate::wave::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
 use std::error::Error;
 use std::fs::File;
-use std::io::{Read, Seek};
+use std::io::{stdout, Read, Seek, Write};
 use std::path::Path;
 
 pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
@@ -12,21 +11,6 @@ pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
 pub enum Endian {
     Little,
     Big,
-}
-
-pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<usize, Box<dyn Error>> {
-    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
-    let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
-    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
-
-    let mut chunk_size = match endianness {
-        Endian::Little => u32::from_le_bytes(byte_array),
-        Endian::Big => u32::from_be_bytes(byte_array),
-    };
-
-    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
-
-    Ok(chunk_size as usize)
 }
 
 pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
@@ -51,6 +35,60 @@ pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalErro
     Ok(file_name)
 }
 
+pub fn write_out_file_data(file_data: Vec<String>, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+    if !output_file_path.is_empty() {
+        write_to_file(file_data, output_file_path)?;
+    } else {
+        write_to_stdout(file_data)?;
+    }
+
+    Ok(())
+}
+
+fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {
+    for line in file_data {
+        let mut lock = stdout().lock();
+        writeln!(lock, "{}", line).unwrap()
+    }
+
+    Ok(())
+}
+
+fn write_to_file(file_data: Vec<String>, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+    check_if_file_already_exists(output_file_path)?;
+
+    let mut output_file = File::create(output_file_path)?;
+    for data in file_data {
+        let line = data + "\n";
+        output_file.write_all(line.as_bytes())?;
+    }
+
+    Ok(())
+}
+
+fn check_if_file_already_exists(output_file: &str) -> Result<(), Box<dyn Error>> {
+    if Path::new(output_file).exists() {
+        return Err(Box::new(LocalError::OutputFileAlreadyExists(output_file.to_string())));
+    }
+
+    Ok(())
+}
+
+pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<usize, Box<dyn Error>> {
+    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
+    let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
+    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
+
+    let mut chunk_size = match endianness {
+        Endian::Little => u32::from_le_bytes(byte_array),
+        Endian::Big => u32::from_be_bytes(byte_array),
+    };
+
+    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
+
+    Ok(chunk_size as usize)
+}
+
 pub fn skip_over_bytes_in_file(file: &mut File, number_of_bytes: usize) -> Result<(), Box<dyn Error>> {
     file.seek_relative(number_of_bytes as i64)?;
 
@@ -68,6 +106,14 @@ pub fn read_bytes_from_file_as_string(file: &mut File, number_of_bytes: usize) -
     let read_bytes = read_bytes_from_file(file, number_of_bytes)?;
 
     Ok(String::from_utf8(read_bytes)?)
+}
+
+pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
+    if byte_size % 2 > 0 {
+        byte_size += 1;
+    }
+
+    byte_size
 }
 
 #[cfg(test)]
@@ -101,5 +147,19 @@ mod tests {
     fn errors_when_geting_filename_from_filepath_if_path_is_invalid() {
         let result = get_file_name_from_file_path("/");
         assert_eq!(result.unwrap_err(), LocalError::InvalidFileName);
+    }
+
+    #[test]
+    fn correctly_adds_one_if_byte_size_is_odd() {
+        let test_size = 3;
+        let correct_size = test_size + 1;
+
+        assert_eq!(add_one_if_byte_size_is_odd(test_size), correct_size);
+    }
+
+    #[test]
+    fn does_not_add_one_if_byte_size_is_even() {
+        let test_size = 4;
+        assert_eq!(add_one_if_byte_size_is_odd(test_size), test_size);
     }
 }

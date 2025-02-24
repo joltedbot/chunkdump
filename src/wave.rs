@@ -8,17 +8,16 @@ mod fmt;
 mod list;
 mod resu;
 mod smpl;
-pub mod sndm;
+mod sndm;
 mod umid;
 mod xmp;
 
 use crate::errors::LocalError;
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
-    read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
+    read_chunk_size_from_file, skip_over_bytes_in_file, write_out_file_data, Endian,
 };
 use crate::formating::format_file_size_as_string;
-use crate::output::write_out_file_data;
 use crate::template::Template;
 use crate::wave::chunk::Chunk;
 
@@ -101,7 +100,7 @@ impl Wave {
     }
 }
 
-pub fn output_wave_metadata(wave_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn extract_and_output_wave_metadata(wave_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
     let mut wave_file = File::open(wave_file_path)?;
     validate_riff_wave_header(&mut wave_file)?;
 

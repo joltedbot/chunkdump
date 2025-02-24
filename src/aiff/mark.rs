@@ -4,7 +4,7 @@ use crate::byteio::{
     take_first_two_bytes_as_unsigned_integer, Endian,
 };
 use crate::errors::LocalError;
-use crate::formating::add_one_if_byte_size_is_odd;
+use crate::fileio::add_one_if_byte_size_is_odd;
 use crate::template::Template;
 use serde::Serialize;
 use upon::Value;
