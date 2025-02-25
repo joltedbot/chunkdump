@@ -100,7 +100,10 @@ impl Wave {
     }
 }
 
-pub fn extract_and_output_wave_metadata(wave_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn extract_and_output_wave_metadata(
+    wave_file_path: &str,
+    output_file_path: Option<String>,
+) -> Result<(), Box<dyn Error>> {
     let mut wave_file = File::open(wave_file_path)?;
     validate_riff_wave_header(&mut wave_file)?;
 
