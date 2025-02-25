@@ -1,6 +1,7 @@
 use crate::bytes::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use crate::template::Template;
+use byte_unit::rust_decimal::prelude::Zero;
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "fmt";
@@ -19,6 +20,7 @@ const EXTENSIBLE_FORMAT_NAME: &str = "Determined by SubFormat";
 const UNKOWN_FORMAT: &str = "Unknown Format ID: ";
 const GUID_LENGTH_IN_BYTES: usize = 16;
 const NO_GUID_FOUND_MESSAGE: &str = "N/A";
+const SIZE_IF_EXTENSION_IS_PRESENT: u16 = 22;
 const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
     "Front Left",
     "Front Tight",
@@ -77,7 +79,7 @@ impl FmtFields {
         let mut speaker_position_mask: u32 = Default::default();
         let mut subformat_guid: [u8; GUID_LENGTH_IN_BYTES] = Default::default();
 
-        if extension_size > 0 {
+        if extension_size == SIZE_IF_EXTENSION_IS_PRESENT {
             valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
             speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
             subformat_guid.copy_from_slice(chunk_data.as_slice());
@@ -126,8 +128,10 @@ fn get_format_name_from_format_id(format_id: u16) -> String {
 }
 
 fn format_guid(guid_bytes: [u8; GUID_LENGTH_IN_BYTES]) -> String {
-    if guid_bytes.len() != GUID_LENGTH_IN_BYTES {
-        return NO_GUID_FOUND_MESSAGE.to_string();
+    let max_byte: &u8 = guid_bytes.iter().max().unwrap_or(&0);
+
+    if max_byte.is_zero() {
+        return String::new();
     }
 
     let formated_guid: Vec<String> = guid_bytes.iter().map(|byte| format!("{:X}", byte)).collect();
