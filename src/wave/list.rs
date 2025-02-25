@@ -1,4 +1,4 @@
-use crate::byteio::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
+use crate::bytes::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
 use crate::errors::LocalError;
 use crate::fileio::add_one_if_byte_size_is_odd;
 use crate::template::Template;

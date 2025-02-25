@@ -1,5 +1,5 @@
 mod aiff;
-mod byteio;
+mod bytes;
 mod cli;
 mod errors;
 mod fileio;

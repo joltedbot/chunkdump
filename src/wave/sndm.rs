@@ -1,4 +1,4 @@
-use crate::byteio::{
+use crate::bytes::{
     take_first_number_of_bytes, take_first_number_of_bytes_as_string, take_first_two_bytes_as_unsigned_integer, Endian,
 };
 use crate::errors::LocalError;

@@ -1,4 +1,4 @@
-use crate::byteio::take_first_number_of_bytes;
+use crate::bytes::take_first_number_of_bytes;
 use crate::errors::LocalError;
 use crate::formating::format_bytes_as_string;
 use crate::template::Template;

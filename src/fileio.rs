@@ -73,6 +73,13 @@ fn check_if_file_already_exists(output_file: &str) -> Result<(), Box<dyn Error>>
 
     Ok(())
 }
+pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
+    if byte_size % 2 > 0 {
+        byte_size += 1;
+    }
+
+    byte_size
+}
 
 pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
@@ -106,14 +113,6 @@ pub fn read_bytes_from_file_as_string(file: &mut File, number_of_bytes: usize) -
     let read_bytes = read_bytes_from_file(file, number_of_bytes)?;
 
     Ok(String::from_utf8(read_bytes)?)
-}
-
-pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
-    if byte_size % 2 > 0 {
-        byte_size += 1;
-    }
-
-    byte_size
 }
 
 #[cfg(test)]
@@ -161,5 +160,23 @@ mod tests {
     fn does_not_add_one_if_byte_size_is_even() {
         let test_size = 4;
         assert_eq!(add_one_if_byte_size_is_odd(test_size), test_size);
+    }
+
+    #[test]
+    fn outputs_the_bytes_to_the_file_when_provided_a_correct_file_path() {
+        let output_file_path = "./write_out_file_data.test";
+        let _ = std::fs::remove_file(output_file_path);
+        let file_data: Vec<String> = vec![String::from("line 1!"), String::from("line 2!")];
+        let correct_result = b"line 1!\nline 2!\n".to_vec();
+
+        write_out_file_data(file_data, output_file_path).unwrap();
+
+        let mut file = File::open(output_file_path).unwrap();
+        let mut file_contents: Vec<u8> = vec![];
+        file.read_to_end(&mut file_contents).unwrap();
+
+        let _ = std::fs::remove_file(output_file_path);
+
+        assert_eq!(file_contents, correct_result);
     }
 }

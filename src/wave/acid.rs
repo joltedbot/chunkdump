@@ -1,4 +1,4 @@
-use crate::byteio::{
+use crate::bytes::{
     take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer,
     take_first_two_bytes_as_unsigned_integer, Endian,
 };

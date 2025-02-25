@@ -1,4 +1,4 @@
-use crate::byteio::take_first_number_of_bytes_as_string;
+use crate::bytes::take_first_number_of_bytes_as_string;
 use crate::errors::LocalError;
 use crate::template::Template;
 use serde::Serialize;
