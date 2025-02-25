@@ -16,32 +16,34 @@ use crate::wave::umid::UMIDFields;
 use crate::wave::xmp::XMPFields;
 use std::error::Error;
 
-const FMT_CHUNK_ID: &str = "fmt ";
-const FACT_CHUNK_ID: &str = "fact";
-const DATA_CHUNK_ID: &str = "data";
+const ACID_CHUNK_ID: &str = "acid";
+const AXML_CHUNK_ID: &str = "axml";
+const AXML_TEMPLATE_TITLE: &str = "AXML Chunk (XML):";
+const BEXT_CHUNK_ID: &str = "bext";
+const CART_CHUNK_ID: &str = "cart";
 const CUE_CHUNK_ID: &str = "cue ";
-const RESU_CHUNK_ID: &str = "resu";
+const DATA_CHUNK_ID: &str = "data";
+const DISP_CHUNK_ID: &str = "disp";
+const FACT_CHUNK_ID: &str = "fact";
+const FMT_CHUNK_ID: &str = "fmt ";
+const ID3_CHUNK_ID: &str = "id3 ";
+const IXML_CHUNK_ID: &str = "ixml";
+const IXML_TEMPLATE_TITLE: &str = "iXML Chunk (XML):";
 const JUNK_CHUNK_ID: &str = "junk";
 const JUNK_TEMPLATE_TITLE: &str = "Junk Chunk Details";
 const LIST_CHUNK_ID: &str = "list";
-const IXML_CHUNK_ID: &str = "ixml";
-const IXML_TEMPLATE_TITLE: &str = "iXML Chunk (XML):";
-const XMP_CHUNK_ID: &str = "_pmx";
-const ID3_CHUNK_ID: &str = "id3 ";
-const BEXT_CHUNK_ID: &str = "bext";
-const CART_CHUNK_ID: &str = "cart";
-const ACID_CHUNK_ID: &str = "acid";
-const SMPL_CHUNK_ID: &str = "smpl";
-const DISP_CHUNK_ID: &str = "disp";
 const LOGIC_PRO_CHUNK_ID: &str = "lgwv";
-const PRO_TOOLS_UMID_CHUNK_ID: &str = "umid";
+const PAD_CHUNK_ID: &str = "pad ";
+const PAD_TEMPLATE_TITLE: &str = "PAD Chunk Details";
 const PRO_TOOLS_DGDA_CHUNK_ID: &str = "dgda";
-const PRO_TOOLS_MINF_CHUNK_ID: &str = "minf";
 const PRO_TOOLS_ELM1_CHUNK_ID: &str = "elm1";
+const PRO_TOOLS_MINF_CHUNK_ID: &str = "minf";
 const PRO_TOOLS_REGN_CHUNK_ID: &str = "regn";
+const PRO_TOOLS_UMID_CHUNK_ID: &str = "umid";
+const RESU_CHUNK_ID: &str = "resu";
+const SMPL_CHUNK_ID: &str = "smpl";
 const SNDM_CHUNK_ID: &str = "sndm";
-const AXML_CHUNK_ID: &str = "axml";
-const AXML_TEMPLATE_TITLE: &str = "AXML Chunk (XML):";
+const XMP_CHUNK_ID: &str = "_pmx";
 
 const NUMBER_OF_CHUNKS_TO_SKIP: usize = 7;
 const CHUNKS_TO_SKIP: [&str; NUMBER_OF_CHUNKS_TO_SKIP] = [
@@ -61,22 +63,23 @@ pub struct Chunk {
     pub found_chunk_ids: Vec<String>,
     pub skipped_chunk_ids: Vec<String>,
     extra_chunks: ExtraChunks,
-    fact_data: FactFields,
-    format_data: FmtFields,
-    resu_data: ResuFields,
-    cue_data: CueFields,
-    junk_data: TextFields,
-    list_data: Vec<ListFields>,
-    ixml_data: TextFields,
-    xmp_data: XMPFields,
-    id3_data: ID3Fields,
+    acid_data: AcidFields,
+    axml_data: TextFields,
     bext_data: BextFields,
     cart_data: CartFields,
-    acid_data: AcidFields,
+    cue_data: CueFields,
+    fact_data: FactFields,
+    format_data: FmtFields,
+    id3_data: ID3Fields,
+    ixml_data: TextFields,
+    junk_data: TextFields,
+    list_data: Vec<ListFields>,
+    pad_data: TextFields,
+    resu_data: ResuFields,
     smpl_data: SmplFields,
-    umid_data: UMIDFields,
     sndm_data: SndmFields,
-    axml_data: TextFields,
+    umid_data: UMIDFields,
+    xmp_data: XMPFields,
 }
 
 impl Chunk {
@@ -109,6 +112,7 @@ impl Chunk {
             SMPL_CHUNK_ID => self.smpl_data = SmplFields::new(chunk_data)?,
             SNDM_CHUNK_ID => self.sndm_data = SndmFields::new(chunk_data)?,
             AXML_CHUNK_ID => self.axml_data = TextFields::new(chunk_data)?,
+            PAD_CHUNK_ID => self.pad_data = TextFields::new(chunk_data)?,
             PRO_TOOLS_UMID_CHUNK_ID => self.umid_data = UMIDFields::new(chunk_data)?,
             PRO_TOOLS_ELM1_CHUNK_ID => {}
             PRO_TOOLS_MINF_CHUNK_ID => {}
@@ -148,6 +152,7 @@ impl Chunk {
                 PRO_TOOLS_UMID_CHUNK_ID => self.umid_data.format_data_for_output(template)?,
                 SNDM_CHUNK_ID => self.sndm_data.format_data_for_output(template)?,
                 AXML_CHUNK_ID => self.axml_data.format_data_for_output(template, AXML_TEMPLATE_TITLE)?,
+                PAD_CHUNK_ID => self.pad_data.format_data_for_output(template, PAD_TEMPLATE_TITLE)?,
                 LIST_CHUNK_ID => {
                     let mut list_metadata_output = String::new();
                     for list_field in self.list_data.iter() {

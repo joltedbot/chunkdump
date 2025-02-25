@@ -69,6 +69,9 @@ blocks are skipped.
 - **LIST**
     - An ordered list of other sub-chunks that contain various metadata.
     - INFO and ADTL, the most common LIST sub-chunks for wave files are supported
+- **pad**
+- Technically not a valid chunk. Padding should be accomplished with the JUNK chunk but some audio applications don't
+  play by the rules. I treat this as if it was the proper JUNK chunk.
 - **ResU**
     - A Logic Pro X metadata format in the form of a JSON document
 - **_PMX** (XMP)

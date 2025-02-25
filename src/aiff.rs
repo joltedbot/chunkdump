@@ -96,7 +96,10 @@ impl Aiff {
     }
 }
 
-pub fn extract_and_output_aiff_metadata(aiff_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn extract_and_output_aiff_metadata(
+    aiff_file_path: &str,
+    output_file_path: Option<String>,
+) -> Result<(), Box<dyn Error>> {
     let mut template = Template::new();
     let mut aiff: Aiff = Default::default();
 

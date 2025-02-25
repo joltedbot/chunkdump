@@ -35,11 +35,10 @@ pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalErro
     Ok(file_name)
 }
 
-pub fn write_out_file_data(file_data: Vec<String>, output_file_path: &str) -> Result<(), Box<dyn Error>> {
-    if !output_file_path.is_empty() {
-        write_to_file(file_data, output_file_path)?;
-    } else {
-        write_to_stdout(file_data)?;
+pub fn write_out_file_data(file_data: Vec<String>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
+    match output_file_path {
+        Some(path) => write_to_file(file_data, path)?,
+        None => write_to_stdout(file_data)?,
     }
 
     Ok(())
@@ -54,8 +53,8 @@ fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn write_to_file(file_data: Vec<String>, output_file_path: &str) -> Result<(), Box<dyn Error>> {
-    check_if_file_already_exists(output_file_path)?;
+fn write_to_file(file_data: Vec<String>, output_file_path: String) -> Result<(), Box<dyn Error>> {
+    check_if_file_already_exists(&output_file_path)?;
 
     let mut output_file = File::create(output_file_path)?;
     for data in file_data {
@@ -164,14 +163,14 @@ mod tests {
 
     #[test]
     fn outputs_the_bytes_to_the_file_when_provided_a_correct_file_path() {
-        let output_file_path = "./write_out_file_data.test";
-        let _ = std::fs::remove_file(output_file_path);
+        let output_file_path = "./write_out_file_data.test".to_string();
+        let _ = std::fs::remove_file(&output_file_path);
         let file_data: Vec<String> = vec![String::from("line 1!"), String::from("line 2!")];
         let correct_result = b"line 1!\nline 2!\n".to_vec();
 
-        write_out_file_data(file_data, output_file_path).unwrap();
+        write_out_file_data(file_data, Some(output_file_path.clone())).unwrap();
 
-        let mut file = File::open(output_file_path).unwrap();
+        let mut file = File::open(&output_file_path).unwrap();
         let mut file_contents: Vec<u8> = vec![];
         file.read_to_end(&mut file_contents).unwrap();
 

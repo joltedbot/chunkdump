@@ -42,7 +42,7 @@ fn main() {
 
     match file_chunk_id.as_str() {
         WAVE_FILE_CHUNKID => {
-            extract_and_output_wave_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(
+            extract_and_output_wave_metadata(&cli_args.input_file_path, cli_args.output_file_path).unwrap_or_else(
                 |error| {
                     handle_local_error(
                         LocalError::CouldNotReadData(cli_args.input_file_path),
@@ -53,7 +53,7 @@ fn main() {
             );
         }
         FLAC_FILE_CHUNKID => {
-            extract_and_output_flac_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(
+            extract_and_output_flac_metadata(&cli_args.input_file_path, cli_args.output_file_path).unwrap_or_else(
                 |error| {
                     handle_local_error(
                         LocalError::CouldNotReadData(cli_args.input_file_path),
@@ -64,7 +64,7 @@ fn main() {
             );
         }
         AIFF_FILE_CHUNKID => {
-            extract_and_output_aiff_metadata(&cli_args.input_file_path, &cli_args.output_file_path).unwrap_or_else(
+            extract_and_output_aiff_metadata(&cli_args.input_file_path, cli_args.output_file_path).unwrap_or_else(
                 |error| {
                     handle_local_error(
                         LocalError::CouldNotReadData(cli_args.input_file_path),

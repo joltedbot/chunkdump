@@ -8,8 +8,8 @@ use crate::template::Template;
 use serde::Serialize;
 use upon::Value;
 
-const TEMPLATE_NAME: &str = "comt"; // A short name to identify the template
-const TEMPLATE_CONTENT: &str = include_str!("../templates/aiff/comt.tmpl"); // The file path where you placed the template
+const TEMPLATE_NAME: &str = "comt";
+const TEMPLATE_CONTENT: &str = include_str!("../templates/aiff/comt.tmpl");
 const EMPTY_COMMENT_MESSAGE: &str = "[No Timestamp]";
 
 #[derive(Debug, Clone, Serialize)]
@@ -19,7 +19,7 @@ pub struct Comment {
     length: u16,
     comment: String,
 }
-// Rename the struct to reflect your new chunk nmae
+
 #[derive(Debug, Clone, Default)]
 pub struct CommentFields {
     comments: Vec<Comment>,

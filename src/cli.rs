@@ -8,7 +8,7 @@ pub const USAGE_MESSAGE: &str = " usage: chunkdump [-hv] file";
 
 pub struct Args {
     pub input_file_path: String,
-    pub output_file_path: String,
+    pub output_file_path: Option<String>,
 }
 
 #[derive(FromArgs)]
@@ -42,7 +42,7 @@ pub fn process_cli_arguments() -> Args {
 
     Args {
         input_file_path: args.file.unwrap(),
-        output_file_path: args.output_file.unwrap_or_default(),
+        output_file_path: args.output_file,
     }
 }
 
