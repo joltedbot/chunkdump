@@ -15,7 +15,9 @@ pub struct TextFields {
 impl TextFields {
     pub fn new(mut chunk_data: Vec<u8>) -> Result<Self, LocalError> {
         let chunk_size = add_one_if_byte_size_is_odd(chunk_data.len() as u32);
-        let body = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size as usize)?;
+        let raw_body = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size as usize)?;
+        let body = raw_body.trim().to_string();
+
         Ok(Self { body })
     }
 
