@@ -19,7 +19,6 @@ const EXTENSIBLE_FORMAT_ID: u16 = 65279;
 const EXTENSIBLE_FORMAT_NAME: &str = "Determined by SubFormat";
 const UNKOWN_FORMAT: &str = "Unknown Format ID: ";
 const GUID_LENGTH_IN_BYTES: usize = 16;
-const NO_GUID_FOUND_MESSAGE: &str = "N/A";
 const SIZE_IF_EXTENSION_IS_PRESENT: u16 = 22;
 const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
     "Front Left",
