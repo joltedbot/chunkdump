@@ -3,3 +3,4 @@
 /target
 /test
 tarpaulin-report.html
+check_before_commit.sh

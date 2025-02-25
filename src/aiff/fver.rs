@@ -1,4 +1,4 @@
-use crate::byteio::{take_first_four_bytes_as_unsigned_integer, Endian};
+use crate::bytes::{take_first_four_bytes_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use crate::formating::format_mac_hfs_timestamp_as_date_time_string;
 use crate::template::Template;

@@ -25,6 +25,7 @@ pub const JUNK_CHUNK_ID: &str = "junk";
 const JUNK_TEMPLATE_TITLE: &str = "Junk Chunk Details";
 const LOGIC_PRO_CHUNK_ID: &str = "lgwv";
 const MARKER_CHUNK_ID: &str = "mark";
+
 pub const AUDIO_SAMPLES_CHUNK_ID: &str = "ssnd";
 pub const NAME_CHUNK_ID: &str = "name";
 const NAME_TEMPLATE_TITLE: &str = "Name Chunk Details";
@@ -76,6 +77,7 @@ impl Chunk {
             NAME_CHUNK_ID => self.name = TextFields::new(chunk_data)?,
             COPYRIGHT_CHUNK_ID => self.name = TextFields::new(chunk_data)?,
             JUNK_CHUNK_ID => self.junk = TextFields::new(chunk_data)?,
+
             LOGIC_PRO_CHUNK_ID => {}
             AUDIO_SAMPLES_CHUNK_ID => {}
             CHAN_CHUNK_ID => {}

@@ -7,10 +7,9 @@ mod mark;
 use crate::aiff::chunk::{Chunk, ID3_CHUNK_ID};
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
-    read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
+    read_chunk_size_from_file, skip_over_bytes_in_file, write_out_file_data, Endian,
 };
 use crate::formating::format_file_size_as_string;
-use crate::output::write_out_file_data;
 use crate::template::Template;
 use std::error::Error;
 use std::fs::File;
@@ -97,7 +96,7 @@ impl Aiff {
     }
 }
 
-pub fn output_aiff_metadata(aiff_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn extract_and_output_aiff_metadata(aiff_file_path: &str, output_file_path: &str) -> Result<(), Box<dyn Error>> {
     let mut template = Template::new();
     let mut aiff: Aiff = Default::default();
 

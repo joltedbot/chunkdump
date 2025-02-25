@@ -15,14 +15,6 @@ pub fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
     )
 }
 
-pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
-    if byte_size % 2 > 0 {
-        byte_size += 1;
-    }
-
-    byte_size
-}
-
 pub fn format_bytes_as_string(bytes: &[u8]) -> String {
     bytes
         .iter()
@@ -42,7 +34,7 @@ pub fn format_mac_hfs_timestamp_as_date_time_string(timestamp: u32) -> Result<St
     Ok(date)
 }
 
-pub fn get_note_name_from_midi_note_number(midi_note_number: u32) -> String {
+pub fn format_midi_note_number_as_note_name(midi_note_number: u32) -> String {
     let note_offset_from_c: usize = midi_note_number as usize % 12;
     let note_name = NOTE_NAMES_WITHOUT_OCTAVES[note_offset_from_c].to_string();
     let note_octave = ((midi_note_number as f32 - note_offset_from_c as f32) / 12.0) - 2.0;
@@ -59,20 +51,6 @@ mod tests {
         let correct_formated_size = "117.74 MiB";
         let formated_size = format_file_size_as_string(megabyte_scale_size_in_bytes);
         assert_eq!(formated_size, correct_formated_size);
-    }
-
-    #[test]
-    fn correctly_adds_one_if_byte_size_is_odd() {
-        let test_size = 3;
-        let correct_size = test_size + 1;
-
-        assert_eq!(add_one_if_byte_size_is_odd(test_size), correct_size);
-    }
-
-    #[test]
-    fn does_not_add_one_if_byte_size_is_even() {
-        let test_size = 4;
-        assert_eq!(add_one_if_byte_size_is_odd(test_size), test_size);
     }
 
     #[test]
@@ -100,16 +78,16 @@ mod tests {
 
     #[test]
     fn return_note_c_minus_2_when_midi_note_number_is_0() {
-        assert_eq!(get_note_name_from_midi_note_number(0), "C-2");
+        assert_eq!(format_midi_note_number_as_note_name(0), "C-2");
     }
 
     #[test]
     fn return_note_gb_3_when_midi_note_number_is_66() {
-        assert_eq!(get_note_name_from_midi_note_number(66), "F#/Gb3");
+        assert_eq!(format_midi_note_number_as_note_name(66), "F#/Gb3");
     }
 
     #[test]
     fn return_note_g8_when_midi_note_number_is_127() {
-        assert_eq!(get_note_name_from_midi_note_number(127), "G8");
+        assert_eq!(format_midi_note_number_as_note_name(127), "G8");
     }
 }

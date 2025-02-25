@@ -1,10 +1,10 @@
-use crate::byteio::{
+use crate::bytes::{
     take_first_four_bytes_as_float, take_first_four_bytes_as_unsigned_integer,
     take_first_two_bytes_as_unsigned_integer, Endian,
 };
 
 use crate::errors::LocalError;
-use crate::formating::get_note_name_from_midi_note_number;
+use crate::formating::format_midi_note_number_as_note_name;
 use crate::template::Template;
 use upon::Value;
 
@@ -56,7 +56,7 @@ impl AcidFields {
                 &mut chunk_data,
                 Endian::Little,
             )?),
-            root_note: get_note_name_from_midi_note_number(take_first_two_bytes_as_unsigned_integer(
+            root_note: format_midi_note_number_as_note_name(take_first_two_bytes_as_unsigned_integer(
                 &mut chunk_data,
                 Endian::Little,
             )? as u32),

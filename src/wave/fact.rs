@@ -1,4 +1,4 @@
-use crate::byteio::{take_first_four_bytes_as_unsigned_integer, Endian};
+use crate::bytes::{take_first_four_bytes_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use crate::template::Template;
 use upon::Value;

@@ -11,6 +11,7 @@ use crate::wave::fmt::FmtFields;
 use crate::wave::list::ListFields;
 use crate::wave::resu::ResuFields;
 use crate::wave::smpl::SmplFields;
+use crate::wave::sndm::SndmFields;
 use crate::wave::umid::UMIDFields;
 use crate::wave::xmp::XMPFields;
 use std::error::Error;
@@ -38,6 +39,9 @@ const PRO_TOOLS_DGDA_CHUNK_ID: &str = "dgda";
 const PRO_TOOLS_MINF_CHUNK_ID: &str = "minf";
 const PRO_TOOLS_ELM1_CHUNK_ID: &str = "elm1";
 const PRO_TOOLS_REGN_CHUNK_ID: &str = "regn";
+const SNDM_CHUNK_ID: &str = "sndm";
+const AXML_CHUNK_ID: &str = "axml";
+const AXML_TEMPLATE_TITLE: &str = "AXML Chunk (XML):";
 
 const NUMBER_OF_CHUNKS_TO_SKIP: usize = 7;
 const CHUNKS_TO_SKIP: [&str; NUMBER_OF_CHUNKS_TO_SKIP] = [
@@ -71,6 +75,8 @@ pub struct Chunk {
     acid_data: AcidFields,
     smpl_data: SmplFields,
     umid_data: UMIDFields,
+    sndm_data: SndmFields,
+    axml_data: TextFields,
 }
 
 impl Chunk {
@@ -101,6 +107,8 @@ impl Chunk {
             CART_CHUNK_ID => self.cart_data = CartFields::new(chunk_data)?,
             ACID_CHUNK_ID => self.acid_data = AcidFields::new(chunk_data)?,
             SMPL_CHUNK_ID => self.smpl_data = SmplFields::new(chunk_data)?,
+            SNDM_CHUNK_ID => self.sndm_data = SndmFields::new(chunk_data)?,
+            AXML_CHUNK_ID => self.axml_data = TextFields::new(chunk_data)?,
             PRO_TOOLS_UMID_CHUNK_ID => self.umid_data = UMIDFields::new(chunk_data)?,
             PRO_TOOLS_ELM1_CHUNK_ID => {}
             PRO_TOOLS_MINF_CHUNK_ID => {}
@@ -138,6 +146,8 @@ impl Chunk {
                 CART_CHUNK_ID => self.cart_data.format_data_for_output(template)?,
                 SMPL_CHUNK_ID => self.smpl_data.format_data_for_output(template)?,
                 PRO_TOOLS_UMID_CHUNK_ID => self.umid_data.format_data_for_output(template)?,
+                SNDM_CHUNK_ID => self.sndm_data.format_data_for_output(template)?,
+                AXML_CHUNK_ID => self.axml_data.format_data_for_output(template, AXML_TEMPLATE_TITLE)?,
                 LIST_CHUNK_ID => {
                     let mut list_metadata_output = String::new();
                     for list_field in self.list_data.iter() {
