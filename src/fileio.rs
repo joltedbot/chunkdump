@@ -1,16 +1,55 @@
-use crate::errors::LocalError;
+use crate::cli::{Args, EXIT_CODE_ERROR};
+use crate::errors::{handle_local_error, LocalError};
 use crate::wave::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
 use std::error::Error;
 use std::fs::File;
 use std::io::{stdout, Read, Seek, Write};
 use std::path::Path;
+use std::process::exit;
 
 pub const FILE_CHUNKID_LENGTH_IN_BYTES: usize = 4;
+
+const AIFF_FILE_CHUNKID: &str = "FORM";
+const FLAC_FILE_CHUNKID: &str = "fLaC";
+const WAVE_FILE_CHUNKID: &str = "RIFF";
+
+#[derive(PartialEq)]
+pub enum FileType {
+    AIFF,
+    FLAC,
+    WAVE,
+    UNSUPPORTED,
+}
 
 #[derive(PartialEq)]
 pub enum Endian {
     Little,
     Big,
+}
+
+pub fn get_file_id_from_file_or_exit(cli_args: &Args) -> FileType {
+    let mut input_file = File::open(&cli_args.input_file_path).unwrap_or_else(|e| {
+        handle_local_error(LocalError::InvalidPath(cli_args.input_file_path.clone()), e.to_string());
+        exit(EXIT_CODE_ERROR);
+    });
+
+    let file_chunk_id = match read_bytes_from_file_as_string(&mut input_file, FILE_CHUNKID_LENGTH_IN_BYTES) {
+        Ok(chunk_id) => chunk_id,
+        Err(e) => {
+            handle_local_error(
+                LocalError::CouldNotReadFile(cli_args.input_file_path.clone()),
+                e.to_string(),
+            );
+            exit(EXIT_CODE_ERROR);
+        }
+    };
+
+    match file_chunk_id.as_str() {
+        AIFF_FILE_CHUNKID => FileType::AIFF,
+        FLAC_FILE_CHUNKID => FileType::FLAC,
+        WAVE_FILE_CHUNKID => FileType::WAVE,
+        _ => FileType::UNSUPPORTED,
+    }
 }
 
 pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {

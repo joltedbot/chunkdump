@@ -15,7 +15,7 @@ mod xmp;
 use crate::errors::LocalError;
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
-    read_chunk_size_from_file, skip_over_bytes_in_file, write_out_file_data, Endian,
+    read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
 };
 use crate::formating::format_file_size_as_string;
 use crate::template::Template;
@@ -100,10 +100,7 @@ impl Wave {
     }
 }
 
-pub fn extract_and_output_wave_metadata(
-    wave_file_path: &str,
-    output_file_path: Option<String>,
-) -> Result<(), Box<dyn Error>> {
+pub fn get_metadata_from_file(wave_file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let mut wave_file = File::open(wave_file_path)?;
     validate_riff_wave_header(&mut wave_file)?;
 
@@ -115,9 +112,7 @@ pub fn extract_and_output_wave_metadata(
     let formated_chunk_output = wave.chunks.format_data_for_output(&mut template)?;
     output_lines.extend(formated_chunk_output);
 
-    write_out_file_data(output_lines, output_file_path)?;
-
-    Ok(())
+    Ok(output_lines)
 }
 
 fn validate_riff_wave_header(wave_file: &mut File) -> Result<(), Box<dyn Error>> {

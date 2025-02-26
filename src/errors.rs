@@ -47,6 +47,9 @@ pub enum LocalError {
 
     #[error("Could not process the ID3 tag IDs")]
     ErrorParsingID3TagIDs,
+
+    #[error("Could not write out metadata.")]
+    CouldNotWrteOutData,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {
