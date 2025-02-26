@@ -29,7 +29,7 @@ Vendor String:       {{ vorbis_vendor }}
 Comments:
 ---------
 {%- for comment in vorbis_tags %}
-{{ comment.id }}:{{ comment.spacer }}{{ comment.value }}
+{{ comment.id }}:{{ comment.spacer }}  {{ comment.value }}
 {%- endfor %}
 {%- endif %}
 {% endif %}

@@ -3,6 +3,7 @@ use crate::fileio::{canonicalize_file_path, get_file_name_from_file_path};
 use crate::formating::format_file_size_as_string;
 use crate::template::Template;
 use byte_unit::rust_decimal::prelude::Zero;
+use claxon::metadata::Tags;
 use claxon::{FlacReader, FlacReaderOptions};
 use serde::Serialize;
 use std::error::Error;
@@ -12,7 +13,6 @@ use upon::Value;
 const TEMPLATE_NAME: &str = "flac";
 const TEMPLATE_CONTENT: &str = include_str!("templates/flac/flac.tmpl");
 const SECONDS_PER_MINUTE: u64 = 60;
-const VORBIS_TAG_ID_PLUS_SPACER_TOTAL_CHARACTERS: &str = "                    ";
 
 #[derive(Debug, Serialize)]
 struct VorbisTag {
@@ -23,26 +23,32 @@ struct VorbisTag {
 
 pub fn get_metadata_from_file(flac_file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let mut template = Template::new();
-    let output_lines: Vec<String> = vec![format_data_for_output(&mut template, flac_file_path)?];
-    Ok(output_lines)
+    let file_stream = FlacReader::open_ext(
+        flac_file_path,
+        FlacReaderOptions {
+            metadata_only: true,
+            read_vorbis_comment: true,
+        },
+    )?;
+
+    let formated_output = format_data_for_output(&mut template, flac_file_path, file_stream)?;
+    Ok(vec![formated_output])
 }
 
-fn format_data_for_output(template: &mut Template, flac_file_path: &str) -> Result<String, Box<dyn Error>> {
-    let file_size = format_file_size_as_string(metadata(flac_file_path)?.len());
-
-    let file_stream = match open_flac_file(flac_file_path) {
-        Ok(value) => value,
-        Err(e) => return e,
-    };
-
+fn format_data_for_output(
+    template: &mut Template,
+    file_path: &str,
+    file_stream: FlacReader<File>,
+) -> Result<String, Box<dyn Error>> {
+    let file_size = format_file_size_as_string(metadata(file_path)?.len());
     let stream_info = file_stream.streaminfo();
     let vorbis_vendor = file_stream.vendor();
     let vorbis_tags = get_vorbis_comment_tags(&file_stream);
     let total_samples = stream_info.samples.unwrap_or_default();
 
     let wave_output_values: Value = upon::value! {
-        file_name: get_file_name_from_file_path(flac_file_path)?,
-        file_path: canonicalize_file_path(flac_file_path)?,
+        file_name: get_file_name_from_file_path(file_path)?,
+        file_path: canonicalize_file_path(file_path)?,
         file_size: file_size,
         duration: format_estimated_duration(total_samples, stream_info.sample_rate),
         min_block_size: stream_info.min_block_size,
@@ -62,27 +68,15 @@ fn format_data_for_output(template: &mut Template, flac_file_path: &str) -> Resu
     Ok(formated_output)
 }
 
-fn open_flac_file(flac_file_path: &str) -> Result<FlacReader<File>, Result<String, Box<dyn Error>>> {
-    let file_stream = match FlacReader::open_ext(
-        flac_file_path,
-        FlacReaderOptions {
-            metadata_only: true,
-            read_vorbis_comment: true,
-        },
-    ) {
-        Ok(stream_reader) => stream_reader,
-        Err(_) => return Err(Err(Box::new(LocalError::InvalidFlacFile(flac_file_path.to_string())))),
-    };
-    Ok(file_stream)
-}
-
 fn get_vorbis_comment_tags(file_stream: &FlacReader<File>) -> Vec<VorbisTag> {
-    let vorbis_comments = file_stream.tags();
     let mut vorbis_tags: Vec<VorbisTag> = vec![];
+    let longest_tag = get_longest_tag(file_stream.tags()).unwrap_or_default();
 
-    vorbis_comments.into_iter().for_each(|(k, v)| {
-        let mut spacer = VORBIS_TAG_ID_PLUS_SPACER_TOTAL_CHARACTERS.to_string();
-        spacer.truncate(VORBIS_TAG_ID_PLUS_SPACER_TOTAL_CHARACTERS.len() - k.len());
+    file_stream.tags().for_each(|(k, v)| {
+        let mut spacer = String::new();
+        if longest_tag > k.len() {
+            spacer = " ".repeat(longest_tag - k.len());
+        }
 
         vorbis_tags.push(VorbisTag {
             id: k.to_string(),
@@ -92,6 +86,13 @@ fn get_vorbis_comment_tags(file_stream: &FlacReader<File>) -> Vec<VorbisTag> {
     });
 
     vorbis_tags
+}
+
+fn get_longest_tag(tags: Tags) -> Result<usize, LocalError> {
+    match tags.max_by_key(|tag| tag.0.len()) {
+        Some(tag) => Ok(tag.0.len()),
+        None => Err(LocalError::ErrorParsingVorbisTags),
+    }
 }
 
 fn format_md5_sum_from_bytes(bytes: [u8; 16]) -> String {

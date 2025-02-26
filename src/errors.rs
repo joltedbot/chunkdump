@@ -39,9 +39,6 @@ pub enum LocalError {
     #[error("Output File {0} Already Exists")]
     OutputFileAlreadyExists(String),
 
-    #[error("Could not open FLAC file {0}")]
-    InvalidFlacFile(String),
-
     #[error("Provided Mac HFS Timestamp is too small. Not a valid date.")]
     HFSTimestampTooSmall,
 
@@ -50,6 +47,9 @@ pub enum LocalError {
 
     #[error("Could not write out metadata.")]
     CouldNotWrteOutData,
+
+    #[error("Could not process the FLAC Vorbis tags")]
+    ErrorParsingVorbisTags,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {
