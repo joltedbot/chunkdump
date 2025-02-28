@@ -1,3 +1,4 @@
+use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
 use crate::fileio::{canonicalize_file_path, get_file_name_from_file_path};
 use crate::formating::format_file_size_as_string;
@@ -11,7 +12,7 @@ use std::fs::{metadata, File};
 use upon::Value;
 
 const TEMPLATE_NAME: &str = "flac";
-const TEMPLATE_CONTENT: &str = include_str!("templates/flac/flac.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("templates/files/flac.tmpl");
 const SECONDS_PER_MINUTE: u64 = 60;
 
 #[derive(Debug, Serialize)]
@@ -21,7 +22,7 @@ struct VorbisTag {
     value: String,
 }
 
-pub fn get_metadata_from_file(flac_file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
+pub fn get_metadata_from_file(flac_file_path: &str) -> Result<Vec<Chunk>, Box<dyn Error>> {
     let mut template = Template::new();
     let file_stream = FlacReader::open_ext(
         flac_file_path,
@@ -39,7 +40,7 @@ fn format_data_for_output(
     template: &mut Template,
     file_path: &str,
     file_stream: FlacReader<File>,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<Chunk, Box<dyn Error>> {
     let file_size = format_file_size_as_string(metadata(file_path)?.len());
     let stream_info = file_stream.streaminfo();
     let vorbis_vendor = file_stream.vendor();
@@ -64,8 +65,12 @@ fn format_data_for_output(
         vorbis_tags: vorbis_tags,
     };
 
-    let formated_output = template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
-    Ok(formated_output)
+    let output = Chunk {
+        section: Section::Header,
+        text: template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?,
+    };
+
+    Ok(output)
 }
 
 fn get_vorbis_comment_tags(file_stream: &FlacReader<File>) -> Vec<VorbisTag> {

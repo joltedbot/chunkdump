@@ -183,10 +183,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn return_correct_integer_when_taking_one_byte_as_unsigned_integer() {
+    fn return_correct_integer_when_taking_one_byte_as_le_unsigned_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x11, 0x01, 0x01, 0x01, 0x01];
         let result_integer: u8 =
             take_first_byte_as_unsigned_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
+        let correct_result: u8 = 17;
+        assert_eq!(result_integer, correct_result);
+    }
+
+    #[test]
+    fn return_correct_integer_when_taking_one_byte_as_be_unsigned_integer() {
+        let mut big_endian_test_bytes: Vec<u8> = vec![0x11, 0x01, 0x01, 0x01, 0x01];
+        let result_integer: u8 = take_first_byte_as_unsigned_integer(&mut big_endian_test_bytes, Endian::Big).unwrap();
         let correct_result: u8 = 17;
         assert_eq!(result_integer, correct_result);
     }
@@ -200,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn return_correct_integer_when_taking_two_bytes_as_unsigned_integer() {
+    fn return_correct_integer_when_taking_two_bytes_as_le_unsigned_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
         let result_integer: u16 =
             take_first_two_bytes_as_unsigned_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
@@ -209,7 +217,16 @@ mod tests {
     }
 
     #[test]
-    fn return_correct_integer_when_taking_two_bytes_as_signed_integer() {
+    fn return_correct_integer_when_taking_two_bytes_as_be_unsigned_integer() {
+        let mut big_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
+        let result_integer: u16 =
+            take_first_two_bytes_as_unsigned_integer(&mut big_endian_test_bytes, Endian::Big).unwrap();
+        let correct_result: u16 = 4097;
+        assert_eq!(result_integer, correct_result);
+    }
+
+    #[test]
+    fn return_correct_integer_when_taking_two_bytes_as_le_signed_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
         let result_integer: i16 =
             take_first_two_bytes_as_signed_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
@@ -218,7 +235,16 @@ mod tests {
     }
 
     #[test]
-    fn return_correct_integer_when_taking_four_bytes_as_unsigned_integer() {
+    fn return_correct_integer_when_taking_two_bytes_as_be_signed_integer() {
+        let mut big_endian_test_bytes: Vec<u8> = vec![0xF0, 0x01, 0x01, 0x01, 0x01];
+        let result_integer: i16 =
+            take_first_two_bytes_as_signed_integer(&mut big_endian_test_bytes, Endian::Big).unwrap();
+        let correct_result: i16 = -4095;
+        assert_eq!(result_integer, correct_result);
+    }
+
+    #[test]
+    fn return_correct_integer_when_taking_four_bytes_as_le_unsigned_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
         let result_integer: u32 =
             take_first_four_bytes_as_unsigned_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
@@ -227,11 +253,29 @@ mod tests {
     }
 
     #[test]
-    fn return_correct_integer_when_taking_four_bytes_as_signed_integer() {
+    fn return_correct_integer_when_taking_four_bytes_as_be_unsigned_integer() {
+        let mut big_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01];
+        let result_integer: u32 =
+            take_first_four_bytes_as_unsigned_integer(&mut big_endian_test_bytes, Endian::Big).unwrap();
+        let correct_result: u32 = 268501249;
+        assert_eq!(result_integer, correct_result);
+    }
+
+    #[test]
+    fn return_correct_integer_when_taking_four_bytes_as_le_signed_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0xDD, 0xCC, 0xBB, 0xAA, 0xFF];
         let result_integer: i32 =
             take_first_four_bytes_as_signed_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: i32 = -1430532899;
+        assert_eq!(result_integer, correct_result);
+    }
+
+    #[test]
+    fn return_correct_integer_when_taking_four_bytes_as_be_signed_integer() {
+        let mut big_endian_test_bytes: Vec<u8> = vec![0xDD, 0xCC, 0xBB, 0xAA, 0xFF];
+        let result_integer: i32 =
+            take_first_four_bytes_as_signed_integer(&mut big_endian_test_bytes, Endian::Big).unwrap();
+        let correct_result: i32 = -573785174;
         assert_eq!(result_integer, correct_result);
     }
 
@@ -261,6 +305,16 @@ mod tests {
             take_first_number_of_bytes_as_string(&mut little_endian_test_bytes, number_of_bytes).unwrap();
 
         assert_eq!(result_string, correct_result_string);
+    }
+
+    #[test]
+    fn return_correct_value_when_taking_ten_bytes_as_apple_extended() {
+        let mut test_bytes: Vec<u8> = vec![0x40, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF];
+        let correct_result: [u8; 10] = [0x40, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
+        let result = take_first_ten_bytes_as_an_apple_extended_integer(&mut test_bytes).unwrap();
+
+        assert_eq!(result.to_be_bytes(), correct_result);
     }
 
     #[test]

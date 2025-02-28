@@ -21,9 +21,6 @@ pub enum LocalError {
     #[error("Could not read metadata from the file: {0}")]
     CouldNotReadData(String),
 
-    #[error("Incorrect INFO chunk type, {0}")]
-    InvalidInfoTypeID(String),
-
     #[error("Incorrect ADTL chunk type, {0}")]
     InvalidADTLTypeID(String),
 

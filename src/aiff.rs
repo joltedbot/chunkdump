@@ -1,108 +1,76 @@
-mod chunk;
-mod comm;
-mod comt;
-mod fver;
-mod mark;
-
-use crate::aiff::chunk::{Chunk, ID3_CHUNK_ID};
+use crate::chunks::{get_chunk_metadata, Chunk, Section, ID3_CHUNK_ID};
 use crate::fileio::{
     canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
     read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
 };
 use crate::formating::format_file_size_as_string;
-use crate::template::Template;
+use crate::template::get_file_chunk_output;
 use std::error::Error;
 use std::fs::File;
 use upon::Value;
 
-const TEMPLATE_NAME: &str = "aiff";
-const TEMPLATE_CONTENT: &str = include_str!("templates/aiff/aiff.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("templates/files/aiff.tmpl");
 const CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
 const AIFF_CHUNK_SIZE_LENGTH_IN_BYTES: usize = 4;
 const AIFF_FORM_TYPE_LENGTH_IN_BYTES: usize = 4;
-const NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE: &str = "failed to fill whole buffer";
+const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 
-#[derive(Default)]
-struct Aiff {
-    name: String,
-    original_file_path: String,
-    canonical_path: String,
-    size_in_bytes: u64,
-    form_type: String,
-    chunks: Chunk,
+pub fn get_metadata_from_file(file_path: &str) -> Result<Vec<Chunk>, Box<dyn Error>> {
+    let mut aiff_file = File::open(file_path)?;
+
+    let aiff_metatdata = get_metadata_from_aiff(file_path, &mut aiff_file)?;
+    let chunk_metadata = get_metadata_from_chunks(&mut aiff_file, file_path)?;
+
+    let mut output = vec![aiff_metatdata];
+    output.extend(chunk_metadata);
+
+    Ok(output)
 }
 
-impl Aiff {
-    fn format_data_for_output(&mut self, template: &mut Template, file_path: &str) -> Result<String, Box<dyn Error>> {
-        let mut aiff_file = File::open(file_path)?;
-        self.extract_file_metadata(file_path, &mut aiff_file)?;
-        self.extract_metadata_from_aiff_chunks(&mut aiff_file)?;
+fn get_metadata_from_aiff(file_path: &str, aiff_file: &mut File) -> Result<Chunk, Box<dyn Error>> {
+    skip_over_bytes_in_file(aiff_file, CHUNK_ID_LENGTH_IN_BYTES + AIFF_CHUNK_SIZE_LENGTH_IN_BYTES)?;
+    let form_type = read_bytes_from_file_as_string(aiff_file, AIFF_FORM_TYPE_LENGTH_IN_BYTES)?;
 
-        let wave_output_values: Value = upon::value! {
-            file_name: &self.name,
-            file_path: &self.canonical_path,
-            file_size: format_file_size_as_string(self.size_in_bytes),
-            form_type: &self.form_type,
-            chunk_ids_found: self.chunks.found_chunk_ids.join("', '"),
-            chunk_ids_skipped: self.chunks.skipped_chunk_ids.join("', '"),
+    let metadata = aiff_file.metadata()?;
+    let size_in_bytes = metadata.len();
+    let name = get_file_name_from_file_path(file_path)?;
+    let canonical_path = canonicalize_file_path(file_path)?;
+
+    let aiff_output_values: Value = upon::value! {
+        file_name: &name,
+        file_path: &canonical_path,
+        file_size: format_file_size_as_string(size_in_bytes),
+        form_type: &form_type,
+    };
+
+    let formated_aiff_output: String = get_file_chunk_output(TEMPLATE_CONTENT, aiff_output_values)?;
+
+    let output = Chunk {
+        section: Section::Header,
+        text: formated_aiff_output,
+    };
+
+    Ok(output)
+}
+
+fn get_metadata_from_chunks(aiff_file: &mut File, file_path: &str) -> Result<Vec<Chunk>, Box<dyn Error>> {
+    let mut output: Vec<Chunk> = vec![];
+
+    loop {
+        let chunk_id: String = match read_bytes_from_file_as_string(aiff_file, CHUNK_ID_LENGTH_IN_BYTES) {
+            Ok(chunk_id) => chunk_id.to_lowercase(),
+            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
+            Err(error) => return Err(error),
         };
 
-        let formated_wave_output: String =
-            template.get_wave_chunk_output(TEMPLATE_NAME, TEMPLATE_CONTENT, wave_output_values)?;
-        Ok(formated_wave_output)
+        let chunk_size = match chunk_id.as_str() {
+            ID3_CHUNK_ID => read_chunk_size_from_file(aiff_file, Endian::Little)?,
+            _ => read_chunk_size_from_file(aiff_file, Endian::Big)?,
+        };
+
+        let chunk_data = read_bytes_from_file(aiff_file, chunk_size).unwrap_or_default();
+        output.push(get_chunk_metadata(chunk_id, chunk_data, file_path)?);
     }
 
-    fn extract_file_metadata(&mut self, file_path: &str, aiff_file: &mut File) -> Result<(), Box<dyn Error>> {
-        skip_over_bytes_in_file(aiff_file, CHUNK_ID_LENGTH_IN_BYTES + AIFF_CHUNK_SIZE_LENGTH_IN_BYTES)?;
-
-        let form_type = read_bytes_from_file_as_string(aiff_file, AIFF_FORM_TYPE_LENGTH_IN_BYTES)?;
-
-        let metadata = aiff_file.metadata()?;
-        self.size_in_bytes = metadata.len();
-        self.original_file_path = file_path.to_string();
-        self.name = get_file_name_from_file_path(file_path)?;
-        self.canonical_path = canonicalize_file_path(file_path)?;
-        self.form_type = form_type;
-        self.chunks = Chunk::new(file_path.to_string());
-
-        Ok(())
-    }
-
-    fn extract_metadata_from_aiff_chunks(&mut self, aiff_file: &mut File) -> Result<(), Box<dyn Error>> {
-        loop {
-            let chunk_id: String = match read_bytes_from_file_as_string(aiff_file, CHUNK_ID_LENGTH_IN_BYTES) {
-                Ok(chunk_id) => chunk_id.to_lowercase(),
-                Err(error) if error.to_string() == NOT_ENOUGH_BYTES_LEFT_IN_FILE_ERROR_MESSAGE => break,
-                Err(error) => return Err(error),
-            };
-
-            let chunk_size = match chunk_id.as_str() {
-                ID3_CHUNK_ID => read_chunk_size_from_file(aiff_file, Endian::Little)?,
-                _ => read_chunk_size_from_file(aiff_file, Endian::Big)?,
-            };
-
-            let mut chunk_data: Vec<u8> = vec![];
-
-            if self.chunks.ignore_data_for_chunks.contains(&chunk_id.as_str()) {
-                skip_over_bytes_in_file(aiff_file, chunk_size)?;
-            } else {
-                chunk_data = read_bytes_from_file(aiff_file, chunk_size)?;
-            }
-
-            self.chunks.add_chunk(&chunk_id, chunk_data)?;
-        }
-
-        Ok(())
-    }
-}
-
-pub fn get_metadata_from_file(aiff_file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut template = Template::new();
-    let mut aiff: Aiff = Default::default();
-
-    let mut output_lines: Vec<String> = vec![aiff.format_data_for_output(&mut template, aiff_file_path)?];
-    let formated_chunk_output = aiff.chunks.format_data_for_output(&mut template)?;
-    output_lines.extend(formated_chunk_output);
-
-    Ok(output_lines)
+    Ok(output)
 }
