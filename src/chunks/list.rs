@@ -8,11 +8,9 @@ use std::error::Error;
 
 const INFO_TEMPLATE_CONTENT: &str = include_str!("../templates/chunks/list_info.tmpl");
 const ADTL_TEMPLATE_CONTENT: &str = include_str!("../templates/chunks/list_adtl.tmpl");
-
 const LIST_TYPE_LENGTH_IN_BYTES: usize = 4;
 const INFO_TYPE_ID: &str = "INFO";
 const ADTL_TYPE_ID: &str = "adtl";
-
 const INFO_ITEM_ID_LENGTH_IN_BYTES: usize = 4;
 const ADTL_SUB_CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
 const ADTL_SUB_CHUNK_ID_LABEL: &str = "labl";
@@ -74,22 +72,27 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
         _ => {}
     }
 
-    let info_output_values = upon::value! {
-            info_items: &info_data,
-    };
+    let mut info_output = String::new();
+    if !info_data.is_empty() {
+        let info_output_values = upon::value! {
+                info_items: &info_data,
+        };
 
-    let info_output = get_file_chunk_output(INFO_TEMPLATE_CONTENT, info_output_values)?;
+        info_output = get_file_chunk_output(INFO_TEMPLATE_CONTENT, info_output_values)?;
+    }
 
     let mut adtl_output: String = String::new();
-    for field in adtl_data {
-        adtl_output += &get_file_chunk_output(
-            ADTL_TEMPLATE_CONTENT,
-            upon::value! {
-                labels: &field.labels,
-                notes: &field.notes,
-                labeled_texts: &field.labeled_texts,
-            },
-        )?;
+    if !adtl_data.is_empty() {
+        for field in adtl_data {
+            adtl_output += &get_file_chunk_output(
+                ADTL_TEMPLATE_CONTENT,
+                upon::value! {
+                    labels: &field.labels,
+                    notes: &field.notes,
+                    labeled_texts: &field.labeled_texts,
+                },
+            )?;
+        }
     }
 
     let formated_output = info_output + &adtl_output;

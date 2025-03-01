@@ -7,11 +7,11 @@ use std::path::Path;
 
 pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
     let mut header: Vec<String> = vec![];
-    let mut mandatory: Vec<String> = vec![include_str!("templates/output/mandatory.tmpl").to_string()];
-    let mut optional: Vec<String> = vec![include_str!("templates/output/optional.tmpl").to_string()];
-    let mut unsupported: Vec<String> = vec![include_str!("templates/output/unsupported.tmpl").to_string()];
-    let mut skipped: Vec<String> = vec![include_str!("templates/output/skipped.tmpl").to_string()];
-    let mut empty: Vec<String> = vec![include_str!("templates/output/empty.tmpl").to_string()];
+    let mut mandatory: Vec<String> = vec![];
+    let mut optional: Vec<String> = vec![];
+    let mut unsupported: Vec<String> = vec![];
+    let mut skipped: Vec<String> = vec![];
+    let mut empty: Vec<String> = vec![];
 
     for chunk in file_data {
         match chunk.section {
@@ -25,11 +25,30 @@ pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String
     }
 
     let mut output_metadata: Vec<String> = header;
-    output_metadata.append(&mut mandatory);
-    output_metadata.append(&mut optional);
-    output_metadata.append(&mut unsupported);
-    output_metadata.append(&mut skipped);
-    output_metadata.append(&mut empty);
+
+    if !mandatory.is_empty() {
+        output_metadata.push(include_str!("templates/output/mandatory.tmpl").to_string());
+        output_metadata.append(&mut mandatory);
+    }
+    if !optional.is_empty() {
+        output_metadata.push(include_str!("templates/output/optional.tmpl").to_string());
+        output_metadata.append(&mut optional);
+    }
+
+    if !unsupported.is_empty() {
+        output_metadata.push(include_str!("templates/output/unsupported.tmpl").to_string());
+        output_metadata.append(&mut unsupported);
+    }
+
+    if !skipped.is_empty() {
+        output_metadata.push(include_str!("templates/output/skipped.tmpl").to_string());
+        output_metadata.append(&mut skipped);
+    }
+
+    if !empty.is_empty() {
+        output_metadata.push(include_str!("templates/output/empty.tmpl").to_string());
+        output_metadata.append(&mut empty);
+    }
 
     match output_file_path {
         None => write_to_stdout(output_metadata)?,

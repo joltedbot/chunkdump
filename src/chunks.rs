@@ -4,7 +4,6 @@ mod cart;
 pub mod comm;
 pub mod comt;
 mod cue;
-mod empty;
 pub mod extra;
 mod fact;
 mod fmt;
@@ -23,7 +22,7 @@ use std::error::Error;
 
 const ACID_CHUNK_ID: &str = "acid";
 const AXML_CHUNK_ID: &str = "axml";
-const AXML_TEMPLATE_TITLE: &str = "AXML Chunk (XML):";
+const AXML_TEMPLATE_TITLE: &str = "AXML (XML)";
 const BEXT_CHUNK_ID: &str = "bext";
 const CART_CHUNK_ID: &str = "cart";
 const CUE_CHUNK_ID: &str = "cue ";
@@ -33,13 +32,13 @@ const FACT_CHUNK_ID: &str = "fact";
 const FMT_CHUNK_ID: &str = "fmt ";
 pub const ID3_CHUNK_ID: &str = "id3 ";
 const IXML_CHUNK_ID: &str = "ixml";
-const IXML_TEMPLATE_TITLE: &str = "iXML Chunk Details";
+const IXML_TEMPLATE_TITLE: &str = "iXML";
 const JUNK_CHUNK_ID: &str = "junk";
-const JUNK_TEMPLATE_TITLE: &str = "Junk Chunk Details";
+const JUNK_TEMPLATE_TITLE: &str = "Junk";
 const LIST_CHUNK_ID: &str = "list";
 const LOGIC_PRO_CHUNK_ID: &str = "lgwv";
 const PAD_CHUNK_ID: &str = "pad ";
-const PAD_TEMPLATE_TITLE: &str = "PAD Chunk Details";
+const PAD_TEMPLATE_TITLE: &str = "PAD";
 const PRO_TOOLS_DGDA_CHUNK_ID: &str = "dgda";
 const PRO_TOOLS_ELM1_CHUNK_ID: &str = "elm1";
 const PRO_TOOLS_MINF_CHUNK_ID: &str = "minf";
@@ -49,15 +48,15 @@ const RESU_CHUNK_ID: &str = "resu";
 const SMPL_CHUNK_ID: &str = "smpl";
 const SNDM_CHUNK_ID: &str = "sndm";
 const XMP_CHUNK_ID: &str = "_pmx";
-const XMP_TEMPLATE_TITLE: &str = "XMP (XML) Chunk Details";
+const XMP_TEMPLATE_TITLE: &str = "XMP (XML)";
 const ANNOTATION_CHUNK_ID: &str = "anno";
-const ANNOTATION_TEMPLATE_TITLE: &str = "Annotation (ANNO) Chunk Details";
+const ANNOTATION_TEMPLATE_TITLE: &str = "Annotation (ANNO)";
 const APPLICATION_CHUNK_ID: &str = "appl";
-const APPLICATION_TEMPLATE_TITLE: &str = "Application (APPL) Chunk Details";
+const APPLICATION_TEMPLATE_TITLE: &str = "Application (APPL)";
 const AUTHOR_CHUNK_ID: &str = "auth";
-const AUTHOR_TEMPLATE_TITLE: &str = "Author (auth) Chunk Details";
+const AUTHOR_TEMPLATE_TITLE: &str = "Author (auth)";
 const COPYRIGHT_CHUNK_ID: &str = "(c) ";
-const COPYRIGHT_TEMPLATE_TITLE: &str = "Copyright ((c) ) Chunk Details";
+const COPYRIGHT_TEMPLATE_TITLE: &str = "Copyright ((c) )";
 const CHAN_CHUNK_ID: &str = "chan";
 const COMMON_CHUNK_ID: &str = "comm";
 const COMMENT_CHUNK_ID: &str = "comt";
@@ -65,7 +64,7 @@ const FORMAT_VERSION_CHUNK_ID: &str = "fver";
 const MARKER_CHUNK_ID: &str = "mark";
 pub const AUDIO_SAMPLES_CHUNK_ID: &str = "ssnd";
 pub const NAME_CHUNK_ID: &str = "name";
-const NAME_TEMPLATE_TITLE: &str = "Name Chunk Details";
+const NAME_TEMPLATE_TITLE: &str = "Name";
 
 pub enum Section {
     Header,
@@ -82,10 +81,6 @@ pub struct Chunk {
 }
 
 pub fn get_chunk_metadata(chunk_id: String, chunk_data: Vec<u8>, file_path: &str) -> Result<Chunk, Box<dyn Error>> {
-    if chunk_data.is_empty() {
-        return empty::get_metadata(chunk_id);
-    }
-
     let result = match chunk_id.as_str() {
         FMT_CHUNK_ID => fmt::get_metadata(chunk_data)?,
         FACT_CHUNK_ID => fact::get_metadata(chunk_data)?,

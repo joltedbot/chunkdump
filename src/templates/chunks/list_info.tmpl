@@ -1,10 +1,8 @@
--------------------
-List Chunk Details:
--------------------
-{% if info_items %}
-  Type: Info
-  ----------
+{%- if info_items %}
+--------------------------
+List - Info (info) Chunk Details:
+--------------------------
 {%- for item in info_items %}
-  {{ item.id }}: {{ item.data }}
+{{ item.id }}:    {{ item.data }}
 {%- endfor %}
 {% endif %}
