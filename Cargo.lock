@@ -216,7 +216,6 @@ dependencies = [
  "extended",
  "flate2",
  "id3",
- "log",
  "serde",
  "thiserror",
  "upon",
