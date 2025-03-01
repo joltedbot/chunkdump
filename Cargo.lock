@@ -207,7 +207,7 @@ dependencies = [
 
 [[package]]
 name = "chunkdump"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "argh",
  "byte-unit",
@@ -216,7 +216,6 @@ dependencies = [
  "extended",
  "flate2",
  "id3",
- "log",
  "serde",
  "thiserror",
  "upon",

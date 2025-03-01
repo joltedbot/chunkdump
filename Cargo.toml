@@ -1,9 +1,9 @@
 [package]
 name = "chunkdump"
-version = "0.1.6"
+version = "0.2.0"
 edition = "2021"
 authors = ["Dave White"]
-description = "Exports the metadata from wav files including non-standard chunks"
+description = "Exports the metadata from Riff Wave, AIFF, and Flac files including non-standard chunks"
 license = "Apache-2.0"
 
 [dependencies]
@@ -16,5 +16,4 @@ serde = { version = "1.0.217", features = ["derive"] }
 argh = "0.1.13"
 claxon = "0.4.3"
 chrono = "0.4.39"
-extended = "0.1.0"
-log = "0.4.26"
+extended = "0.1.0"c
