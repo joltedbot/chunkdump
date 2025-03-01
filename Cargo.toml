@@ -16,4 +16,4 @@ serde = { version = "1.0.217", features = ["derive"] }
 argh = "0.1.13"
 claxon = "0.4.3"
 chrono = "0.4.39"
-extended = "0.1.0"c
+extended = "0.1.0"
