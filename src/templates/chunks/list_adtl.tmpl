@@ -1,0 +1,31 @@
+--------------------------------------------
+List - Associated Data (adtl) Chunk Details:
+--------------------------------------------
+{%- if labels %}
+Labels:
+-------
+{%- for item in labels %}
+{{ item.cue_point_id }}: {{ item.data }}{% endfor %}
+{%- endif %}
+
+{% if notes %}
+ Notes:
+ ------
+{%- for item in notes %}
+{{ item.cue_point_id }}: {{ item.data }}{% endfor %}
+{%- endif %}
+
+{%- if labeled_texts %}
+Labeled Text:
+-------------
+{% for item in labeled_texts %}
+Type: Labeled Text
+Cue Point ID:   {{ item.cue_point_id }}
+Sample Length:  {{ item.sample_length }}
+Purpose ID:     {{ item.purpose_id }}
+Country:        {{ item.country }}
+Language:       {{ item.language }}
+Dialect:        {{ item.dialect }}
+Code Page:      {{ item.code_page }}
+Data:            {{ item.data }}
+{%- endfor %}{%- endif %}

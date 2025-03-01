@@ -21,9 +21,6 @@ pub enum LocalError {
     #[error("Could not read metadata from the file: {0}")]
     CouldNotReadData(String),
 
-    #[error("Incorrect INFO chunk type, {0}")]
-    InvalidInfoTypeID(String),
-
     #[error("Incorrect ADTL chunk type, {0}")]
     InvalidADTLTypeID(String),
 
@@ -39,14 +36,17 @@ pub enum LocalError {
     #[error("Output File {0} Already Exists")]
     OutputFileAlreadyExists(String),
 
-    #[error("Could not open FLAC file {0}")]
-    InvalidFlacFile(String),
-
     #[error("Provided Mac HFS Timestamp is too small. Not a valid date.")]
     HFSTimestampTooSmall,
 
     #[error("Could not process the ID3 tag IDs")]
     ErrorParsingID3TagIDs,
+
+    #[error("Could not write out metadata.")]
+    CouldNotWrteOutData,
+
+    #[error("Could not process the FLAC Vorbis tags")]
+    ErrorParsingVorbisTags,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

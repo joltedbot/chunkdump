@@ -35,6 +35,16 @@ impl Template {
     }
 }
 
+pub fn get_file_chunk_output(template_content: &'static str, values: Value) -> Result<String, upon::Error> {
+    let engine = Engine::new();
+    let template = engine.compile(template_content)?;
+
+    match template.render(&engine, &values).to_string() {
+        Ok(template) => Ok(template),
+        Err(e) => Err(e),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

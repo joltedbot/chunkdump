@@ -1,0 +1,88 @@
+use crate::chunks::{Chunk, Section};
+use crate::errors::LocalError;
+use std::error::Error;
+use std::fs::File;
+use std::io::{stdout, Write};
+use std::path::Path;
+
+pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
+    let mut header: Vec<String> = vec![];
+    let mut mandatory: Vec<String> = vec![];
+    let mut optional: Vec<String> = vec![];
+    let mut unsupported: Vec<String> = vec![];
+    let mut skipped: Vec<String> = vec![];
+    let mut empty: Vec<String> = vec![];
+
+    for chunk in file_data {
+        match chunk.section {
+            Section::Header => header.push(chunk.text),
+            Section::Mandatory => mandatory.push(chunk.text),
+            Section::Optional => optional.push(chunk.text),
+            Section::Unsupported => unsupported.push(chunk.text),
+            Section::Skipped => skipped.push(chunk.text),
+            Section::Empty => empty.push(chunk.text),
+        }
+    }
+
+    let mut output_metadata: Vec<String> = header;
+
+    if !mandatory.is_empty() {
+        output_metadata.push(include_str!("templates/output/mandatory.tmpl").to_string());
+        output_metadata.append(&mut mandatory);
+    }
+    if !optional.is_empty() {
+        output_metadata.push(include_str!("templates/output/optional.tmpl").to_string());
+        output_metadata.append(&mut optional);
+    }
+
+    if !unsupported.is_empty() {
+        output_metadata.push(include_str!("templates/output/unsupported.tmpl").to_string());
+        output_metadata.append(&mut unsupported);
+    }
+
+    if !skipped.is_empty() {
+        output_metadata.push(include_str!("templates/output/skipped.tmpl").to_string());
+        output_metadata.append(&mut skipped);
+    }
+
+    if !empty.is_empty() {
+        output_metadata.push(include_str!("templates/output/empty.tmpl").to_string());
+        output_metadata.append(&mut empty);
+    }
+
+    match output_file_path {
+        None => write_to_stdout(output_metadata)?,
+        Some(output_path) => write_to_file(output_metadata, output_path)?,
+    }
+
+    Ok(())
+}
+
+fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {
+    for line in file_data {
+        let mut lock = stdout().lock();
+        writeln!(lock, "{}", line).unwrap()
+    }
+
+    Ok(())
+}
+
+fn write_to_file(file_data: Vec<String>, output_file_path: String) -> Result<(), Box<dyn Error>> {
+    check_if_file_already_exists(&output_file_path)?;
+
+    let mut output_file = File::create(output_file_path)?;
+    for data in file_data {
+        let line = data + "\n";
+        output_file.write_all(line.as_bytes())?;
+    }
+
+    Ok(())
+}
+
+fn check_if_file_already_exists(output_file: &str) -> Result<(), Box<dyn Error>> {
+    if Path::new(output_file).exists() {
+        return Err(Box::new(LocalError::OutputFileAlreadyExists(output_file.to_string())));
+    }
+
+    Ok(())
+}
