@@ -20,6 +20,9 @@ mod umid;
 
 use std::error::Error;
 
+pub const CHUNK_ID_FIELD_LENGTH_IN_BYTES: usize = 4;
+pub const CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
+
 const ACID_CHUNK_ID: &str = "acid";
 const AXML_CHUNK_ID: &str = "axml";
 const AXML_TEMPLATE_TITLE: &str = "AXML (XML)";

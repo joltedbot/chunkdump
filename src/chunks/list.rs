@@ -1,7 +1,7 @@
 use crate::bytes::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
 use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
-use crate::fileio::add_one_if_byte_size_is_odd;
+use crate::formating::add_one_if_byte_size_is_odd;
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;
@@ -82,18 +82,17 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
     }
 
     let mut adtl_output: String = String::new();
-    if !adtl_data.is_empty() {
-        for field in adtl_data {
-            adtl_output += &get_file_chunk_output(
-                ADTL_TEMPLATE_CONTENT,
-                upon::value! {
-                    labels: &field.labels,
-                    notes: &field.notes,
-                    labeled_texts: &field.labeled_texts,
-                },
-            )?;
-        }
-    }
+    adtl_data.iter().for_each(|field| {
+        adtl_output += &get_file_chunk_output(
+            ADTL_TEMPLATE_CONTENT,
+            upon::value! {
+                labels: &field.labels,
+                notes: &field.notes,
+                labeled_texts: &field.labeled_texts,
+            },
+        )
+        .unwrap_or_default();
+    });
 
     let formated_output = info_output + &adtl_output;
 

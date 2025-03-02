@@ -27,9 +27,7 @@ pub struct CliArguments {
     file: Option<String>,
 }
 
-pub fn process_cli_arguments() -> Args {
-    let args: CliArguments = argh::from_env();
-
+pub fn process_cli_arguments(args: CliArguments) -> Args {
     if args.version {
         println!("{}", VERSION);
         exit(EXIT_CODE_SUCCESS);

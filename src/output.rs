@@ -13,16 +13,14 @@ pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String
     let mut skipped: Vec<String> = vec![];
     let mut empty: Vec<String> = vec![];
 
-    for chunk in file_data {
-        match chunk.section {
-            Section::Header => header.push(chunk.text),
-            Section::Mandatory => mandatory.push(chunk.text),
-            Section::Optional => optional.push(chunk.text),
-            Section::Unsupported => unsupported.push(chunk.text),
-            Section::Skipped => skipped.push(chunk.text),
-            Section::Empty => empty.push(chunk.text),
-        }
-    }
+    file_data.iter().for_each(|chunk| match chunk.section {
+        Section::Header => header.push(chunk.text.clone()),
+        Section::Mandatory => mandatory.push(chunk.text.clone()),
+        Section::Optional => optional.push(chunk.text.clone()),
+        Section::Unsupported => unsupported.push(chunk.text.clone()),
+        Section::Skipped => skipped.push(chunk.text.clone()),
+        Section::Empty => empty.push(chunk.text.clone()),
+    });
 
     let mut output_metadata: Vec<String> = header;
 
@@ -59,16 +57,17 @@ pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String
 }
 
 fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {
-    for line in file_data {
-        let mut lock = stdout().lock();
-        writeln!(lock, "{}", line).unwrap()
-    }
-
+    let mut lock = stdout().lock();
+    file_data.iter().for_each(|line| writeln!(lock, "{}", line).unwrap());
     Ok(())
 }
 
 fn write_to_file(file_data: Vec<String>, output_file_path: String) -> Result<(), Box<dyn Error>> {
-    check_if_file_already_exists(&output_file_path)?;
+    if Path::new(&output_file_path).exists() {
+        return Err(Box::new(LocalError::OutputFileAlreadyExists(
+            output_file_path.to_string(),
+        )));
+    }
 
     let mut output_file = File::create(output_file_path)?;
     for data in file_data {
@@ -79,10 +78,33 @@ fn write_to_file(file_data: Vec<String>, output_file_path: String) -> Result<(),
     Ok(())
 }
 
-fn check_if_file_already_exists(output_file: &str) -> Result<(), Box<dyn Error>> {
-    if Path::new(output_file).exists() {
-        return Err(Box::new(LocalError::OutputFileAlreadyExists(output_file.to_string())));
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn fails_to_write_to_a_file_that_already_exists() {
+        let mut test_file_path: PathBuf = std::env::temp_dir();
+        test_file_path.push("test_writing_to_exisitng_file.txt");
+        File::create(test_file_path.clone()).unwrap();
+        let result = write_to_file(vec!["test".to_string()], test_file_path.to_str().unwrap().to_string());
+        std::fs::remove_file(test_file_path).unwrap();
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("test_writing_to_exisitng_file.txt Already Exists"));
     }
 
-    Ok(())
+    #[test]
+    fn correctly_writes_to_file_when_the_file_path_is_valid() {
+        let mut test_file_path: PathBuf = std::env::temp_dir();
+        test_file_path.push("test_writing_valid_file.txt");
+        let result = write_to_file(
+            vec!["test1\n".to_string(), "test2\n".to_string()],
+            test_file_path.to_str().unwrap().to_string(),
+        );
+        std::fs::remove_file(test_file_path).unwrap();
+        assert!(result.is_ok());
+    }
 }

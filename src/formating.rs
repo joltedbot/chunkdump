@@ -1,6 +1,8 @@
 use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
 use chrono::DateTime;
+use std::error::Error;
+use std::path::Path;
 
 const NOTE_NAMES_WITHOUT_OCTAVES: [&str; 12] = [
     "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B",
@@ -39,6 +41,36 @@ pub fn format_midi_note_number_as_note_name(midi_note_number: u32) -> String {
     let note_name = NOTE_NAMES_WITHOUT_OCTAVES[note_offset_from_c].to_string();
     let note_octave = ((midi_note_number as f32 - note_offset_from_c as f32) / 12.0) - 2.0;
     format!("{}{}", note_name, note_octave)
+}
+
+pub fn canonicalize_file_path(file_path: &str) -> Result<String, Box<dyn Error>> {
+    let path = Path::new(file_path).canonicalize()?;
+
+    let canonical_path = match path.to_str() {
+        Some(path) => path.to_string(),
+        None => return Err(Box::new(LocalError::InvalidPath(file_path.to_string()))),
+    };
+
+    Ok(canonical_path)
+}
+
+pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalError> {
+    let path = Path::new(file_path);
+
+    let file_name = match path.file_name() {
+        Some(name) => name.to_string_lossy().to_string(),
+        None => return Err(LocalError::InvalidFileName),
+    };
+
+    Ok(file_name)
+}
+
+pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
+    if byte_size % 2 > 0 {
+        byte_size += 1;
+    }
+
+    byte_size
 }
 
 #[cfg(test)]
@@ -89,5 +121,47 @@ mod tests {
     #[test]
     fn return_note_g8_when_midi_note_number_is_127() {
         assert_eq!(format_midi_note_number_as_note_name(127), "G8");
+    }
+
+    #[test]
+    fn return_correct_canonicalize_path_when_given_path_is_valid() {
+        let correct_result = std::env::current_dir().unwrap().to_str().unwrap().to_string() + "/src/main.rs";
+        let result = canonicalize_file_path("./src/main.rs").unwrap();
+
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn canonicalize_file_path_throws_error_when_given_path_is_invalid() {
+        let invalid_test_path = "/not/a/real/path".to_string();
+        let result = canonicalize_file_path(&invalid_test_path);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_file_name_from_file_path_returns_correct_result() {
+        let result = get_file_name_from_file_path("/test/path/filename.wav").unwrap();
+        assert_eq!(result, "filename.wav")
+    }
+
+    #[test]
+    fn errors_when_geting_filename_from_filepath_if_path_is_invalid() {
+        let result = get_file_name_from_file_path("/");
+        assert_eq!(result.unwrap_err(), LocalError::InvalidFileName);
+    }
+
+    #[test]
+    fn correctly_adds_one_if_byte_size_is_odd() {
+        let test_size = 3;
+        let correct_size = test_size + 1;
+
+        assert_eq!(add_one_if_byte_size_is_odd(test_size), correct_size);
+    }
+
+    #[test]
+    fn does_not_add_one_if_byte_size_is_even() {
+        let test_size = 4;
+        assert_eq!(add_one_if_byte_size_is_odd(test_size), test_size);
     }
 }

@@ -105,7 +105,6 @@ pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianne
 
     let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
     let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
-
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -122,7 +121,6 @@ pub fn take_first_ten_bytes_as_an_apple_extended_integer(byte_data: &mut Vec<u8>
 
     let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
     let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
-
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     Ok(Extended::from_be_bytes(byte_array))
