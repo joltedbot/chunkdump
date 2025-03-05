@@ -1,7 +1,7 @@
 use crate::errors::LocalError;
 use extended::Extended;
 
-#[derive(PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Endian {
     Little,
     Big,
@@ -72,7 +72,7 @@ pub fn take_first_eight_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Re
     Ok(u64::from_le_bytes(byte_array))
 }
 
-pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i8, LocalError> {
+pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i8, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -80,7 +80,12 @@ pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>) -> Result<i8, 
     let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
-    Ok(i8::from_le_bytes(byte_array))
+    let result = match endianness {
+        Endian::Little => i8::from_le_bytes(byte_array),
+        Endian::Big => i8::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
 }
 
 pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i16, LocalError> {
@@ -153,6 +158,12 @@ pub fn take_first_number_of_bytes_as_string(
     Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())
 }
 
+pub fn take_first_byte(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
+    check_sufficient_bytes_are_available_to_take(byte_data, 1)?;
+    let taken_bytes = byte_data.drain(..1).collect::<Vec<_>>();
+    Ok(taken_bytes[0])
+}
+
 pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<Vec<u8>, LocalError> {
     check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
 
@@ -162,7 +173,7 @@ pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usiz
 }
 
 fn check_sufficient_bytes_are_available_to_take(
-    byte_data: &[u8],
+    byte_data: &mut Vec<u8>,
     number_of_bytes_to_take: usize,
 ) -> Result<(), LocalError> {
     let byte_data_length = byte_data.len();
@@ -200,7 +211,8 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_one_byte_as_signed_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x11, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: i8 = take_first_byte_as_signed_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: i8 =
+            take_first_byte_as_signed_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: i8 = 17;
         assert_eq!(result_integer, correct_result);
     }
@@ -317,11 +329,12 @@ mod tests {
 
     #[test]
     fn throws_error_when_available_bytes_are_less_than_number_to_be_taken() {
-        let little_endian_test_bytes: Vec<u8> = vec![87, 65];
+        let mut little_endian_test_bytes: Vec<u8> = vec![87, 65];
         let test_bytes_length = little_endian_test_bytes.len();
         let number_of_bytes_to_take: usize = 4;
 
-        let result = check_sufficient_bytes_are_available_to_take(&little_endian_test_bytes, number_of_bytes_to_take);
+        let result =
+            check_sufficient_bytes_are_available_to_take(&mut little_endian_test_bytes, number_of_bytes_to_take);
 
         assert_eq!(
             result.err(),
