@@ -15,37 +15,34 @@ use crate::cli::process_cli_arguments;
 use crate::cli::{print_usage_message, EXIT_CODE_ERROR};
 use crate::errors::handle_local_error;
 use crate::errors::LocalError;
-use crate::fileio::{get_file_id_from_file_or_exit, FileType};
+use crate::fileio::{get_file_id_from_file, FileType};
 use output::write_out_metadata;
 use std::process::exit;
 
 fn main() {
-    let cli_args = process_cli_arguments();
+    let cli_args = process_cli_arguments(argh::from_env());
 
-    let file_type = get_file_id_from_file_or_exit(&cli_args);
+    let file_type = get_file_id_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+        handle_local_error(
+            LocalError::CouldNotReadData(cli_args.input_file_path.clone()),
+            err.to_string(),
+        );
+        exit(EXIT_CODE_ERROR);
+    });
 
     let metadata: Vec<Chunk> = match file_type {
-        FileType::WAVE => wave::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|error| {
-            handle_local_error(
-                LocalError::CouldNotReadData(cli_args.input_file_path),
-                error.to_string(),
-            );
+        FileType::WAVE => wave::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+            handle_local_error(LocalError::CouldNotReadFile(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),
 
-        FileType::FLAC => flac::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|error| {
-            handle_local_error(
-                LocalError::CouldNotReadData(cli_args.input_file_path),
-                error.to_string(),
-            );
+        FileType::FLAC => flac::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+            handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),
 
-        FileType::AIFF => aiff::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|error| {
-            handle_local_error(
-                LocalError::CouldNotReadData(cli_args.input_file_path),
-                error.to_string(),
-            );
+        FileType::AIFF => aiff::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+            handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),
         _ => {

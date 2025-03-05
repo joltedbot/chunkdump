@@ -4,7 +4,7 @@ use crate::bytes::{
     take_first_two_bytes_as_unsigned_integer, Endian,
 };
 use crate::chunks::{Chunk, Section};
-use crate::fileio::add_one_if_byte_size_is_odd;
+use crate::formating::add_one_if_byte_size_is_odd;
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;

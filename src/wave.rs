@@ -1,10 +1,11 @@
-use crate::chunks::{get_chunk_metadata, Chunk, Section};
+use crate::chunks::{
+    get_chunk_metadata, Chunk, Section, CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES,
+};
 use crate::errors::LocalError;
 use crate::fileio::{
-    canonicalize_file_path, get_file_name_from_file_path, read_bytes_from_file, read_bytes_from_file_as_string,
-    read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
+    read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
 };
-use crate::formating::format_file_size_as_string;
+use crate::formating::{canonicalize_file_path, format_file_size_as_string, get_file_name_from_file_path};
 use crate::template::get_file_chunk_output;
 use std::error::Error;
 use std::fs::File;
@@ -12,8 +13,6 @@ use upon::Value;
 
 const TEMPLATE_CONTENT: &str = include_str!("templates/files/wave.tmpl");
 const WAVEID_FIELD_LENGTH_IN_BYTES: usize = 4;
-const CHUNKID_FIELD_LENGTH_IN_BYTES: usize = 4;
-pub const CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
 const CORRECT_WAVE_ID: &[u8; 4] = b"WAVE";
 const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 
@@ -55,7 +54,7 @@ fn get_metadata_from_chunks(wave_file: &mut File, file_path: &str) -> Result<Vec
     let mut output: Vec<Chunk> = vec![];
 
     loop {
-        let chunk_id = match read_bytes_from_file_as_string(wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES) {
+        let chunk_id = match read_chunk_id_from_file(wave_file) {
             Ok(chunk_id) => chunk_id.to_lowercase(),
             Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
             Err(error) => return Err(error),
@@ -70,7 +69,7 @@ fn get_metadata_from_chunks(wave_file: &mut File, file_path: &str) -> Result<Vec
 }
 
 fn validate_riff_wave_header(wave_file: &mut File) -> Result<(), Box<dyn Error>> {
-    skip_over_bytes_in_file(wave_file, CHUNKID_FIELD_LENGTH_IN_BYTES)?;
+    skip_over_bytes_in_file(wave_file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
     skip_over_bytes_in_file(wave_file, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
 
     let wave_id_bytes = read_bytes_from_file(wave_file, WAVEID_FIELD_LENGTH_IN_BYTES)?;

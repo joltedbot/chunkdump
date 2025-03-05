@@ -30,7 +30,7 @@ pub fn get_metadata(file_path: &str) -> Result<Chunk, Box<dyn Error>> {
     let tag = Tag::read_from_path(file_path).map_err(|e| LocalError::InvalidID3TagDataFound(e.to_string()))?;
     let longest_tag_id = get_longest_tag_id(&tag)?;
 
-    for frame in tag.frames() {
+    tag.frames().for_each(|frame| {
         let mut content: String = frame.content().to_string();
         let id = frame.name().to_string();
         if id == TIME_FIELD_TITLE {
@@ -40,7 +40,7 @@ pub fn get_metadata(file_path: &str) -> Result<Chunk, Box<dyn Error>> {
         let spacer = " ".repeat(longest_tag_id - id.len());
 
         id3_entries.push(ID3Tag { id, spacer, content });
-    }
+    });
 
     let wave_output_values: Value = upon::value! {
         id3_tags: id3_entries,
