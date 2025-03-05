@@ -6,6 +6,7 @@ mod errors;
 mod fileio;
 mod flac;
 mod formating;
+mod midi;
 mod output;
 mod template;
 mod wave;
@@ -31,17 +32,21 @@ fn main() {
     });
 
     let metadata: Vec<Chunk> = match file_type {
-        FileType::WAVE => wave::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+        FileType::Wave => wave::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
             handle_local_error(LocalError::CouldNotReadFile(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),
 
-        FileType::FLAC => flac::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+        FileType::Flac => flac::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
             handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),
 
-        FileType::AIFF => aiff::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+        FileType::Aiff => aiff::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+            handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
+            exit(EXIT_CODE_ERROR);
+        }),
+        FileType::Midi => midi::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
             handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),

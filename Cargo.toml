@@ -1,6 +1,6 @@
 [package]
 name = "chunkdump"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Dave White"]
 description = "Exports the metadata from Riff Wave, AIFF, and Flac files including non-standard chunks"

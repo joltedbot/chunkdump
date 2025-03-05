@@ -1,3 +1,4 @@
+use crate::bytes::{take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
 use chrono::DateTime;
@@ -63,6 +64,22 @@ pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalErro
     };
 
     Ok(file_name)
+}
+
+pub fn format_smpte_offset(smpte_offset_bytes: &mut Vec<u8>, endianness: Endian) -> Result<String, LocalError> {
+    if endianness == Endian::Little {
+        let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Little)?;
+        let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+        let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+        let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+        Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
+    } else {
+        let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
+        let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
+        let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
+        let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Big)?;
+        Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
+    }
 }
 
 pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
@@ -149,6 +166,20 @@ mod tests {
     fn errors_when_geting_filename_from_filepath_if_path_is_invalid() {
         let result = get_file_name_from_file_path("/");
         assert_eq!(result.unwrap_err(), LocalError::InvalidFileName);
+    }
+
+    #[test]
+    fn returns_the_correctly_format_le_smpte_offset_bytes() {
+        let mut test_manufacturer_id_bytes = vec![0x01, 0x02, 0x03, 0x04];
+        let id = format_smpte_offset(&mut test_manufacturer_id_bytes, Endian::Little).unwrap();
+        assert_eq!(id, "1h:2m:3s & 4 samples");
+    }
+
+    #[test]
+    fn returns_the_correctly_format_be_smpte_offset_bytes() {
+        let mut test_manufacturer_id_bytes = vec![0x04, 0x03, 0x02, 0x01];
+        let id = format_smpte_offset(&mut test_manufacturer_id_bytes, Endian::Big).unwrap();
+        assert_eq!(id, "1h:2m:3s & 4 samples");
     }
 
     #[test]

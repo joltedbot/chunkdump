@@ -1,10 +1,9 @@
 use crate::bytes::{
-    take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
-    take_first_number_of_bytes, Endian,
+    take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, Endian,
 };
 use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
-use crate::formating::format_midi_note_number_as_note_name;
+use crate::formating::{format_midi_note_number_as_note_name, format_smpte_offset};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;
@@ -38,7 +37,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
     )?);
     let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let smpte_offset = format_smpte_offset(&mut chunk_data)?;
+    let smpte_offset = format_smpte_offset(&mut chunk_data, Endian::Little)?;
     let number_of_sample_loops = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let sample_data_size_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
@@ -92,15 +91,6 @@ fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
     Ok(manufacturer_id.join(" "))
 }
 
-fn format_smpte_offset(smpte_offset_bytes: &mut Vec<u8>) -> Result<String, LocalError> {
-    let hours = take_first_byte_as_signed_integer(smpte_offset_bytes)?;
-    let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-    let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-    let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-
-    Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -117,12 +107,5 @@ mod tests {
         let test_manufacturer_id_bytes = vec![0x03, 0x2A, 0x03, 0x04, 0x05];
         let id = format_manufacturer_id(test_manufacturer_id_bytes).unwrap();
         assert_eq!(id, "2AH 03H 04H");
-    }
-
-    #[test]
-    fn returns_the_correct_format_smpte_offset() {
-        let mut test_manufacturer_id_bytes = vec![0x01, 0x02, 0x03, 0x04];
-        let id = format_smpte_offset(&mut test_manufacturer_id_bytes).unwrap();
-        assert_eq!(id, "1h:2m:3s & 4 samples");
     }
 }

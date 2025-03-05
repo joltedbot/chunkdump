@@ -1,6 +1,7 @@
+use crate::bytes::Endian;
 use crate::chunks::{get_chunk_metadata, Chunk, Section, ID3_CHUNK_ID};
 use crate::fileio::{
-    read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file, skip_over_bytes_in_file, Endian,
+    read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file, skip_over_bytes_in_file,
 };
 use crate::formating::{canonicalize_file_path, format_file_size_as_string, get_file_name_from_file_path};
 use crate::template::get_file_chunk_output;
