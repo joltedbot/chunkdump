@@ -15,8 +15,8 @@ pub enum LocalError {
     #[error("Could not read from the file {0}")]
     CouldNotReadFile(String),
 
-    #[error("Incorrect WAVEID, file is not a valid RIFF WAVE file")]
-    InvalidWaveID,
+    #[error("Incorrect RIFF file type, file is not a valid RIFF WAVE or RMID file")]
+    InvalidRiffTypeID,
 
     #[error("Could not read metadata from the file: {0}")]
     CouldNotReadData(String),
@@ -50,6 +50,6 @@ pub enum LocalError {
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {
-    println!("\n{}: {}", local_error, specific_error);
+    eprintln!("\n{}: {}", local_error, specific_error);
     print_usage_message();
 }
