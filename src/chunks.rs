@@ -18,7 +18,10 @@ mod sndm;
 mod text;
 mod umid;
 
+use crate::bytes::Endian;
+use crate::fileio::{read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file};
 use std::error::Error;
+use std::fs::File;
 
 pub const CHUNK_ID_FIELD_LENGTH_IN_BYTES: usize = 4;
 pub const CHUNK_SIZE_FIELD_LENGTH_IN_BYTES: usize = 4;
@@ -68,6 +71,7 @@ const MARKER_CHUNK_ID: &str = "mark";
 pub const AUDIO_SAMPLES_CHUNK_ID: &str = "ssnd";
 pub const NAME_CHUNK_ID: &str = "name";
 const NAME_TEMPLATE_TITLE: &str = "Name";
+pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 
 pub enum Section {
     Header,
@@ -124,4 +128,30 @@ pub fn get_chunk_metadata(chunk_id: String, chunk_data: Vec<u8>, file_path: &str
     };
 
     Ok(result)
+}
+
+pub fn get_metadata_from_chunks(
+    input_file: &mut File,
+    file_path: &str,
+    endianness: Endian,
+) -> Result<Vec<Chunk>, Box<dyn Error>> {
+    let mut output: Vec<Chunk> = vec![];
+
+    loop {
+        let chunk_id: String = match read_chunk_id_from_file(input_file) {
+            Ok(chunk_id) => chunk_id.to_lowercase(),
+            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
+            Err(error) => return Err(error),
+        };
+
+        let chunk_size = match chunk_id.as_str() {
+            ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
+            _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
+        };
+
+        let chunk_data = read_bytes_from_file(input_file, chunk_size).unwrap_or_default();
+        output.push(get_chunk_metadata(chunk_id, chunk_data, file_path)?);
+    }
+
+    Ok(output)
 }

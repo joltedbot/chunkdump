@@ -1,6 +1,6 @@
 use crate::bytes::take_first_number_of_bytes;
 use crate::chunks::{Chunk, Section};
-use crate::formating::format_bytes_as_string;
+use crate::formating::format_bytes_as_string_of_bytes;
 use crate::template::get_file_chunk_output;
 use std::error::Error;
 use upon::Value;
@@ -13,7 +13,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
     let umid = take_first_number_of_bytes(&mut chunk_data, chunk_size)?;
 
     let wave_output_values: Value = upon::value! {
-        umid: format_bytes_as_string(&umid),
+        umid: format_bytes_as_string_of_bytes(&umid),
     };
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;

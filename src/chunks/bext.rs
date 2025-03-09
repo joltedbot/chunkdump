@@ -6,7 +6,7 @@ use std::error::Error;
 
 use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
-use crate::formating::format_bytes_as_string;
+use crate::formating::format_bytes_as_string_of_bytes;
 use crate::template::get_file_chunk_output;
 use upon::Value;
 
@@ -74,14 +74,14 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
         max_short_term_loudness: max_short_term_loudness / 100,
         reserved: &reserved,
         coding_history: &coding_history,
-        universal_label: format_bytes_as_string(&umid.universal_label),
-        instance_number: format_bytes_as_string(&umid.instance_number),
-        material_number: format_bytes_as_string(&umid.material_number),
-        time_and_date: format_bytes_as_string(&umid.time_and_date),
-        spatial_coordinates: format_bytes_as_string(&umid.spatial_coordinates),
-        country: format_bytes_as_string(&umid.country),
-        organization: format_bytes_as_string(&umid.organization),
-        user: format_bytes_as_string(&umid.user),
+        universal_label: format_bytes_as_string_of_bytes(&umid.universal_label),
+        instance_number: format_bytes_as_string_of_bytes(&umid.instance_number),
+        material_number: format_bytes_as_string_of_bytes(&umid.material_number),
+        time_and_date: format_bytes_as_string_of_bytes(&umid.time_and_date),
+        spatial_coordinates: format_bytes_as_string_of_bytes(&umid.spatial_coordinates),
+        country: format_bytes_as_string_of_bytes(&umid.country),
+        organization: format_bytes_as_string_of_bytes(&umid.organization),
+        user: format_bytes_as_string_of_bytes(&umid.user),
     };
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;

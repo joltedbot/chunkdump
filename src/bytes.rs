@@ -7,6 +7,20 @@ pub enum Endian {
     Big,
 }
 
+pub fn take_first_byte(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
+    check_sufficient_bytes_are_available_to_take(byte_data, 1)?;
+    let taken_bytes = byte_data.drain(..1).collect::<Vec<_>>();
+    Ok(taken_bytes[0])
+}
+
+pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<Vec<u8>, LocalError> {
+    check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
+
+    Ok(taken_bytes)
+}
+
 pub fn take_first_byte_as_unsigned_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<u8, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
@@ -120,17 +134,6 @@ pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianne
     Ok(result)
 }
 
-pub fn take_first_ten_bytes_as_an_apple_extended_integer(byte_data: &mut Vec<u8>) -> Result<Extended, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 10;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
-
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
-    byte_array.copy_from_slice(taken_bytes.as_slice());
-
-    Ok(Extended::from_be_bytes(byte_array))
-}
-
 pub fn take_first_four_bytes_as_float(byte_data: &mut Vec<u8>) -> Result<f32, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
@@ -140,6 +143,17 @@ pub fn take_first_four_bytes_as_float(byte_data: &mut Vec<u8>) -> Result<f32, Lo
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     Ok(f32::from_le_bytes(byte_array))
+}
+
+pub fn take_first_ten_bytes_as_an_apple_extended_integer(byte_data: &mut Vec<u8>) -> Result<Extended, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 10;
+    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    Ok(Extended::from_be_bytes(byte_array))
 }
 
 pub fn take_first_number_of_bytes_as_string(
@@ -158,22 +172,8 @@ pub fn take_first_number_of_bytes_as_string(
     Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())
 }
 
-pub fn take_first_byte(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
-    check_sufficient_bytes_are_available_to_take(byte_data, 1)?;
-    let taken_bytes = byte_data.drain(..1).collect::<Vec<_>>();
-    Ok(taken_bytes[0])
-}
-
-pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<Vec<u8>, LocalError> {
-    check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
-
-    let taken_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
-
-    Ok(taken_bytes)
-}
-
 fn check_sufficient_bytes_are_available_to_take(
-    byte_data: &mut Vec<u8>,
+    byte_data: &mut [u8],
     number_of_bytes_to_take: usize,
 ) -> Result<(), LocalError> {
     let byte_data_length = byte_data.len();

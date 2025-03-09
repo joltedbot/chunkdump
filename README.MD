@@ -1,6 +1,6 @@
 # CHUNKDUMP
 
-**Status: v0.2.0 - _Stable but currently only tested on macOS with Apple Silicon._**
+**Status: v0.4.0 - _Stable but currently only tested on macOS with Apple Silicon._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
 Resource Interchange File Format (RIFF) Wave files and Audio Interchange File Format AIFF/AIFF-C .aif files as well as
@@ -13,7 +13,7 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav, .aif, or .flac file with
+Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 > chunkdump /path/to/file
 
 #### Usage
@@ -147,5 +147,64 @@ For now they will show up in "Extra Chunks" until I actually have something to w
 - **Audio Recording Chunk - AESD**
 - **Instrument Chunk - INST**
 - **MIDI Data Chunk - MIDI**
-    
-    
+
+### Current List of Supported MIDI File Metadata
+
+There are 2 kinds of MIDI files "Standard MIDI Files" SMF and the somewhat less common and odd "RIFF MIDI" RMID files.
+RMID files are contained inside a RIFF container like WAVE files but their DATA chunk contains an complete SMF midi
+file.
+RMID files should have a .rmid extension apparently but sometimes they just have a .mid extension. \
+Chunkdump supports either option.
+
+The idea it seems is for RMID is to provide for richer metadata to be layered ontop of standard midi files.
+As such chunkdump supports all the WAVE file chunks listed above and all the SMF MIDI metadata described below.
+
+SMF MIDI files contain one or more tracks any of which can contain metadata. The first track is the header track which
+gives you metadata about the format of the file like WAVE fmt or AIFF COMM chunks. And that is followed by one or more
+MIDI tracks which can, but don't have to, contain "Meta Events" containing metadata about the track contents.
+
+Chunkdump supports all the standard Header metadata and what should be all Meta Events but this is an insane protocol
+from the 80s so it is hard to know I found them all.
+
+Meta Events will show the Track Number the even occurs in, the "Delta Time", an "Event" type as per the list below and
+a value for the event which will vary in type depending on the event.
+
+Delta Time is the point in the track where the event occurs. The Delta Time is presented as pure value for each event.  
+The units that that value use is represented in the Header Info section for the file either as a "Division: " meaning
+ticks per quarter note or as a SMPTE/Midi Time Code that has both a frames per second and ticks per frame value.
+All of which will be clearly stated in the header info.
+
+- **0x00 - Sequence Number**
+- **0x01 - Text**
+- **0x02 - Copyright Notice**
+- **0x03 - Track Name**
+- **0x04 - Instrument Name**
+- **0x05 - Lyrics**
+- **0x06 - Marker**
+- **0x07 - Cue Point**
+- **0x09 - Device Name**
+- **0x20 - Channel Prefix**
+    - A midi channel. If this is present it means the next meta event applies to that channel.
+- **0x21 - MIDI Port**
+- **0x2F - End of Track**
+    - This will not show up in the output. I just put it here for completeness.
+- **0x51 - Set Tempo**
+    - This occurs to set or change the tempo of the
+- **0x54 - SMPTE Offset**
+- **0x58 - Time Signature**
+    - In MIDI as in life this defaults to 4/4 time if nothing is specified to the contrary.
+    - If it does say 4/4 it may be specified as such or it might just be the default. Good luck.
+- **0x59 - Key Signature**
+    - C Major is the default and in some cases it can show C Major even if it is not.
+    - Generally if this event shows up it will be properly specified but take C Major with a grain of salt.
+- **0x7F - Sequencer Specific**
+    - This contains a byte representing the manufacture and then data representing what ever the manufacturer wanted to
+      store.
+    - The idea was to provide instructions for hardware sequencers. Perhaps to save its internal state in some way.
+    - The data will be a string of raw hex bytes as there is no way to know what it should be. The format is:
+
+> manufacturer: data bytes
+
+If a meta event that isn't supported does show up chunkdump will note that and display the byte representing that event
+id
+and try and render the contents as a string as with the other file types above.

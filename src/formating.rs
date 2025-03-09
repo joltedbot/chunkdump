@@ -18,10 +18,19 @@ pub fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
     )
 }
 
-pub fn format_bytes_as_string(bytes: &[u8]) -> String {
+pub fn format_bytes_as_string_of_bytes(bytes: &[u8]) -> String {
     bytes
         .iter()
         .fold("".to_string(), |umid: String, byte| format!("{} {:02x?}", umid, byte))
+}
+
+pub fn format_bytes_as_string(byte_data: Vec<u8>) -> Result<String, LocalError> {
+    let cleaned_bytes: Vec<u8> = byte_data
+        .into_iter()
+        .filter(|byte| byte.is_ascii() && *byte != 0x00 && !byte.is_ascii_control())
+        .collect();
+
+    Ok(String::from_utf8_lossy(cleaned_bytes.as_slice()).to_string())
 }
 
 pub fn format_mac_hfs_timestamp_as_date_time_string(timestamp: u32) -> Result<String, LocalError> {
@@ -107,7 +116,7 @@ mod tests {
         let input_byte_array_in_decimal: &[u8] = &[1, 2, 58, 75];
         let correct_result_string: String = " 01 02 3a 4b".to_string();
         assert_eq!(
-            format_bytes_as_string(input_byte_array_in_decimal),
+            format_bytes_as_string_of_bytes(input_byte_array_in_decimal),
             correct_result_string
         );
     }

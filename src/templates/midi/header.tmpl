@@ -1,0 +1,8 @@
+------------
+Header Info
+------------
+File Format:        {{ format }}
+Number of Tracks:   {{ number_of_tracks }}
+{% if ppqn %}Division:           {{ ppqn }} Ticks (pulses) per quarter note{%- endif %}
+{%- if timecode %}Timecode:           {{ timecode }} Frames per Second{%- endif %}
+{%- if ticks_per_frame %}Ticks per Frame:   {{ ticks_per_frame }}  Ticks per frame{%- endif %}
