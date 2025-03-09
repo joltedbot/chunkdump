@@ -28,6 +28,7 @@ pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String
         output_metadata.push(include_str!("templates/output/mandatory.tmpl").to_string());
         output_metadata.append(&mut mandatory);
     }
+
     if !optional.is_empty() {
         output_metadata.push(include_str!("templates/output/optional.tmpl").to_string());
         output_metadata.append(&mut optional);

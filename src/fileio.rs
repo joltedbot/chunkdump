@@ -1,22 +1,36 @@
 use crate::bytes::Endian;
-use crate::chunks::{CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
-use crate::formating;
+use crate::chunks::{Chunk, Section, CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
+use crate::errors::LocalError;
+use crate::formating::{
+    add_one_if_byte_size_is_odd, canonicalize_file_path, format_file_size_as_string, get_file_name_from_file_path,
+};
+use crate::template::get_file_chunk_output;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek};
+use upon::Value;
 
 const AIFF_FILE_CHUNKID: &str = "FORM";
 const FLAC_FILE_CHUNKID: &str = "fLaC";
-const WAVE_FILE_CHUNKID: &str = "RIFF";
+const RIFF_FILE_CHUNKID: &str = "RIFF";
 const MIDI_FILE_CHUNKID: &str = "MThd";
+const WAVE_FILE_TYPE_ID: &str = "WAVE";
+const RMID_FILE_TYPE_ID: &str = "RMID";
 
 #[derive(Debug, PartialEq)]
 pub enum FileType {
     Aiff,
     Flac,
     Wave,
-    Midi,
+    Smf,
+    Rmid,
     Unsupported,
+}
+
+#[derive(Debug, PartialEq)]
+enum RiffDataType {
+    Wave,
+    Rmid,
 }
 
 pub fn skip_over_bytes_in_file(file: &mut File, number_of_bytes: usize) -> Result<(), Box<dyn Error>> {
@@ -40,12 +54,30 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
     let file_type = match file_id.as_str() {
         AIFF_FILE_CHUNKID => FileType::Aiff,
         FLAC_FILE_CHUNKID => FileType::Flac,
-        WAVE_FILE_CHUNKID => FileType::Wave,
-        MIDI_FILE_CHUNKID => FileType::Midi,
+        RIFF_FILE_CHUNKID => match get_riff_data_type_from_file(&mut input_file)? {
+            RiffDataType::Wave => FileType::Wave,
+            RiffDataType::Rmid => FileType::Rmid,
+        },
+        MIDI_FILE_CHUNKID => FileType::Smf,
         _ => FileType::Unsupported,
     };
 
     Ok(file_type)
+}
+
+fn get_riff_data_type_from_file(wave_file: &mut File) -> Result<RiffDataType, Box<dyn Error>> {
+    skip_over_bytes_in_file(wave_file, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
+
+    let riff_id_bytes = read_chunk_id_from_file(wave_file)?;
+
+    match riff_id_bytes.as_str() {
+        WAVE_FILE_TYPE_ID => Ok(RiffDataType::Wave),
+        RMID_FILE_TYPE_ID => Ok(RiffDataType::Rmid),
+        _ => {
+            eprintln!("RIFF file type mismatch: {:?} ", riff_id_bytes.to_ascii_uppercase());
+            Err(Box::new(LocalError::InvalidRiffTypeID))
+        }
+    }
 }
 
 pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>> {
@@ -63,20 +95,28 @@ pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<
         Endian::Big => u32::from_be_bytes(byte_array),
     };
 
-    chunk_size = formating::add_one_if_byte_size_is_odd(chunk_size);
+    chunk_size = add_one_if_byte_size_is_odd(chunk_size);
 
     Ok(chunk_size as usize)
 }
 
-pub fn read_chunk_size_from_midi_file(file: &mut File, endianness: Endian) -> Result<usize, Box<dyn Error>> {
-    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
-    let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
-    byte_array.copy_from_slice(chunk_size_bytes.as_slice());
+pub fn get_file_metadata(file_path: &str, file: &File, header_template: &str) -> Result<Chunk, Box<dyn Error>> {
+    let size_in_bytes = file.metadata()?.len();
+    let name = get_file_name_from_file_path(file_path)?;
+    let canonical_path = canonicalize_file_path(file_path)?;
 
-    let chunk_size = match endianness {
-        Endian::Little => u32::from_le_bytes(byte_array),
-        Endian::Big => u32::from_be_bytes(byte_array),
+    let smf_output_values: Value = upon::value! {
+        file_name: name,
+        file_path: canonical_path,
+        file_size: format_file_size_as_string(size_in_bytes),
     };
 
-    Ok(chunk_size as usize)
+    let formated_smf_output: String = get_file_chunk_output(header_template, smf_output_values)?;
+
+    let file_metadata = Chunk {
+        section: Section::Header,
+        text: formated_smf_output,
+    };
+
+    Ok(file_metadata)
 }

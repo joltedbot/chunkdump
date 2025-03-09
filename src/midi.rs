@@ -1,19 +1,15 @@
 use crate::bytes::{
     take_first_byte, take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer,
-    take_first_number_of_bytes, take_first_two_bytes_as_unsigned_integer, Endian,
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_two_bytes_as_unsigned_integer,
+    Endian,
 };
-use crate::chunks::{Chunk, Section};
-use crate::fileio::{read_bytes_from_file, read_chunk_size_from_midi_file, skip_over_bytes_in_file};
-use crate::formating::{
-    canonicalize_file_path, format_bytes_as_string, format_file_size_as_string, format_smpte_offset,
-    get_file_name_from_file_path,
-};
+use crate::chunks::{Chunk, Section, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
+use crate::formating::{format_bytes_as_string, format_bytes_as_string_of_bytes, format_smpte_offset};
 use crate::template::get_file_chunk_output;
 use byte_unit::rust_decimal::prelude::Zero;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fs::File;
 use upon::Value;
 
 const MAJOR_KEY_FLATS: [(i8, &str); 15] = [
@@ -50,9 +46,8 @@ const MINOR_KEY_FLATS: [(i8, &str); 15] = [
     (-6, "D#"),
     (-7, "A#"),
 ];
-const TEMPLATE_CONTENT: &str = include_str!("templates/files/midi.tmpl");
-const MIDI_HEADER_CHUNK_TYPE_LENGTH_IN_BYTES: usize = 4;
-const MIDI_HEADER_CHUNK_DIVISION_LENGTH_IN_BYTES: usize = 2;
+
+pub const MIDI_HEADER_CHUNK_DIVISION_LENGTH_IN_BYTES: usize = 2;
 const MIDI_FORMAT_TYPE_ZERO: &str = "A single multi-channel track";
 const MIDI_FORMAT_TYPE_ONE: &str = "One or more simultaneous tracks of a sequence";
 const MIDI_FORMAT_TYPE_TWO: &str = "One or more sequential tracks of a sequence";
@@ -73,68 +68,49 @@ const META_EVENT_SET_TEMPO: &str = "Set Tempo";
 const META_EVENT_SMPTE_OFFSET: &str = "SMPTE Offset";
 const META_EVENT_TIME_SIGNATURE: &str = "Time Signature";
 const META_EVENT_KEY_SIGNATURE: &str = "Key Signature";
-const META_EVENT_SEQUENCER_SPECIIFIC: &str = "Sequencer specific Message";
+const META_EVENT_SEQUENCER_SPECIFIC: &str = "Sequencer specific Message";
 const FIRST_BIT_AS_U8_DECIMAL_INTEGER: u8 = 64;
 const META_EVENT_UNKNOWN: &str = "Unknown MetaEvent";
 const MAJOR_SCALE_TITLE: &str = "Major";
 const MINOR_SCALE_TITLE: &str = "major";
 const MICROSECONDS_PER_MINUTE: u32 = 60000000;
 const META_EVENT_ID_BYTE_VALUE: u8 = 0xFF;
+const SYSEX_EVENT_ID_BYTE_VALUE: u8 = 0xF0;
 const META_EVENT_END_OFF_TRACK_BYTE_VALUE: u8 = 0x2F;
+const HEADER_TEMPLATE_CONTENT: &str = include_str!("templates/midi/header.tmpl");
+const META_EVENT_TEMPLATE_CONTENT: &str = include_str!("templates/midi/meta_events.tmpl");
 
 #[derive(Default, Serialize)]
-struct Division {
-    ppqn: u16,
-    timecode: u8,
-    ticks_per_frame: u8,
+pub struct Division {
+    pub ppqn: u16,
+    pub timecode: u8,
+    pub ticks_per_frame: u8,
 }
 
 #[derive(Default)]
-struct Header {
-    format: String,
-    number_of_tracks: u16,
-    division: Division,
+pub struct Header {
+    pub format: String,
+    pub number_of_tracks: u16,
+    pub division: Division,
 }
 
 #[derive(Serialize)]
-struct MetaEvent {
-    track_number: u16,
-    delta_time: u32,
-    name: String,
-    value: String,
+pub struct MetaEvent {
+    pub track_number: u16,
+    pub delta_time: u32,
+    pub name: String,
+    pub value: String,
 }
 
-pub fn get_metadata_from_file(midi_file_path: &str) -> Result<Vec<Chunk>, Box<dyn Error>> {
-    let mut midi_file = File::open(midi_file_path)?;
-
-    let file_name = get_file_name_from_file_path(midi_file_path)?;
-    let file_path = canonicalize_file_path(midi_file_path)?;
-    let file_size = format_file_size_as_string(midi_file.metadata()?.len());
-    let header = get_header_metadata_from_file(&mut midi_file)?;
-    let meta_events = get_meta_events_from_track_data(&mut midi_file, header.number_of_tracks)?;
-
-    let midi_output_values: Value = upon::value! {
-        file_name: file_name,
-        file_path: file_path,
-        file_size: file_size,
-        format: header.format,
-        number_of_tracks: header.number_of_tracks,
-        ppqn: header.division.ppqn,
-        timecode: header.division.timecode,
-        ticks_per_frame: header.division.ticks_per_frame,
-        meta_event_data: meta_events,
-    };
-
-    let output = Chunk {
-        section: Section::Header,
-        text: get_file_chunk_output(TEMPLATE_CONTENT, midi_output_values)?,
-    };
-
-    Ok(vec![output])
+pub fn get_metadata_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Vec<Chunk>, Box<dyn Error>> {
+    let header = get_header_metadata_from_midi_data(midi_data)?;
+    let header_chunk = get_header_chunk_from_header_metadata(&header)?;
+    let meta_events_chunk = get_meta_events_from_track_data(midi_data, header.number_of_tracks)?;
+    Ok(vec![header_chunk, meta_events_chunk])
 }
 
-fn get_header_metadata_from_file(mut midi_file: &mut File) -> Result<Header, Box<dyn Error>> {
-    let mut header_track_data = get_track_data_from_file(&mut midi_file)?;
+pub fn get_header_metadata_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Header, Box<dyn Error>> {
+    let mut header_track_data = get_track_data_from_midi_data(midi_data)?;
 
     let raw_format = take_first_two_bytes_as_unsigned_integer(&mut header_track_data, Endian::Big)?;
     let format = get_file_format_from_raw_format_number(raw_format);
@@ -151,62 +127,91 @@ fn get_header_metadata_from_file(mut midi_file: &mut File) -> Result<Header, Box
     })
 }
 
-fn get_meta_events_from_track_data(
-    mut midi_file: &mut File,
-    number_of_tracks: u16,
-) -> Result<Vec<MetaEvent>, Box<dyn Error>> {
+fn get_header_chunk_from_header_metadata(header: &Header) -> Result<Chunk, Box<dyn Error>> {
+    let midi_output_values: Value = upon::value! {
+        format: &header.format,
+        number_of_tracks: header.number_of_tracks,
+        ppqn: header.division.ppqn,
+        timecode: header.division.timecode,
+        ticks_per_frame: header.division.ticks_per_frame,
+    };
+
+    Ok(Chunk {
+        section: Section::Header,
+        text: get_file_chunk_output(HEADER_TEMPLATE_CONTENT, midi_output_values)?,
+    })
+}
+
+fn get_meta_events_from_track_data(midi_data: &mut Vec<u8>, number_of_tracks: u16) -> Result<Chunk, Box<dyn Error>> {
     let mut meta_events: Vec<MetaEvent> = vec![];
 
     for track_number in 0..number_of_tracks {
-        let mut track_data = get_track_data_from_file(&mut midi_file)?;
-        meta_events.extend(get_midi_meta_events_from_track_data(track_number, &mut track_data)?);
+        let track_data = get_track_data_from_midi_data(midi_data)?;
+        meta_events.extend(get_midi_meta_events_from_track_data(track_number, track_data)?);
     }
 
-    Ok(meta_events)
+    let midi_output_values: Value = upon::value! {
+        meta_event_data: meta_events,
+    };
+
+    let output = Chunk {
+        section: Section::Optional,
+        text: get_file_chunk_output(META_EVENT_TEMPLATE_CONTENT, midi_output_values)?,
+    };
+
+    Ok(output)
 }
 
-fn get_track_data_from_file(midi_file: &mut File) -> Result<Vec<u8>, Box<dyn Error>> {
-    skip_over_bytes_in_file(midi_file, MIDI_HEADER_CHUNK_TYPE_LENGTH_IN_BYTES)?;
-    let header_chunk_size = read_chunk_size_from_midi_file(midi_file, Endian::Big)?;
-    let chunk_data = read_bytes_from_file(midi_file, header_chunk_size)?;
-    Ok(chunk_data)
+fn get_track_data_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>> {
+    let _ = take_first_number_of_bytes(midi_data, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
+    let track_chunk_size = take_first_four_bytes_as_unsigned_integer(midi_data, Endian::Big)?;
+    let track_track_data = take_first_number_of_bytes(midi_data, track_chunk_size as usize)?;
+    Ok(track_track_data)
 }
 
-fn get_midi_meta_events_from_track_data(
+pub fn get_midi_meta_events_from_track_data(
     track_number: u16,
-    track_data: &mut Vec<u8>,
+    mut track_data: Vec<u8>,
 ) -> Result<Vec<MetaEvent>, Box<dyn Error>> {
     let mut meta_events: Vec<MetaEvent> = Vec::new();
 
     loop {
-        let delta_time = get_variable_length_unsigned_integer_from_track_data(track_data);
+        let delta_time = get_variable_length_unsigned_integer_from_track_data(&mut track_data);
+        let meta_event_id = take_first_byte(&mut track_data)?;
+        let meta_event_type = take_first_byte(&mut track_data)?;
 
-        let meta_event_id = take_first_byte(track_data)?;
-        if meta_event_id != META_EVENT_ID_BYTE_VALUE {
+        if meta_event_type == META_EVENT_END_OFF_TRACK_BYTE_VALUE && meta_event_id == META_EVENT_ID_BYTE_VALUE {
             break;
         }
 
-        let meta_event_type = take_first_byte(track_data)?;
-        if meta_event_type == META_EVENT_END_OFF_TRACK_BYTE_VALUE {
+        let meta_event_data_length =
+            if meta_event_id == META_EVENT_ID_BYTE_VALUE || meta_event_type == SYSEX_EVENT_ID_BYTE_VALUE {
+                get_variable_length_unsigned_integer_from_track_data(&mut track_data)
+            } else {
+                take_first_byte_as_unsigned_integer(&mut track_data, Endian::Big)? as u32
+            };
+
+        if meta_event_data_length == 0 || track_data.len() < meta_event_data_length as usize {
             break;
         }
 
-        let meta_event_data_length = get_variable_length_unsigned_integer_from_track_data(track_data);
-        let meta_event_data = take_first_number_of_bytes(track_data, meta_event_data_length as usize)?;
+        let meta_event_data = take_first_number_of_bytes(&mut track_data, meta_event_data_length as usize)?;
 
-        let meta_event = get_meta_event_from_event_data_for_type_byte(meta_event_type, meta_event_data)?;
-        meta_events.push(MetaEvent {
-            track_number,
-            delta_time,
-            name: meta_event.0,
-            value: meta_event.1,
-        });
+        if meta_event_id == META_EVENT_ID_BYTE_VALUE {
+            let meta_event = get_meta_event_from_event_data_by_type_byte(meta_event_type, meta_event_data)?;
+            meta_events.push(MetaEvent {
+                track_number,
+                delta_time,
+                name: meta_event.0,
+                value: meta_event.1,
+            });
+        }
     }
 
     Ok(meta_events)
 }
 
-fn get_meta_event_from_event_data_for_type_byte(
+fn get_meta_event_from_event_data_by_type_byte(
     type_byte: u8,
     mut bytes: Vec<u8>,
 ) -> Result<(String, String), Box<dyn Error>> {
@@ -219,34 +224,13 @@ fn get_meta_event_from_event_data_for_type_byte(
             META_EVENT_TEXT.to_string(),
             String::from_utf8_lossy(bytes.as_slice()).to_string(),
         ),
-        0x02 => (
-            META_EVENT_COPYRIGHT_NOTICE.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
-        0x03 => (
-            META_EVENT_TRACK_NAME.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
-        0x04 => (
-            META_EVENT_INSTRUMENT_NAME.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
-        0x05 => (
-            META_EVENT_LYRICS.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
-        0x06 => (
-            META_EVENT_MARKER.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
-        0x07 => (
-            META_EVENT_CUE_POINT.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
-        0x09 => (
-            META_EVENT_DEVICE_NAME.to_string(),
-            String::from_utf8_lossy(bytes.as_slice()).to_string(),
-        ),
+        0x02 => (META_EVENT_COPYRIGHT_NOTICE.to_string(), format_bytes_as_string(bytes)?),
+        0x03 => (META_EVENT_TRACK_NAME.to_string(), format_bytes_as_string(bytes)?),
+        0x04 => (META_EVENT_INSTRUMENT_NAME.to_string(), format_bytes_as_string(bytes)?),
+        0x05 => (META_EVENT_LYRICS.to_string(), format_bytes_as_string(bytes)?),
+        0x06 => (META_EVENT_MARKER.to_string(), format_bytes_as_string(bytes)?),
+        0x07 => (META_EVENT_CUE_POINT.to_string(), format_bytes_as_string(bytes)?),
+        0x09 => (META_EVENT_DEVICE_NAME.to_string(), format_bytes_as_string(bytes)?),
         0x20 => (
             META_EVENT_CHANNEL_PREFIX.to_string(),
             format!("{}", take_first_byte_as_unsigned_integer(&mut bytes, Endian::Big)?),
@@ -271,13 +255,12 @@ fn get_meta_event_from_event_data_for_type_byte(
                 take_first_byte_as_unsigned_integer(&mut bytes, Endian::Big)?.is_zero(),
             ),
         ),
-
         0x7F => (
-            META_EVENT_SEQUENCER_SPECIIFIC.to_string(),
+            META_EVENT_SEQUENCER_SPECIFIC.to_string(),
             get_sequencer_specific_from_bytes(&mut bytes),
         ),
         _ => {
-            let unknown_as_string = String::from_utf8_lossy(bytes.as_slice()).to_string();
+            let unknown_as_string = format_bytes_as_string(bytes)?;
             let value = format!("Byte: 0x{:02X?} - {}", type_byte, unknown_as_string);
             (META_EVENT_UNKNOWN.to_string(), value)
         }
@@ -298,13 +281,13 @@ fn get_bpm_from_bytes(bytes: &mut Vec<u8>) -> String {
     format!("{}", bpm)
 }
 
-fn get_division_output_values_from_raw_division_bytes(mut division_bytes: Vec<u8>) -> Division {
+pub fn get_division_output_values_from_raw_division_bytes(mut division_bytes: Vec<u8>) -> Division {
     let first_byte = take_first_byte(&mut division_bytes).unwrap_or(0x00);
     let second_byte = take_first_byte(&mut division_bytes).unwrap_or(0x00);
 
     let mut division: Division = Default::default();
 
-    let check_byte = first_byte.clone();
+    let check_byte = first_byte;
     if (check_byte >> 7) == 1 {
         let timecode_byte = first_byte - FIRST_BIT_AS_U8_DECIMAL_INTEGER;
         let timecode = i8::from_be_bytes([timecode_byte]).abs();
@@ -317,7 +300,7 @@ fn get_division_output_values_from_raw_division_bytes(mut division_bytes: Vec<u8
     division
 }
 
-fn get_file_format_from_raw_format_number(format_number: u16) -> String {
+pub fn get_file_format_from_raw_format_number(format_number: u16) -> String {
     match format_number {
         0 => MIDI_FORMAT_TYPE_ZERO.to_string(),
         1 => MIDI_FORMAT_TYPE_ONE.to_string(),
@@ -350,7 +333,7 @@ fn get_variable_length_unsigned_integer_from_track_data(bytes: &mut Vec<u8>) -> 
 
 fn get_sequencer_specific_from_bytes(bytes: &mut Vec<u8>) -> String {
     let manufacturer_id = take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or_default();
-    let remaining_bytes = format_bytes_as_string(bytes);
+    let remaining_bytes = format_bytes_as_string_of_bytes(bytes);
     format!("{} : {}", manufacturer_id, remaining_bytes)
 }
 

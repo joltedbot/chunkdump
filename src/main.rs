@@ -8,6 +8,8 @@ mod flac;
 mod formating;
 mod midi;
 mod output;
+mod rmid;
+mod smf;
 mod template;
 mod wave;
 
@@ -46,7 +48,11 @@ fn main() {
             handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),
-        FileType::Midi => midi::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+        FileType::Smf => smf::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
+            handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
+            exit(EXIT_CODE_ERROR);
+        }),
+        FileType::Rmid => rmid::get_metadata_from_file(&cli_args.input_file_path).unwrap_or_else(|err| {
             handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
             exit(EXIT_CODE_ERROR);
         }),

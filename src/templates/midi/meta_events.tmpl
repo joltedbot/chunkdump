@@ -1,0 +1,10 @@
+---------------
+Meta Event Info
+---------------
+{%- for event in meta_event_data %}
+Track:       {{ event.track_number }}
+Delta Time:  {{ event.delta_time }}
+Event:       {{ event.name }}
+Value:       {{ event.value }}
+---------------
+{%- endfor %}

@@ -29,11 +29,11 @@ pub fn get_metadata_from_file(flac_file_path: &str) -> Result<Vec<Chunk>, Box<dy
         },
     )?;
 
-    let formated_output = format_data_for_output(flac_file_path, file_stream)?;
+    let formated_output = get_metadata_from_flac(flac_file_path, file_stream)?;
     Ok(vec![formated_output])
 }
 
-fn format_data_for_output(file_path: &str, file_stream: FlacReader<File>) -> Result<Chunk, Box<dyn Error>> {
+fn get_metadata_from_flac(file_path: &str, file_stream: FlacReader<File>) -> Result<Chunk, Box<dyn Error>> {
     let file_size = format_file_size_as_string(metadata(file_path)?.len());
     let stream_info = file_stream.streaminfo();
     let vorbis_vendor = file_stream.vendor();
