@@ -1,5 +1,5 @@
-use crate::bytes::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
-use crate::chunks::{Chunk, Section};
+use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;
@@ -18,7 +18,7 @@ struct CuePoint {
     sample_start: u32,
 }
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let mut cue_points: Vec<CuePoint> = vec![];
     let number_of_cue_points: u32 = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
@@ -40,7 +40,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

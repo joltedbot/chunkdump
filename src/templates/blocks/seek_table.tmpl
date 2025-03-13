@@ -1,0 +1,12 @@
+---------------
+Seek Table Info
+---------------
+{%- for point in seek_points %}
+{%- if point.is_placeholder %}Placeholder Point (no data){% endif %}
+{% if not point.is_placeholder %}
+Number of samples in the target frame:                            {{ point.number_of_samples }}
+Sample # of the first sample in the target frame:                 {{ point.first_sample }}
+Offset from the first frame header to the target frame's header:  {{ point.offset_in_bytes }} bytes
+
+---------------
+{%- endif %}{% endfor %}

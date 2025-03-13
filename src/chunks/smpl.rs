@@ -1,9 +1,9 @@
-use crate::bytes::{
+use crate::byte_arrays::{
     take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, Endian,
 };
-use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
 use crate::formating::{format_midi_note_number_as_note_name, format_smpte_offset};
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;
@@ -22,7 +22,7 @@ struct SampleLoops {
     number_of_time_to_play_the_loop: u32,
 }
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let mut sample_loops: Vec<SampleLoops> = vec![];
 
     let manufacturer = format_manufacturer_id(take_first_number_of_bytes(
@@ -70,7 +70,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

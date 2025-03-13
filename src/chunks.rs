@@ -18,8 +18,9 @@ mod sndm;
 mod text;
 mod umid;
 
-use crate::bytes::Endian;
+use crate::byte_arrays::Endian;
 use crate::fileio::{read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file};
+use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
 
@@ -73,21 +74,37 @@ pub const NAME_CHUNK_ID: &str = "name";
 const NAME_TEMPLATE_TITLE: &str = "Name";
 pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 
-pub enum Section {
-    Header,
-    Mandatory,
-    Optional,
-    Unsupported,
-    Skipped,
-    Empty,
+pub fn get_metadata_from_chunks(
+    input_file: &mut File,
+    file_path: &str,
+    endianness: Endian,
+) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
+    let mut output: Vec<OutputEntry> = vec![];
+
+    loop {
+        let chunk_id: String = match read_chunk_id_from_file(input_file) {
+            Ok(chunk_id) => chunk_id.to_lowercase(),
+            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
+            Err(error) => return Err(error),
+        };
+
+        let chunk_size = match chunk_id.as_str() {
+            ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
+            _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
+        };
+
+        let chunk_data = read_bytes_from_file(input_file, chunk_size).unwrap_or_default();
+        output.push(get_chunk_metadata(chunk_id, chunk_data, file_path)?);
+    }
+
+    Ok(output)
 }
 
-pub struct Chunk {
-    pub section: Section,
-    pub text: String,
-}
-
-pub fn get_chunk_metadata(chunk_id: String, chunk_data: Vec<u8>, file_path: &str) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_chunk_metadata(
+    chunk_id: String,
+    chunk_data: Vec<u8>,
+    file_path: &str,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let result = match chunk_id.as_str() {
         FMT_CHUNK_ID => fmt::get_metadata(chunk_data)?,
         FACT_CHUNK_ID => fact::get_metadata(chunk_data)?,
@@ -128,30 +145,4 @@ pub fn get_chunk_metadata(chunk_id: String, chunk_data: Vec<u8>, file_path: &str
     };
 
     Ok(result)
-}
-
-pub fn get_metadata_from_chunks(
-    input_file: &mut File,
-    file_path: &str,
-    endianness: Endian,
-) -> Result<Vec<Chunk>, Box<dyn Error>> {
-    let mut output: Vec<Chunk> = vec![];
-
-    loop {
-        let chunk_id: String = match read_chunk_id_from_file(input_file) {
-            Ok(chunk_id) => chunk_id.to_lowercase(),
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
-            Err(error) => return Err(error),
-        };
-
-        let chunk_size = match chunk_id.as_str() {
-            ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
-            _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
-        };
-
-        let chunk_data = read_bytes_from_file(input_file, chunk_size).unwrap_or_default();
-        output.push(get_chunk_metadata(chunk_id, chunk_data, file_path)?);
-    }
-
-    Ok(output)
 }

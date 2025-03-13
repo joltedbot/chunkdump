@@ -44,9 +44,6 @@ pub enum LocalError {
 
     #[error("Could not write out metadata.")]
     CouldNotWrteOutData,
-
-    #[error("Could not process the FLAC Vorbis tags")]
-    ErrorParsingVorbisTags,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

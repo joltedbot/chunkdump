@@ -1,10 +1,11 @@
-use crate::bytes::{
+use crate::byte_arrays::{
     take_first_byte, take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer,
     take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_two_bytes_as_unsigned_integer,
     Endian,
 };
-use crate::chunks::{Chunk, Section, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
+use crate::chunks::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
 use crate::formating::{format_bytes_as_string, format_bytes_as_string_of_bytes, format_smpte_offset};
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use byte_unit::rust_decimal::prelude::Zero;
 use serde::Serialize;
@@ -77,8 +78,8 @@ const MICROSECONDS_PER_MINUTE: u32 = 60000000;
 const META_EVENT_ID_BYTE_VALUE: u8 = 0xFF;
 const SYSEX_EVENT_ID_BYTE_VALUE: u8 = 0xF0;
 const META_EVENT_END_OFF_TRACK_BYTE_VALUE: u8 = 0x2F;
-const HEADER_TEMPLATE_CONTENT: &str = include_str!("templates/midi/header.tmpl");
-const META_EVENT_TEMPLATE_CONTENT: &str = include_str!("templates/midi/meta_events.tmpl");
+const HEADER_TEMPLATE_CONTENT: &str = include_str!("../templates/midi/header.tmpl");
+const META_EVENT_TEMPLATE_CONTENT: &str = include_str!("../templates/midi/meta_events.tmpl");
 
 #[derive(Default, Serialize)]
 pub struct Division {
@@ -102,7 +103,7 @@ pub struct MetaEvent {
     pub value: String,
 }
 
-pub fn get_metadata_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Vec<Chunk>, Box<dyn Error>> {
+pub fn get_metadata_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let header = get_header_metadata_from_midi_data(midi_data)?;
     let header_chunk = get_header_chunk_from_header_metadata(&header)?;
     let meta_events_chunk = get_meta_events_from_track_data(midi_data, header.number_of_tracks)?;
@@ -127,7 +128,7 @@ pub fn get_header_metadata_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Hea
     })
 }
 
-fn get_header_chunk_from_header_metadata(header: &Header) -> Result<Chunk, Box<dyn Error>> {
+fn get_header_chunk_from_header_metadata(header: &Header) -> Result<OutputEntry, Box<dyn Error>> {
     let midi_output_values: Value = upon::value! {
         format: &header.format,
         number_of_tracks: header.number_of_tracks,
@@ -136,16 +137,19 @@ fn get_header_chunk_from_header_metadata(header: &Header) -> Result<Chunk, Box<d
         ticks_per_frame: header.division.ticks_per_frame,
     };
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Header,
         text: get_file_chunk_output(HEADER_TEMPLATE_CONTENT, midi_output_values)?,
     })
 }
 
-fn get_meta_events_from_track_data(midi_data: &mut Vec<u8>, number_of_tracks: u16) -> Result<Chunk, Box<dyn Error>> {
+fn get_meta_events_from_track_data(
+    midi_data: &mut Vec<u8>,
+    number_of_tracks: u16,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let mut meta_events: Vec<MetaEvent> = vec![];
 
-    for track_number in 0..number_of_tracks {
+    for track_number in 1..=number_of_tracks {
         let track_data = get_track_data_from_midi_data(midi_data)?;
         meta_events.extend(get_midi_meta_events_from_track_data(track_number, track_data)?);
     }
@@ -154,7 +158,7 @@ fn get_meta_events_from_track_data(midi_data: &mut Vec<u8>, number_of_tracks: u1
         meta_event_data: meta_events,
     };
 
-    let output = Chunk {
+    let output = OutputEntry {
         section: Section::Optional,
         text: get_file_chunk_output(META_EVENT_TEMPLATE_CONTENT, midi_output_values)?,
     };

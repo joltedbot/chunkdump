@@ -1,5 +1,5 @@
-use crate::bytes::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer, Endian};
-use crate::chunks::{Chunk, Section};
+use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer, Endian};
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use byte_unit::rust_decimal::prelude::Zero;
 use std::error::Error;
@@ -41,7 +41,7 @@ const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
     "Top Back Tight",
 ];
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let chunk_size = chunk_data.len();
 
     let format_code = get_format_name_from_format_id(take_first_two_bytes_as_unsigned_integer(
@@ -84,7 +84,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Mandatory,
         text: formated_output,
     })

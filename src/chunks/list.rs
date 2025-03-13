@@ -1,7 +1,7 @@
-use crate::bytes::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
-use crate::chunks::{Chunk, Section};
+use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
 use crate::errors::LocalError;
 use crate::formating::add_one_if_byte_size_is_odd;
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;
@@ -60,7 +60,7 @@ struct AssociatedData {
     labeled_texts: Vec<LabeledText>,
 }
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let list_type = take_first_number_of_bytes_as_string(&mut chunk_data, LIST_TYPE_LENGTH_IN_BYTES)?;
 
     let mut info_data: Vec<InfoData> = Vec::new();
@@ -96,7 +96,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = info_output + &adtl_output;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

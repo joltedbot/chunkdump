@@ -1,13 +1,13 @@
-use crate::chunks::Chunk;
 use crate::fileio::get_file_metadata;
-use crate::midi::get_metadata_from_midi_data;
+use crate::files::midi::get_metadata_from_midi_data;
+use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 
-const TEMPLATE_CONTENT: &str = include_str!("templates/files/smf.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/files/smf.tmpl");
 
-pub fn get_metadata_from_file(smf_file_path: &str) -> Result<Vec<Chunk>, Box<dyn Error>> {
+pub fn get_metadata_from_file(smf_file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut smf_file = File::open(smf_file_path)?;
     let file_metadata = get_file_metadata(smf_file_path, &mut smf_file, TEMPLATE_CONTENT)?;
     let smf_metadata = get_metadata_from_smf(&mut smf_file)?;
@@ -18,7 +18,7 @@ pub fn get_metadata_from_file(smf_file_path: &str) -> Result<Vec<Chunk>, Box<dyn
     Ok(chunks)
 }
 
-pub fn get_metadata_from_smf(smf_file: &mut File) -> Result<Vec<Chunk>, Box<dyn Error>> {
+pub fn get_metadata_from_smf(smf_file: &mut File) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut midi_data = get_midi_data_from_file(smf_file)?;
     let midi_metadata = get_metadata_from_midi_data(&mut midi_data)?;
     Ok(midi_metadata)

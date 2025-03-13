@@ -7,6 +7,12 @@ pub enum Endian {
     Big,
 }
 
+pub fn skip_over_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<(), LocalError> {
+    check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
+    let _dropping_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
+    Ok(())
+}
+
 pub fn take_first_byte(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
     check_sufficient_bytes_are_available_to_take(byte_data, 1)?;
     let taken_bytes = byte_data.drain(..1).collect::<Vec<_>>();
@@ -75,7 +81,32 @@ pub fn take_first_four_bytes_as_unsigned_integer(
     Ok(result)
 }
 
-pub fn take_first_eight_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u64, LocalError> {
+pub fn take_first_three_bytes_as_32bit_unsigned_integer(
+    byte_data: &mut Vec<u8>,
+    endianness: Endian,
+) -> Result<u32, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 3;
+    const NUMBER_OF_BYTES_TO_RETURN: usize = 4;
+    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+
+    let mut taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    taken_bytes.insert(0, 0x00);
+
+    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_RETURN] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    let result = match endianness {
+        Endian::Little => u32::from_le_bytes(byte_array),
+        Endian::Big => u32::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
+}
+
+pub fn take_first_eight_bytes_as_unsigned_integer(
+    byte_data: &mut Vec<u8>,
+    endianness: Endian,
+) -> Result<u64, LocalError> {
     const NUMBER_OF_BYTES_TO_TAKE: usize = 8;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
@@ -83,7 +114,12 @@ pub fn take_first_eight_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Re
     let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
-    Ok(u64::from_le_bytes(byte_array))
+    let result = match endianness {
+        Endian::Little => u64::from_le_bytes(byte_array),
+        Endian::Big => u64::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
 }
 
 pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i8, LocalError> {
@@ -292,7 +328,8 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_eight_bytes_as_unsigned_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01, 0x10, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: u64 = take_first_eight_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: u64 =
+            take_first_eight_bytes_as_unsigned_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: u64 = 72356665512493328;
         assert_eq!(result_integer, correct_result);
     }

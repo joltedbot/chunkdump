@@ -2,37 +2,6 @@
 Flac File Metadata
 #################################################
 
--------------
-File Details:
--------------
 File Name: {{ file_name }}
 File Path: {{ file_path }}
 File Size: {{ file_size }}
-Estimated Duration: {{ duration }}
-
-------------
-Stream Info
-------------
-Channels:            {{ channels }}
-Sample Rate:         {{ sample_rate }} kHz
-Bit Depth:           {{ bits_per_sample }} bits
-Total Samples:       {{ total_samples }} per channel
-Minimum Block Size:  {{ min_block_size }} Samples
-Maximum Block Size:  {{ max_block_size }} Samples
-Minimum Frame Size:  {{ min_frame_size }} Bytes
-Maximum Frame Size:  {{ max_frame_size }} Bytes
-MD5 Sum:             {{ md5_sum }}
-
-{% if vorbis_vendor %}
----------------
-Vorbis Comments
----------------
-Vendor String:       {{ vorbis_vendor }}
-{% if vorbis_tags %}
-Comments:
----------
-{%- for comment in vorbis_tags %}
-{{ comment.id }}:{{ comment.spacer }}  {{ comment.value }}
-{%- endfor %}
-{%- endif %}
-{% endif %}

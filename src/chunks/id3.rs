@@ -1,5 +1,5 @@
-use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use id3::Tag;
 use serde::Serialize;
@@ -25,7 +25,7 @@ fn get_longest_tag_id(tags: &Tag) -> Result<usize, LocalError> {
     }
 }
 
-pub fn get_metadata(file_path: &str) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(file_path: &str) -> Result<OutputEntry, Box<dyn Error>> {
     let mut id3_entries: Vec<ID3Tag> = Vec::new();
     let tag = Tag::read_from_path(file_path).map_err(|e| LocalError::InvalidID3TagDataFound(e.to_string()))?;
     let longest_tag_id = get_longest_tag_id(&tag)?;
@@ -48,7 +48,7 @@ pub fn get_metadata(file_path: &str) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

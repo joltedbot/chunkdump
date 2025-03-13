@@ -1,7 +1,7 @@
-use crate::bytes::{
+use crate::byte_arrays::{
     take_first_number_of_bytes, take_first_number_of_bytes_as_string, take_first_two_bytes_as_unsigned_integer, Endian,
 };
-use crate::chunks::{Chunk, Section};
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use std::error::Error;
 use upon::Value;
@@ -14,7 +14,7 @@ const GENRE_TAG_ID: &str = "gen";
 const AUTHOR_TAG_ID: &str = "aut";
 const ALBUM_TAG_ID: &str = "alb";
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let mut genre = String::new();
     let mut author = String::new();
     let mut album = String::new();
@@ -50,7 +50,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, aiff_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

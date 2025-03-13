@@ -14,6 +14,5 @@ thiserror = "2.0.11"
 upon = "0.9.0"
 serde = { version = "1.0.217", features = ["derive"] }
 argh = "0.1.13"
-claxon = "0.4.3"
 chrono = "0.4.39"
 extended = "0.1.0"
