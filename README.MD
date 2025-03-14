@@ -1,6 +1,6 @@
 # CHUNKDUMP
 
-**Status: v0.4.0 - _Stable but currently only tested on macOS with Apple Silicon._**
+**Status: v0.5.0 - _Stable but currently only tested on macOS with Apple Silicon._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
 Resource Interchange File Format (RIFF) Wave files and Audio Interchange File Format AIFF/AIFF-C .aif files as well as
