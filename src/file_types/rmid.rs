@@ -1,15 +1,15 @@
 use crate::byte_arrays::Endian;
 use crate::chunks::{get_chunk_metadata, ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE};
+use crate::file_types::midi::get_metadata_from_midi_data;
 use crate::fileio::{
     get_file_metadata, read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file,
     skip_over_bytes_in_file,
 };
-use crate::files::midi::get_metadata_from_midi_data;
 use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
 
-const TEMPLATE_HEADER_CONTENT: &str = include_str!("../templates/files/rmid.tmpl");
+const TEMPLATE_HEADER_CONTENT: &str = include_str!("../templates/file_types/rmid.tmpl");
 
 const RMID_HEADER_FIELDS_LENGTH_IN_BYTES: usize = 12;
 

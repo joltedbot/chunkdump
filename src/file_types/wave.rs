@@ -5,7 +5,7 @@ use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
 
-const TEMPLATE_CONTENT: &str = include_str!("../templates/files/wave.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/wave.tmpl");
 const WAVE_HEADER_FIELDS_LENGTH_IN_BYTES: usize = 12;
 
 pub fn get_metadata_from_file(wave_file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {

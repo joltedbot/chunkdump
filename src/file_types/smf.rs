@@ -1,11 +1,11 @@
+use crate::file_types::midi::get_metadata_from_midi_data;
 use crate::fileio::get_file_metadata;
-use crate::files::midi::get_metadata_from_midi_data;
 use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 
-const TEMPLATE_CONTENT: &str = include_str!("../templates/files/smf.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/smf.tmpl");
 
 pub fn get_metadata_from_file(smf_file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut smf_file = File::open(smf_file_path)?;
