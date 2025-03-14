@@ -1,10 +1,22 @@
 use crate::errors::LocalError;
 use extended::Extended;
 
+const BYTES_IN_U8: usize = 1;
+const BYTES_IN_U16: usize = 2;
+const BYTES_IN_U32: usize = 4;
+const BYTES_IN_U64: usize = 8;
+const BYTES_IN_APPLE_EXTENDED_INTEGER: usize = 10;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Endian {
     Little,
     Big,
+}
+
+pub fn skip_over_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usize) -> Result<(), LocalError> {
+    check_sufficient_bytes_are_available_to_take(byte_data, number_of_bytes)?;
+    let _dropping_bytes: Vec<u8> = byte_data.drain(..number_of_bytes).collect();
+    Ok(())
 }
 
 pub fn take_first_byte(byte_data: &mut Vec<u8>) -> Result<u8, LocalError> {
@@ -22,11 +34,10 @@ pub fn take_first_number_of_bytes(byte_data: &mut Vec<u8>, number_of_bytes: usiz
 }
 
 pub fn take_first_byte_as_unsigned_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<u8, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U8)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U8).collect();
+    let mut byte_array: [u8; BYTES_IN_U8] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -41,11 +52,10 @@ pub fn take_first_two_bytes_as_unsigned_integer(
     byte_data: &mut Vec<u8>,
     endianness: Endian,
 ) -> Result<u16, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 2;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U16)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U16).collect();
+    let mut byte_array: [u8; BYTES_IN_U16] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -60,11 +70,10 @@ pub fn take_first_four_bytes_as_unsigned_integer(
     byte_data: &mut Vec<u8>,
     endianness: Endian,
 ) -> Result<u32, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U32)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U32).collect();
+    let mut byte_array: [u8; BYTES_IN_U32] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -75,23 +84,50 @@ pub fn take_first_four_bytes_as_unsigned_integer(
     Ok(result)
 }
 
-pub fn take_first_eight_bytes_as_unsigned_integer(byte_data: &mut Vec<u8>) -> Result<u64, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 8;
+pub fn take_first_three_bytes_as_32bit_unsigned_integer(
+    byte_data: &mut Vec<u8>,
+    endianness: Endian,
+) -> Result<u32, LocalError> {
+    const NUMBER_OF_BYTES_TO_TAKE: usize = 3;
     check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let mut taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
+    taken_bytes.insert(0, 0x00);
+
+    let mut byte_array: [u8; BYTES_IN_U32] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
-    Ok(u64::from_le_bytes(byte_array))
+    let result = match endianness {
+        Endian::Little => u32::from_le_bytes(byte_array),
+        Endian::Big => u32::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
+}
+
+pub fn take_first_eight_bytes_as_unsigned_integer(
+    byte_data: &mut Vec<u8>,
+    endianness: Endian,
+) -> Result<u64, LocalError> {
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U64)?;
+
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U64).collect();
+    let mut byte_array: [u8; BYTES_IN_U64] = Default::default();
+    byte_array.copy_from_slice(taken_bytes.as_slice());
+
+    let result = match endianness {
+        Endian::Little => u64::from_le_bytes(byte_array),
+        Endian::Big => u64::from_be_bytes(byte_array),
+    };
+
+    Ok(result)
 }
 
 pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i8, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 1;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U8)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U8).collect();
+    let mut byte_array: [u8; BYTES_IN_U8] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -103,11 +139,10 @@ pub fn take_first_byte_as_signed_integer(byte_data: &mut Vec<u8>, endianness: En
 }
 
 pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i16, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 2;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U16)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U16).collect();
+    let mut byte_array: [u8; BYTES_IN_U16] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -119,11 +154,10 @@ pub fn take_first_two_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endiannes
 }
 
 pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianness: Endian) -> Result<i32, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U32)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U32).collect();
+    let mut byte_array: [u8; BYTES_IN_U32] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     let result = match endianness {
@@ -135,22 +169,20 @@ pub fn take_first_four_bytes_as_signed_integer(byte_data: &mut Vec<u8>, endianne
 }
 
 pub fn take_first_four_bytes_as_float(byte_data: &mut Vec<u8>) -> Result<f32, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 4;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_U32)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_U32).collect();
+    let mut byte_array: [u8; BYTES_IN_U32] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     Ok(f32::from_le_bytes(byte_array))
 }
 
 pub fn take_first_ten_bytes_as_an_apple_extended_integer(byte_data: &mut Vec<u8>) -> Result<Extended, LocalError> {
-    const NUMBER_OF_BYTES_TO_TAKE: usize = 10;
-    check_sufficient_bytes_are_available_to_take(byte_data, NUMBER_OF_BYTES_TO_TAKE)?;
+    check_sufficient_bytes_are_available_to_take(byte_data, BYTES_IN_APPLE_EXTENDED_INTEGER)?;
 
-    let taken_bytes: Vec<u8> = byte_data.drain(..NUMBER_OF_BYTES_TO_TAKE).collect();
-    let mut byte_array: [u8; NUMBER_OF_BYTES_TO_TAKE] = Default::default();
+    let taken_bytes: Vec<u8> = byte_data.drain(..BYTES_IN_APPLE_EXTENDED_INTEGER).collect();
+    let mut byte_array: [u8; BYTES_IN_APPLE_EXTENDED_INTEGER] = Default::default();
     byte_array.copy_from_slice(taken_bytes.as_slice());
 
     Ok(Extended::from_be_bytes(byte_array))
@@ -292,7 +324,8 @@ mod tests {
     #[test]
     fn return_correct_integer_when_taking_eight_bytes_as_unsigned_integer() {
         let mut little_endian_test_bytes: Vec<u8> = vec![0x10, 0x01, 0x01, 0x01, 0x01, 0x10, 0x01, 0x01, 0x01, 0x01];
-        let result_integer: u64 = take_first_eight_bytes_as_unsigned_integer(&mut little_endian_test_bytes).unwrap();
+        let result_integer: u64 =
+            take_first_eight_bytes_as_unsigned_integer(&mut little_endian_test_bytes, Endian::Little).unwrap();
         let correct_result: u64 = 72356665512493328;
         assert_eq!(result_integer, correct_result);
     }

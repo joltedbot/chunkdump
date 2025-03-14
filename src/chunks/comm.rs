@@ -1,8 +1,8 @@
-use crate::bytes::{
+use crate::byte_arrays::{
     take_first_byte_as_unsigned_integer, take_first_four_bytes_as_signed_integer, take_first_number_of_bytes_as_string,
     take_first_ten_bytes_as_an_apple_extended_integer, take_first_two_bytes_as_signed_integer, Endian,
 };
-use crate::chunks::{Chunk, Section};
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use std::error::Error;
 use upon::Value;
@@ -10,7 +10,7 @@ use upon::Value;
 const TEMPLATE_CONTENT: &str = include_str!("../templates/chunks/comm.tmpl");
 const COMPRESSION_NAME_LENGTH_IN_BYTES: usize = 4;
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let number_of_channels = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
     let sample_frames = take_first_four_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
     let sample_size = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
@@ -39,7 +39,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, aiff_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Mandatory,
         text: formated_output,
     })

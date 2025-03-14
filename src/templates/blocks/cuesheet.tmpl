@@ -1,0 +1,28 @@
+--------------
+Cue Sheet Info
+--------------
+{%- if is_cdda %}Cuesheet is Compact Disc Digital Audio (CD-DA) Format{%- endif %}
+Media Catalog Number:       {{ media_catalog_number }}
+Number of Lead-in Samples:  {{ number_of_lead_in_samples }}
+Number of Cuesheet Tracks:  {{ number_of_tracks }}
+
+{% for id, track in tracks %}
+---------------
+Track Number:                                  {{ track.track_number }}
+Track Type:                                    {%- if track.is_audio %}Audio{%- endif %}{%- if not track.is_audio %}Non-Audio{%- endif %}
+Has Pre-Emphasis:                              {%- if track.pre_emphasis %}Yes{%- endif %}{%- if not track.pre_emphasis %}No{%- endif %}
+Track offset of the first index point:         {{ track.track_offset }} samples
+International Standard Recording Code (ISRC):  {{ track.track_isrc }}
+Number of Index Points:                        {{ number_of_index_points }}
+
+{% if track.number_of_index_points %}
+{% for id, point in track.points %}
+---
+Point: {{ point_number }}
+Index Point offset relative to the track offset: {{ offset_samples }}
+---
+{% endfor %}
+{% endif %}
+
+---------------
+{% endfor %}

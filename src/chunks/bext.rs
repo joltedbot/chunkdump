@@ -1,12 +1,12 @@
-use crate::bytes::{
+use crate::byte_arrays::{
     take_first_eight_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_number_of_bytes_as_string,
     take_first_two_bytes_as_signed_integer, take_first_two_bytes_as_unsigned_integer, Endian,
 };
 use std::error::Error;
 
-use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
 use crate::formating::format_bytes_as_string_of_bytes;
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use upon::Value;
 
@@ -41,14 +41,14 @@ struct UmidComponent {
     user: Vec<u8>,
 }
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let description = take_first_number_of_bytes_as_string(&mut chunk_data, DESCRIPTION_LENGTH_IN_BYTES)?;
     let originator = take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_LENGTH_IN_BYTES)?;
     let originator_reference =
         take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_REFERENCE_LENGTH_IN_BYTES)?;
     let originator_date = take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_DATA_LENGTH_IN_BYTES)?;
     let originator_time = take_first_number_of_bytes_as_string(&mut chunk_data, ORIGINATOR_TIME_LENGTH_IN_BYTES)?;
-    let time_reference = take_first_eight_bytes_as_unsigned_integer(&mut chunk_data)?;
+    let time_reference = take_first_eight_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let version = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let umid = get_umid_from_bytes(&mut chunk_data)?;
     let loudness_value = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?;
@@ -86,7 +86,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

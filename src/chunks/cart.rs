@@ -1,9 +1,8 @@
-use crate::bytes::{
-    take_first_four_bytes_as_signed_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes,
-    take_first_number_of_bytes_as_string, Endian,
+use crate::byte_arrays::{
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_number_of_bytes_as_string, Endian,
 };
-use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
+use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
 use std::error::Error;
@@ -19,19 +18,18 @@ const CLIENT_ID_LENGTH_IN_BYTES: usize = 64;
 const CATEGORY_LENGTH_IN_BYTES: usize = 64;
 const CLASSIFICATION_LENGTH_IN_BYTES: usize = 64;
 const OUT_CUE_LENGTH_IN_BYTES: usize = 64;
-const START_DATE_LENGTH_IN_BYTES: usize = 64;
-const START_TIME_LENGTH_IN_BYTES: usize = 64;
-const END_DATE_LENGTH_IN_BYTES: usize = 64;
-const END_TIME_LENGTH_IN_BYTES: usize = 64;
+const START_DATE_LENGTH_IN_BYTES: usize = 10;
+const START_TIME_LENGTH_IN_BYTES: usize = 8;
+const END_DATE_LENGTH_IN_BYTES: usize = 10;
+const END_TIME_LENGTH_IN_BYTES: usize = 8;
 const PRODUCER_APP_ID_LENGTH_IN_BYTES: usize = 64;
 const PRODUCER_APP_VERSION_LENGTH_IN_BYTES: usize = 64;
 const USER_DEF_LENGTH_IN_BYTES: usize = 64;
 const POST_TIMER_LENGTH_IN_BYTES: usize = 64;
 const NUMBER_OF_POST_TIMERS_PER_TIMER: usize = 8;
 const DW_USAGE_LENGTH_IN_BYTES: usize = 4;
-const RESERVED_LENGTH_IN_BYTES: usize = 64;
-const URL_LENGTH_IN_BYTES: usize = 64;
-const TAG_TEXT_LENGTH_IN_BYTES: usize = 64;
+const RESERVED_LENGTH_IN_BYTES: usize = 276;
+const URL_LENGTH_IN_BYTES: usize = 1024;
 const VERSION_STRING_DECIMAL_POSITION: usize = 2;
 
 #[derive(Debug, Serialize)]
@@ -40,7 +38,7 @@ struct CartTimer {
     dw_value: u32,
 }
 
-pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
+pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let version = take_first_number_of_bytes_as_string(&mut chunk_data, VERSION_LENGTH_IN_BYTES)?;
     let title = take_first_number_of_bytes_as_string(&mut chunk_data, TITLE_LENGTH_IN_BYTES)?;
     let artist = take_first_number_of_bytes_as_string(&mut chunk_data, ARTIST_LENGTH_IN_BYTES)?;
@@ -57,12 +55,14 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
     let producer_app_version =
         take_first_number_of_bytes_as_string(&mut chunk_data, PRODUCER_APP_VERSION_LENGTH_IN_BYTES)?;
     let user_def = take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?;
-    let dw_level_reference = take_first_four_bytes_as_signed_integer(&mut chunk_data, Endian::Little)?;
+    let dw_level_reference = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let post_timer =
         get_post_timer_from_bytes(take_first_number_of_bytes(&mut chunk_data, POST_TIMER_LENGTH_IN_BYTES)?)?;
     let reserved = take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_LENGTH_IN_BYTES)?;
     let url = take_first_number_of_bytes_as_string(&mut chunk_data, URL_LENGTH_IN_BYTES)?;
-    let tag_text = take_first_number_of_bytes_as_string(&mut chunk_data, TAG_TEXT_LENGTH_IN_BYTES)?;
+
+    let remaining_data_bytes = chunk_data.len();
+    let tag_text = take_first_number_of_bytes_as_string(&mut chunk_data, remaining_data_bytes)?;
 
     let wave_output_values: Value = upon::value! {
        version: get_formated_version_from_version_string(version.clone()),
@@ -89,7 +89,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<Chunk, Box<dyn Error>> {
 
     let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
 
-    Ok(Chunk {
+    Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,
     })

@@ -1,6 +1,6 @@
 # CHUNKDUMP
 
-**Status: v0.4.0 - _Stable but currently only tested on macOS with Apple Silicon._**
+**Status: v0.5.0 - _Stable but currently only tested on macOS with Apple Silicon._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
 Resource Interchange File Format (RIFF) Wave files and Audio Interchange File Format AIFF/AIFF-C .aif files as well as
@@ -29,12 +29,32 @@ Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 
 &nbsp;
 
-### Flac File Metadata Supported
+### Current List of Supported FLAC Blocks
 
-Flac files have much more standardized metadata than wave files so there shouldn't be a lot of unexpected metadata
-blocks.
-I am just extracting some basic file information and the StreamInfo and Vorbis Comment metadata blocks. Padding and Data
-blocks are skipped.
+- **application**
+    - An optional block for use by third party applications for their own purposes
+    - It contains an Application ID that is registered with IANA. See here: https://xiph.org/flac/id.html
+- **cuesheet**
+    - An optional block similar to the seek table that provides index points to samples in the audio frames.
+- **padding**
+    - An optional block generally used for padding the file size and is supposed to be ignored.
+      Unlike with the wave files I haven't found any "secret" message stored in junk chunks for aiffs but you never
+      know.
+- **picture**
+    - An optional block for storing images, generally the album cover or similar.
+- **seek_table**
+    - An optional list of seek points to various samples of interest in the audio frames.
+    - A seek table is generally not usable for seeking in a FLAC file embedded in a container (see Section 10), as such
+      containers usually interleave FLAC data with other data and the offsets used in seek points are those of an
+      unmuxed FLAC stream.
+- **stream_info**
+    - A mandatory Flac file block specifying the format of the data
+- **Vorbis Comments**
+    - An optional block storing key value pair metadata similar to Vorbis codex metadata hence the name.
+
+### Special Skipped FLAC Blocks:
+
+- **Audio Frames**: This is the audio portion which is just skipped. See your media player of choice to read that block.
 
 ### Current List of Supported Wave Chunks
 

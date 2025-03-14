@@ -1,0 +1,11 @@
+-------------------
+Vorbis Comment Info
+-------------------
+Vendor String:       {{ vorbis_vendor }}
+{% if vorbis_tags %}
+Comments:
+---------
+{%- for comment in vorbis_tags %}
+{{ comment.key }}:    {{ comment.spacer }}{{ comment.value }}
+{%- endfor %}
+{%- endif %}

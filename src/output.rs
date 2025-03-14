@@ -1,11 +1,24 @@
-use crate::chunks::{Chunk, Section};
 use crate::errors::LocalError;
 use std::error::Error;
 use std::fs::File;
 use std::io::{stdout, Write};
 use std::path::Path;
 
-pub fn write_out_metadata(file_data: Vec<Chunk>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
+pub enum Section {
+    Header,
+    Mandatory,
+    Optional,
+    Unsupported,
+    Skipped,
+    Empty,
+}
+
+pub struct OutputEntry {
+    pub section: Section,
+    pub text: String,
+}
+
+pub fn write_out_metadata(file_data: Vec<OutputEntry>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
     let mut header: Vec<String> = vec![];
     let mut mandatory: Vec<String> = vec![];
     let mut optional: Vec<String> = vec![];

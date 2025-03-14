@@ -1,4 +1,4 @@
-use crate::bytes::{take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian};
+use crate::byte_arrays::{take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian};
 use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
 use chrono::DateTime;
