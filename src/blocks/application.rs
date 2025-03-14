@@ -37,11 +37,11 @@ const APPLICATION_ID_LENGTH_IN_BYTES: usize = 4;
 const TEMPLATE_CONTENT: &str = include_str!("../templates/blocks/application.tmpl");
 
 pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
-    let picture_type_names: HashMap<&str, &str> = HashMap::from(APPLICATION_ID_NAMES);
+    let application_id_names: HashMap<&str, &str> = HashMap::from(APPLICATION_ID_NAMES);
     let application_id = take_first_number_of_bytes_as_string(&mut block_data, APPLICATION_ID_LENGTH_IN_BYTES)?;
-    let application = *picture_type_names
+    let application = *application_id_names
         .get(application_id.as_str())
-        .unwrap_or(&"Unknown Picture Type");
+        .unwrap_or(&"Unknown Application Type");
 
     let data = format_bytes_as_string(block_data)?;
 

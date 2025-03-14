@@ -9,16 +9,16 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/blocks/vorbis_comments
 
 #[derive(Serialize)]
 struct VorbisTag {
-    id: String,
+    key: String,
     spacer: String,
     value: String,
 }
 
 pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
-    // The Vorbis Comment block length fields are little endian unlike ever other integer in the Flac file
     let vorbis_vendor_length = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Little)?;
     let vorbis_vendor = take_first_number_of_bytes_as_string(&mut block_data, vorbis_vendor_length as usize)?;
     let number_of_tags = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Little)?;
+
     let vorbis_tags = get_vorbis_comment_tags(&mut block_data, number_of_tags)?;
 
     let output_values: Value = upon::value! {
@@ -40,13 +40,14 @@ fn get_vorbis_comment_tags(block_data: &mut Vec<u8>, number_of_tags: u32) -> Res
     for _ in 0..number_of_tags {
         let tag_length = take_first_four_bytes_as_unsigned_integer(block_data, Endian::Little)? as usize;
         let raw_tag = take_first_number_of_bytes_as_string(block_data, tag_length)?;
+
         let tag_key_and_value = match raw_tag.split_once('=') {
-            Some((id, value)) => (id.trim(), value.trim()),
+            Some((key, value)) => (key.trim(), value.trim()),
             None => continue,
         };
 
         vorbis_tags.push(VorbisTag {
-            id: tag_key_and_value.0.to_string(),
+            key: tag_key_and_value.0.to_string(),
             spacer: " ".to_string(),
             value: tag_key_and_value.1.to_string(),
         });
@@ -58,14 +59,14 @@ fn get_vorbis_comment_tags(block_data: &mut Vec<u8>, number_of_tags: u32) -> Res
 }
 
 fn set_tag_spacers(tags: &mut Vec<VorbisTag>) {
-    let longest_id = match tags.iter().max_by_key(|tag| tag.id.len()) {
-        Some(tag) => tag.id.len(),
+    let longest_key = match tags.iter().max_by_key(|tag| tag.key.len()) {
+        Some(tag) => tag.key.len(),
         None => return,
     };
 
     for tag in tags {
-        if longest_id > tag.id.len() {
-            tag.spacer = " ".repeat(longest_id - tag.id.len());
+        if longest_key > tag.key.len() {
+            tag.spacer = " ".repeat(longest_key - tag.key.len());
         } else {
             tag.spacer = String::new();
         }

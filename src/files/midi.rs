@@ -138,7 +138,7 @@ fn get_header_chunk_from_header_metadata(header: &Header) -> Result<OutputEntry,
     };
 
     Ok(OutputEntry {
-        section: Section::Header,
+        section: Section::Mandatory,
         text: get_file_chunk_output(HEADER_TEMPLATE_CONTENT, midi_output_values)?,
     })
 }
