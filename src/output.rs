@@ -18,7 +18,7 @@ pub struct OutputEntry {
     pub text: String,
 }
 
-pub fn write_out_metadata(file_data: Vec<OutputEntry>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
+pub fn output_metadata(file_data: Vec<OutputEntry>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
     let mut header: Vec<String> = vec![];
     let mut mandatory: Vec<String> = vec![];
     let mut optional: Vec<String> = vec![];
@@ -62,12 +62,16 @@ pub fn write_out_metadata(file_data: Vec<OutputEntry>, output_file_path: Option<
         output_metadata.append(&mut empty);
     }
 
-    match output_file_path {
-        None => write_to_stdout(output_metadata)?,
-        Some(output_path) => write_to_file(output_metadata, output_path)?,
-    }
+    write_to_output(output_file_path, output_metadata)?;
 
     Ok(())
+}
+
+fn write_to_output(output_file_path: Option<String>, output_metadata: Vec<String>) -> Result<(), Box<dyn Error>> {
+    match output_file_path {
+        None => write_to_stdout(output_metadata),
+        Some(output_path) => write_to_file(output_metadata, output_path),
+    }
 }
 
 fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {

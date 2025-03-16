@@ -70,10 +70,10 @@ const META_EVENT_SMPTE_OFFSET: &str = "SMPTE Offset";
 const META_EVENT_TIME_SIGNATURE: &str = "Time Signature";
 const META_EVENT_KEY_SIGNATURE: &str = "Key Signature";
 const META_EVENT_SEQUENCER_SPECIFIC: &str = "Sequencer specific Message";
-const FIRST_BIT_AS_U8_DECIMAL_INTEGER: u8 = 64;
+const FIRST_BIT_AS_U8_DECIMAL_INTEGER: u8 = 128;
 const META_EVENT_UNKNOWN: &str = "Unknown MetaEvent";
 const MAJOR_SCALE_TITLE: &str = "Major";
-const MINOR_SCALE_TITLE: &str = "major";
+const MINOR_SCALE_TITLE: &str = "minor";
 const MICROSECONDS_PER_MINUTE: u32 = 60000000;
 const META_EVENT_ID_BYTE_VALUE: u8 = 0xFF;
 const SYSEX_EVENT_ID_BYTE_VALUE: u8 = 0xF0;
@@ -81,7 +81,7 @@ const META_EVENT_END_OFF_TRACK_BYTE_VALUE: u8 = 0x2F;
 const HEADER_TEMPLATE_CONTENT: &str = include_str!("../templates/midi/header.tmpl");
 const META_EVENT_TEMPLATE_CONTENT: &str = include_str!("../templates/midi/meta_events.tmpl");
 
-#[derive(Default, Serialize)]
+#[derive(Default, Debug, PartialEq, Serialize)]
 pub struct Division {
     pub ppqn: u16,
     pub timecode: u8,
@@ -261,7 +261,7 @@ fn get_meta_event_from_event_data_by_type_byte(
         ),
         0x7F => (
             META_EVENT_SEQUENCER_SPECIFIC.to_string(),
-            get_sequencer_specific_from_bytes(&mut bytes),
+            get_sequencer_specific_field_from_bytes(&mut bytes),
         ),
         _ => {
             let unknown_as_string = format_bytes_as_string(bytes)?;
@@ -281,8 +281,14 @@ fn get_bpm_from_bytes(bytes: &mut Vec<u8>) -> String {
     let mut byte_array: [u8; MAX_INTEGER_BYTES] = [0; MAX_INTEGER_BYTES];
     byte_array.copy_from_slice(bpm_bytes.as_slice());
 
-    let bpm = MICROSECONDS_PER_MINUTE / u32::from_be_bytes(byte_array);
-    format!("{}", bpm)
+    let microseconds_per_beat = u32::from_be_bytes(byte_array);
+
+    if microseconds_per_beat == 0 {
+        return "0".to_string();
+    }
+
+    let bpm = MICROSECONDS_PER_MINUTE / microseconds_per_beat;
+    bpm.to_string()
 }
 
 pub fn get_division_output_values_from_raw_division_bytes(mut division_bytes: Vec<u8>) -> Division {
@@ -335,7 +341,7 @@ fn get_variable_length_unsigned_integer_from_track_data(bytes: &mut Vec<u8>) -> 
     u32::from_be_bytes(buffer)
 }
 
-fn get_sequencer_specific_from_bytes(bytes: &mut Vec<u8>) -> String {
+fn get_sequencer_specific_field_from_bytes(bytes: &mut Vec<u8>) -> String {
     let manufacturer_id = take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or_default();
     let remaining_bytes = format_bytes_as_string_of_bytes(bytes);
     format!("{} : {}", manufacturer_id, remaining_bytes)
@@ -368,4 +374,134 @@ fn get_key_from_number_of_flats(flats: i8, is_major: bool) -> String {
     };
 
     format!("{} {}", key_center.0, key_center.1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn returns_f_minor_key_from_4_flats() {
+        let correct_result = "F minor".to_string();
+        let result = get_key_from_number_of_flats(4, false);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn returns_b_major_key_from_7_flats() {
+        let correct_result = "B Major".to_string();
+        let result = get_key_from_number_of_flats(7, true);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_the_correct_time_signature_from_valid_bytes() {
+        let mut test_bytes: Vec<u8> = vec![0x07, 0x08, 0x09, 0x10];
+        let correct_result = "7/16\nMidi Clock Ticks Per Metronome Click: 9\n32nd Notes Per Beat: 16".to_string();
+        let result = get_time_signature_from_bytes(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_the_correct_sequencer_specific_field_from_valid_bytes() {
+        let mut test_bytes: Vec<u8> = vec![0x07, 0x43, 0x4F, 0x52, 0x52, 0x45, 0x43, 0x54];
+        let correct_result = "7 :  43 4f 52 52 45 43 54".to_string();
+        let result = get_sequencer_specific_field_from_bytes(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_the_correct_file_format_string_from_valid_format_numbers() {
+        let format_numbers: [(u16, &str); 3] = [
+            (0, MIDI_FORMAT_TYPE_ZERO),
+            (1, MIDI_FORMAT_TYPE_ONE),
+            (2, MIDI_FORMAT_TYPE_TWO),
+        ];
+        for number in format_numbers {
+            let result = get_file_format_from_raw_format_number(number.0);
+            assert_eq!(result, number.1);
+        }
+    }
+
+    #[test]
+    fn return_an_empty_file_format_string_from_invalid_format_number() {
+        let test_number = u16::MAX;
+        let correct_result = "".to_string();
+        let result = get_file_format_from_raw_format_number(test_number);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_variable_length_integer_from_no_bytes() {
+        let mut test_bytes = vec![];
+        let correct_result = 0;
+        let result = get_variable_length_unsigned_integer_from_track_data(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_variable_length_integer_from_1_valid_byte() {
+        let mut test_bytes = vec![7];
+        let correct_result = 7;
+        let result = get_variable_length_unsigned_integer_from_track_data(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_variable_length_integer_when_no_bytes_have_list_byte_bit_set() {
+        let mut test_bytes = vec![135, 129, 140, 200, 129, 243];
+        let correct_result = 2273414344;
+        let result = get_variable_length_unsigned_integer_from_track_data(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_ppqn_division_from_valid_bytes() {
+        let test_bytes: Vec<u8> = vec![0x00, 0x18];
+        let correct_result = Division {
+            ppqn: 24,
+            timecode: 0,
+            ticks_per_frame: 0,
+        };
+        let result = get_division_output_values_from_raw_division_bytes(test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_timecode_division_from_valid_bytes() {
+        let test_bytes: Vec<u8> = vec![0xF0, 0x18];
+        let correct_result = Division {
+            ppqn: 0,
+            timecode: 112,
+            ticks_per_frame: 24,
+        };
+        let result = get_division_output_values_from_raw_division_bytes(test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_bpm_from_bytes() {
+        let mut test_bytes: Vec<u8> = vec![0x05, 0x24, 0xB6];
+        let correct_result = "178".to_string();
+        let result = get_bpm_from_bytes(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_zero_bpm_when_passed_zero_value_bytes() {
+        let mut test_bytes: Vec<u8> = vec![0x00, 0x00, 0x00];
+        let correct_result = "0".to_string();
+        let result = get_bpm_from_bytes(&mut test_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_byte_vec_from_valid_bytes() {
+        let mut test_bytes: Vec<u8> = vec![
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+        ];
+        let correct_result = vec![0x01, 0x02, 0x03, 0x04];
+        let result = get_track_data_from_midi_data(&mut test_bytes).unwrap();
+        assert_eq!(result, correct_result);
+    }
 }

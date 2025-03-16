@@ -112,13 +112,19 @@ mod tests {
     }
 
     #[test]
-    fn correct_string_is_returned_from_bytes() {
+    fn correct_string_of_bytes_is_returned_from_bytes() {
         let input_byte_array_in_decimal: &[u8] = &[1, 2, 58, 75];
         let correct_result_string: String = " 01 02 3a 4b".to_string();
-        assert_eq!(
-            format_bytes_as_string_of_bytes(input_byte_array_in_decimal),
-            correct_result_string
-        );
+        let result_string: String = format_bytes_as_string_of_bytes(input_byte_array_in_decimal);
+        assert_eq!(result_string, correct_result_string);
+    }
+
+    #[test]
+    fn correct_string_is_returned_from_bytes() {
+        let input_byte_array_in_decimal: Vec<u8> = vec![0x43, 0x4F, 0x52, 0x52, 0x45, 0x43, 0x54];
+        let correct_result_string: String = "CORRECT".to_string();
+        let result_string: String = format_bytes_as_string(input_byte_array_in_decimal).unwrap();
+        assert_eq!(result_string, correct_result_string);
     }
 
     #[test]

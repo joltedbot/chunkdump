@@ -14,7 +14,7 @@ use crate::cli::EXIT_CODE_ERROR;
 use crate::errors::handle_local_error;
 use crate::errors::LocalError;
 use crate::fileio::get_file_id_from_file;
-use output::write_out_metadata;
+use output::output_metadata;
 use std::process::exit;
 
 fn main() {
@@ -28,12 +28,12 @@ fn main() {
         exit(EXIT_CODE_ERROR);
     });
 
-    let metadata = file_types::get_file_metadata(&cli_args, file_type).unwrap_or_else(|err| {
+    let metadata = file_types::get_file_metadata(&cli_args.input_file_path, file_type).unwrap_or_else(|err| {
         handle_local_error(LocalError::CouldNotReadData(cli_args.input_file_path), err.to_string());
         exit(EXIT_CODE_ERROR);
     });
 
-    write_out_metadata(metadata, cli_args.output_file_path).unwrap_or_else(|error| {
+    output_metadata(metadata, cli_args.output_file_path).unwrap_or_else(|error| {
         handle_local_error(LocalError::CouldNotWrteOutData, error.to_string());
         exit(EXIT_CODE_ERROR);
     });

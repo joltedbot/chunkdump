@@ -32,7 +32,6 @@ const APPLICATION_ID_NAMES: [(&str, &str); 24] = [
     ("xbat", "XBAT"),
     ("xmcd", "xmcd"),
 ];
-
 const APPLICATION_ID_LENGTH_IN_BYTES: usize = 4;
 const TEMPLATE_CONTENT: &str = include_str!("../templates/blocks/application.tmpl");
 
