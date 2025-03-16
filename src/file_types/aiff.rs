@@ -7,8 +7,8 @@ use std::error::Error;
 use std::fs::File;
 use upon::Value;
 
-const TEMPLATE_CONTENT: &str = include_str!("../templates/files/aiff.tmpl");
-const FORM_TEMPLATE_CONTENT: &str = include_str!("../templates/files/aiff-form.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/aiff.tmpl");
+const FORM_TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/aiff-form.tmpl");
 const CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
 const AIFF_CHUNK_SIZE_LENGTH_IN_BYTES: usize = 4;
 const AIFF_FORM_TYPE_LENGTH_IN_BYTES: usize = 4;

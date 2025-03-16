@@ -1,28 +1,3 @@
-/*****************************************************
-             Support for FLAC Metadata Blocks
-
-FLAC File Header Format:
- - 4 Byte String - Always fLaC
- - One or more metadata blocks
-    - Metadata block format
-        - 1 Byte Block Header
-            - First Byte indicates if this is the last metadata block. 1 means it is the last block
-            - The following 7 bits are an unsigned integer metadata block ID
-                - 0 	Stream Info
-                - 1 	Padding
-                - 2 	Application
-                - 3 	Seek table
-                - 4 	Vorbis comment
-                - 5 	Cue Sheet
-                - 6 	Picture
-                - 7-126 Reserved
-                - 127 	Forbidden (to avoid confusion with a frame sync code)
-        - 3 Byte unsigned integer representing the length of the metadata block
-        - Variable number of bytes of metadata depending on the block type above
- - The Audio Block - Ignored in chunkdump
-
-*****************************************************/
-
 mod application;
 mod cuesheet;
 mod extra;
@@ -89,13 +64,13 @@ pub fn get_block_metadata(block_type: u32, block_data: Vec<u8>) -> Result<Output
 
 fn read_metadata_block_from_file(flac_file: &mut File) -> Result<MetadataBlock, Box<dyn Error>> {
     let header_byte = read_byte_from_file(flac_file)?;
-    let is_last_block: bool = (header_byte >> 7) == 1;
-    let header_type = get_header_type_from_header_byte(header_byte);
-
     let mut block_data_length_bytes = read_bytes_from_file(flac_file, BLOCK_LENGTH_FIELD_IN_BYTES)?;
+
+    let header_type = get_header_type_from_header_byte(header_byte);
+    let is_last_block: bool = (header_byte >> 7) == 1;
     let block_data_length = get_block_data_length_from_bytes(&mut block_data_length_bytes)?;
 
-    let data = read_bytes_from_file(flac_file, block_data_length)?;
+    let data = read_bytes_from_file(flac_file, block_data_length as usize)?;
 
     let metadata = MetadataBlock {
         header_type,
@@ -116,8 +91,37 @@ fn get_header_type_from_header_byte(header_byte: u8) -> u32 {
     header_type
 }
 
-fn get_block_data_length_from_bytes(block_data: &mut Vec<u8>) -> Result<usize, Box<dyn Error>> {
+fn get_block_data_length_from_bytes(block_data: &mut Vec<u8>) -> Result<u32, Box<dyn Error>> {
     block_data.insert(0, 0x00);
     let block_data_length = take_first_four_bytes_as_unsigned_integer(block_data, Endian::Big)?;
-    Ok(block_data_length as usize)
+    Ok(block_data_length)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn return_correct_header_type_from_byte_when_not_the_last_block() {
+        let test_byte: u8 = 130;
+        let correct_response: u32 = 2;
+        let header_type = get_header_type_from_header_byte(test_byte);
+        assert_eq!(header_type, correct_response);
+    }
+
+    #[test]
+    fn return_correct_header_type_from_byte_when_it_is_the_last_block() {
+        let test_byte: u8 = 2;
+        let correct_result: u32 = 2;
+        let header_type = get_header_type_from_header_byte(test_byte);
+        assert_eq!(header_type, correct_result);
+    }
+
+    #[test]
+    fn return_correct_u32_block_data_length_from_3_bytes_vector() {
+        let mut test_data: Vec<u8> = vec![0x01, 0x01, 0x01];
+        let correct_result = 65793;
+        let result: u32 = get_block_data_length_from_bytes(&mut test_data).unwrap();
+        assert_eq!(result, correct_result);
+    }
 }

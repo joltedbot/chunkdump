@@ -25,7 +25,7 @@ pub enum FileType {
     Wave,
     Smf,
     Rmid,
-    Unsupported,
+    Unsupported(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -68,7 +68,7 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
             RiffDataType::Rmid => FileType::Rmid,
         },
         MIDI_FILE_CHUNKID => FileType::Smf,
-        _ => FileType::Unsupported,
+        _ => FileType::Unsupported(file_id),
     };
 
     Ok(file_type)

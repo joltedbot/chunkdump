@@ -31,23 +31,23 @@ Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 
 ### Current List of Supported FLAC Blocks
 
-- **application**
+- **Application**
     - An optional block for use by third party applications for their own purposes
     - It contains an Application ID that is registered with IANA. See here: https://xiph.org/flac/id.html
-- **cuesheet**
+- **Cuesheet**
     - An optional block similar to the seek table that provides index points to samples in the audio frames.
-- **padding**
+- **Padding**
     - An optional block generally used for padding the file size and is supposed to be ignored.
       Unlike with the wave files I haven't found any "secret" message stored in junk chunks for aiffs but you never
       know.
-- **picture**
+- **Picture**
     - An optional block for storing images, generally the album cover or similar.
-- **seek_table**
+- **Seek Table**
     - An optional list of seek points to various samples of interest in the audio frames.
     - A seek table is generally not usable for seeking in a FLAC file embedded in a container (see Section 10), as such
       containers usually interleave FLAC data with other data and the offsets used in seek points are those of an
       unmuxed FLAC stream.
-- **stream_info**
+- **Stream Info**
     - A mandatory Flac file block specifying the format of the data
 - **Vorbis Comments**
     - An optional block storing key value pair metadata similar to Vorbis codex metadata hence the name.

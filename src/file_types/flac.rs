@@ -4,7 +4,7 @@ use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
 
-const TEMPLATE_CONTENT: &str = include_str!("../templates/files/flac.tmpl");
+const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/flac.tmpl");
 
 pub fn get_metadata_from_file(file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut flac_file = File::open(file_path)?;
