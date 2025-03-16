@@ -80,7 +80,7 @@ fn get_bits_per_sample_from_bytes(data_bytes: &[u8]) -> u8 {
     let bits_per_sample_minus_one_remaining_bits = data_bytes[3] >> 4;
 
     let bits_per_sample_minus_one_first_bit = (bits_per_sample_minus_one_first_bit_byte & 1) << 4;
-    let bits_per_sample_minus_one = bits_per_sample_minus_one_first_bit + bits_per_sample_minus_one_remaining_bits + 1;
+    let bits_per_sample_minus_one = bits_per_sample_minus_one_first_bit + bits_per_sample_minus_one_remaining_bits;
 
     bits_per_sample_minus_one + 1
 }
