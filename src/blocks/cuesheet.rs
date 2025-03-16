@@ -114,3 +114,24 @@ fn get_cue_track_flags_from_flag_byte(block_data: u8) -> Result<(bool, bool), Bo
 
     Ok((is_audio, pre_emphasis))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_correct_cue_track_flags_from_valid_byte_with_both_bits_set_to_true() {
+        let test_byte = 0xC0;
+        let correct_result = (true, true);
+        let flags = get_cue_track_flags_from_flag_byte(test_byte).unwrap();
+        assert_eq!(correct_result, flags);
+    }
+
+    #[test]
+    fn get_correct_cue_track_flags_from_valid_byte_with_both_bits_set_to_false() {
+        let test_byte = 0x01;
+        let correct_result = (false, false);
+        let flags = get_cue_track_flags_from_flag_byte(test_byte).unwrap();
+        assert_eq!(correct_result, flags);
+    }
+}

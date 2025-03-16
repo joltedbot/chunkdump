@@ -7,7 +7,7 @@ use upon::Value;
 
 const TEMPLATE_CONTENT: &str = include_str!("../templates/blocks/vorbis_comments.tmpl");
 
-#[derive(Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 struct VorbisTag {
     key: String,
     spacer: String,
@@ -70,5 +70,60 @@ fn set_tag_spacers(tags: &mut Vec<VorbisTag>) {
         } else {
             tag.spacer = String::new();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn correctly_set_tag_spacers() {
+        let mut test_tags: Vec<VorbisTag> = vec![
+            VorbisTag {
+                key: "k".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+            VorbisTag {
+                key: "ke".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+            VorbisTag {
+                key: "key".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+            VorbisTag {
+                key: "keyvaluepair".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+        ];
+        let correct_tags: Vec<VorbisTag> = vec![
+            VorbisTag {
+                key: "k".to_string(),
+                spacer: "           ".to_string(),
+                value: "none".to_string(),
+            },
+            VorbisTag {
+                key: "ke".to_string(),
+                spacer: "          ".to_string(),
+                value: "none".to_string(),
+            },
+            VorbisTag {
+                key: "key".to_string(),
+                spacer: "         ".to_string(),
+                value: "none".to_string(),
+            },
+            VorbisTag {
+                key: "keyvaluepair".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+        ];
+        set_tag_spacers(&mut test_tags);
+        assert_eq!(test_tags, correct_tags);
     }
 }

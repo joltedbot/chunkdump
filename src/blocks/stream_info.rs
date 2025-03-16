@@ -102,10 +102,50 @@ mod tests {
     use super::*;
 
     #[test]
-    fn returns_the_correct_md5_format_from_passed_bytes() {
-        let input_bytes: [u8; 16] = [0x1A; 16];
+    fn return_correct_md5sum_from_valid_bytes() {
+        let test_bytes: [u8; 16] = [0x1A; 16];
         let correct_md5_format = String::from("1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a");
-        let result = format_md5_sum_from_bytes(input_bytes);
+        let result = get_md5sum_from_bytes(&test_bytes);
+        assert_eq!(correct_md5_format, result);
+    }
+
+    #[test]
+    fn return_correct_interchannel_samples_from_valid_bytes() {
+        let test_byte: Vec<u8> = vec![0x01, 0x02, 0x03, 0x0F, 0x20, 0x06, 0x07, 0x08];
+        let correct_interchannel_samples = 64961775368;
+        let result = get_interchannel_samples_from_bytes(test_byte);
+        assert_eq!(result, correct_interchannel_samples);
+    }
+
+    #[test]
+    fn return_correct_sample_rate_from_valid_bytes() {
+        let test_byte: Vec<u8> = vec![0x0B, 0xB8, 0x00, 0x60, 0x05, 0x06];
+        let correct_sample_rate = 48000;
+        let result = get_sample_rate_from_bytes(&test_byte);
+        assert_eq!(result, correct_sample_rate);
+    }
+
+    #[test]
+    fn return_the_correct_bits_per_sample_from_valid_bytes() {
+        let test_byte: Vec<u8> = vec![0x01, 0x02, 0x03, 0x60, 0x05, 0x06];
+        let correct_bits_per_sample = 24;
+        let result = get_bits_per_sample_from_bytes(&test_byte);
+        assert_eq!(result, correct_bits_per_sample);
+    }
+
+    #[test]
+    fn return_the_correct_number_of_channels_from_valid_bytes() {
+        let test_byte: Vec<u8> = vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
+        let correct_number_of_channels = 2;
+        let result = get_number_of_channels_from_byte(&test_byte);
+        assert_eq!(result, correct_number_of_channels);
+    }
+
+    #[test]
+    fn returns_the_correct_md5_format_from_passed_bytes() {
+        let test_bytes: [u8; 16] = [0x1A; 16];
+        let correct_md5_format = String::from("1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a");
+        let result = format_md5_sum_from_bytes(test_bytes);
         assert_eq!(correct_md5_format, result);
     }
 }
