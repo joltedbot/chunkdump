@@ -21,11 +21,13 @@ pub struct Comment {
 }
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
-    let number_of_comments = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
+    let number_of_comments =
+        take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
     let mut comments: Vec<Comment> = vec![];
 
     for _ in 0..number_of_comments {
-        let mac_hfs_format_timestamp = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
+        let mac_hfs_format_timestamp =
+            take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
         let mut timestamp = String::from(EMPTY_COMMENT_MESSAGE);
         if mac_hfs_format_timestamp != 0 {
             timestamp = format_mac_hfs_timestamp_as_date_time_string(mac_hfs_format_timestamp)?;

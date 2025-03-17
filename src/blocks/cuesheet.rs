@@ -1,6 +1,6 @@
 use crate::byte_arrays::{
-    skip_over_bytes, take_first_byte, take_first_eight_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string,
-    Endian,
+    skip_over_bytes, take_first_byte, take_first_eight_bytes_as_unsigned_integer,
+    take_first_number_of_bytes_as_string, Endian,
 };
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
@@ -33,7 +33,8 @@ const POINT_RESERVED_BYTES: usize = 3;
 
 pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let media_catalog_number = take_first_number_of_bytes_as_string(&mut block_data, 128)?;
-    let number_of_lead_in_samples = take_first_eight_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let number_of_lead_in_samples =
+        take_first_eight_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
     let is_cdda = take_first_byte(&mut block_data)?;
     skip_over_bytes(&mut block_data, CUESHEET_RESERVED_BYTES)?;
     let number_of_tracks = take_first_byte(&mut block_data)?;
@@ -65,7 +66,8 @@ fn get_cuesheet_tracks_from_block_data(
     for _ in 0..number_of_tracks {
         let track_offset = take_first_eight_bytes_as_unsigned_integer(block_data, Endian::Big)?;
         let track_number = take_first_byte(block_data)?;
-        let track_isrc = take_first_number_of_bytes_as_string(block_data, TRACK_ISRC_FIELD_LENGTH_IN_BYTES)?;
+        let track_isrc =
+            take_first_number_of_bytes_as_string(block_data, TRACK_ISRC_FIELD_LENGTH_IN_BYTES)?;
         let flag_byte = take_first_byte(block_data)?;
         let number_of_index_points = take_first_byte(block_data)?;
 

@@ -1,4 +1,6 @@
-use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
+use crate::byte_arrays::{
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian,
+};
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
@@ -20,16 +22,29 @@ struct CuePoint {
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let mut cue_points: Vec<CuePoint> = vec![];
-    let number_of_cue_points: u32 = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let number_of_cue_points: u32 =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
     for _ in 0..number_of_cue_points {
         cue_points.push(CuePoint {
             id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             position: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
-            data_chunk_id: take_first_number_of_bytes_as_string(&mut chunk_data, DATA_CHUNK_ID_LENGTH_IN_BYTES)?,
-            chunk_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
-            block_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
-            sample_start: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+            data_chunk_id: take_first_number_of_bytes_as_string(
+                &mut chunk_data,
+                DATA_CHUNK_ID_LENGTH_IN_BYTES,
+            )?,
+            chunk_start: take_first_four_bytes_as_unsigned_integer(
+                &mut chunk_data,
+                Endian::Little,
+            )?,
+            block_start: take_first_four_bytes_as_unsigned_integer(
+                &mut chunk_data,
+                Endian::Little,
+            )?,
+            sample_start: take_first_four_bytes_as_unsigned_integer(
+                &mut chunk_data,
+                Endian::Little,
+            )?,
         })
     }
 

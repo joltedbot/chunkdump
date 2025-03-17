@@ -7,7 +7,10 @@ use upon::Value;
 const TEMPLATE_CONTENT: &str = include_str!("../templates/chunks/extra.tmpl");
 const EMPTY_DATA_MESSAGE: &str = "[The chunk exists but is empty]";
 
-pub fn get_metadata(chunk_id: String, mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
+pub fn get_metadata(
+    chunk_id: String,
+    mut chunk_data: Vec<u8>,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let chunk_size = chunk_data.len();
     let mut chunk_data = take_first_number_of_bytes_as_string(&mut chunk_data, chunk_size)?;
 

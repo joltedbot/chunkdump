@@ -84,7 +84,9 @@ pub fn get_metadata_from_chunks(
     loop {
         let chunk_id: String = match read_chunk_id_from_file(input_file) {
             Ok(chunk_id) => chunk_id.to_lowercase(),
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
+            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
+                break
+            }
             Err(error) => return Err(error),
         };
 

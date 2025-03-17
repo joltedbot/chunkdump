@@ -1,5 +1,6 @@
 use crate::byte_arrays::{
-    take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, Endian,
+    take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
+    take_first_number_of_bytes, Endian,
 };
 use crate::errors::LocalError;
 use crate::formating::{format_midi_note_number_as_note_name, format_smpte_offset};
@@ -31,21 +32,29 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     )?)?;
     let product = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let sample_period = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let midi_unity_note = format_midi_note_number_as_note_name(take_first_four_bytes_as_unsigned_integer(
-        &mut chunk_data,
-        Endian::Little,
-    )?);
-    let midi_pitch_fraction = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let midi_unity_note = format_midi_note_number_as_note_name(
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+    );
+    let midi_pitch_fraction =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let smpte_format = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let smpte_offset = format_smpte_offset(&mut chunk_data, Endian::Little)?;
-    let number_of_sample_loops = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let sample_data_size_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let number_of_sample_loops =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let sample_data_size_in_bytes =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
     for _ in 0..number_of_sample_loops {
         sample_loops.push(SampleLoops {
-            cue_point_id: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+            cue_point_id: take_first_four_bytes_as_unsigned_integer(
+                &mut chunk_data,
+                Endian::Little,
+            )?,
             loop_type: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
-            start_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+            start_point: take_first_four_bytes_as_unsigned_integer(
+                &mut chunk_data,
+                Endian::Little,
+            )?,
             end_point: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             fraction: take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
             number_of_time_to_play_the_loop: take_first_four_bytes_as_unsigned_integer(
@@ -77,10 +86,11 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
 }
 
 fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
-    let manufacturer_id_bytes: Vec<u8> = match take_first_byte_as_unsigned_integer(&mut bytes, Endian::Little) {
-        Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
-        Err(e) => return Err(e),
-    };
+    let manufacturer_id_bytes: Vec<u8> =
+        match take_first_byte_as_unsigned_integer(&mut bytes, Endian::Little) {
+            Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
+            Err(e) => return Err(e),
+        };
 
     let mut manufacturer_id: Vec<String> = vec![];
 
@@ -98,14 +108,16 @@ mod tests {
     #[test]
     fn return_1_byte_manufacturer_id_when_first_byte_is_1() {
         let test_manufacturer_id_bytes = vec![0x01, 0x2A, 0x03, 0x04];
+        let correct_id = "2AH";
         let id = format_manufacturer_id(test_manufacturer_id_bytes).unwrap();
-        assert_eq!(id, "2AH");
+        assert_eq!(id, correct_id);
     }
 
     #[test]
     fn return_3_byte_manufacturer_id_when_first_byte_is_3() {
         let test_manufacturer_id_bytes = vec![0x03, 0x2A, 0x03, 0x04, 0x05];
+        let correct_id = "2AH 03H 04H";
         let id = format_manufacturer_id(test_manufacturer_id_bytes).unwrap();
-        assert_eq!(id, "2AH 03H 04H");
+        assert_eq!(id, correct_id);
     }
 }

@@ -27,14 +27,18 @@ pub fn get_metadata_from_file(file_path: &str) -> Result<Vec<OutputEntry>, Box<d
 }
 
 fn get_form_metadata_from_file(aiff_file: &mut File) -> Result<OutputEntry, Box<dyn Error>> {
-    skip_over_bytes_in_file(aiff_file, CHUNK_ID_LENGTH_IN_BYTES + AIFF_CHUNK_SIZE_LENGTH_IN_BYTES)?;
+    skip_over_bytes_in_file(
+        aiff_file,
+        CHUNK_ID_LENGTH_IN_BYTES + AIFF_CHUNK_SIZE_LENGTH_IN_BYTES,
+    )?;
     let form_type_bytes = read_bytes_from_file(aiff_file, AIFF_FORM_TYPE_LENGTH_IN_BYTES)?;
 
     let aiff_output_values: Value = upon::value! {
         form_type: String::from_utf8(form_type_bytes)?,
     };
 
-    let formated_aiff_output: String = get_file_chunk_output(FORM_TEMPLATE_CONTENT, aiff_output_values)?;
+    let formated_aiff_output: String =
+        get_file_chunk_output(FORM_TEMPLATE_CONTENT, aiff_output_values)?;
 
     let form_chunk = OutputEntry {
         section: Section::Header,

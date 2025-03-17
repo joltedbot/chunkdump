@@ -18,7 +18,10 @@ pub struct OutputEntry {
     pub text: String,
 }
 
-pub fn output_metadata(file_data: Vec<OutputEntry>, output_file_path: Option<String>) -> Result<(), Box<dyn Error>> {
+pub fn output_metadata(
+    file_data: Vec<OutputEntry>,
+    output_file_path: Option<String>,
+) -> Result<(), Box<dyn Error>> {
     let mut header: Vec<String> = vec![];
     let mut mandatory: Vec<String> = vec![];
     let mut optional: Vec<String> = vec![];
@@ -67,7 +70,10 @@ pub fn output_metadata(file_data: Vec<OutputEntry>, output_file_path: Option<Str
     Ok(())
 }
 
-fn write_to_output(output_file_path: Option<String>, output_metadata: Vec<String>) -> Result<(), Box<dyn Error>> {
+fn write_to_output(
+    output_file_path: Option<String>,
+    output_metadata: Vec<String>,
+) -> Result<(), Box<dyn Error>> {
     match output_file_path {
         None => write_to_stdout(output_metadata),
         Some(output_path) => write_to_file(output_metadata, output_path),
@@ -76,7 +82,9 @@ fn write_to_output(output_file_path: Option<String>, output_metadata: Vec<String
 
 fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {
     let mut lock = stdout().lock();
-    file_data.iter().for_each(|line| writeln!(lock, "{}", line).unwrap());
+    file_data
+        .iter()
+        .for_each(|line| writeln!(lock, "{}", line).unwrap());
     Ok(())
 }
 
@@ -106,7 +114,10 @@ mod tests {
         let mut test_file_path: PathBuf = std::env::temp_dir();
         test_file_path.push("test_writing_to_exisitng_file.txt");
         File::create(test_file_path.clone()).unwrap();
-        let result = write_to_file(vec!["test".to_string()], test_file_path.to_str().unwrap().to_string());
+        let result = write_to_file(
+            vec!["test".to_string()],
+            test_file_path.to_str().unwrap().to_string(),
+        );
         std::fs::remove_file(test_file_path).unwrap();
         assert!(result
             .unwrap_err()

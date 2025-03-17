@@ -18,16 +18,10 @@ struct ID3Tag {
     content: String,
 }
 
-fn get_longest_tag_id(tags: &Tag) -> Result<usize, LocalError> {
-    match tags.frames().max_by_key(|tag| tag.name().len()) {
-        Some(tag) => Ok(tag.name().len()),
-        None => Err(LocalError::ErrorParsingID3TagIDs),
-    }
-}
-
 pub fn get_metadata(file_path: &str) -> Result<OutputEntry, Box<dyn Error>> {
     let mut id3_entries: Vec<ID3Tag> = Vec::new();
-    let tag = Tag::read_from_path(file_path).map_err(|e| LocalError::InvalidID3TagDataFound(e.to_string()))?;
+    let tag = Tag::read_from_path(file_path)
+        .map_err(|e| LocalError::InvalidID3TagDataFound(e.to_string()))?;
     let longest_tag_id = get_longest_tag_id(&tag)?;
 
     tag.frames().for_each(|frame| {
@@ -39,7 +33,11 @@ pub fn get_metadata(file_path: &str) -> Result<OutputEntry, Box<dyn Error>> {
 
         let spacer = " ".repeat(longest_tag_id - id.len());
 
-        id3_entries.push(ID3Tag { id, spacer, content });
+        id3_entries.push(ID3Tag {
+            id,
+            spacer,
+            content,
+        });
     });
 
     let wave_output_values: Value = upon::value! {
@@ -52,4 +50,11 @@ pub fn get_metadata(file_path: &str) -> Result<OutputEntry, Box<dyn Error>> {
         section: Section::Optional,
         text: formated_output,
     })
+}
+
+fn get_longest_tag_id(tags: &Tag) -> Result<usize, LocalError> {
+    match tags.frames().max_by_key(|tag| tag.name().len()) {
+        Some(tag) => Ok(tag.name().len()),
+        None => Err(LocalError::ErrorParsingID3TagIDs),
+    }
 }

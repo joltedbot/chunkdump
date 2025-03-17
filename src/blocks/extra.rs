@@ -6,7 +6,10 @@ use upon::Value;
 
 const TEMPLATE_CONTENT: &str = include_str!("../templates/blocks/padding.tmpl");
 
-pub fn get_metadata(block_type: u32, mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
+pub fn get_metadata(
+    block_type: u32,
+    mut block_data: Vec<u8>,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let data_length_in_bytes = block_data.len();
 
     let output_values: Value = upon::value! {

@@ -1,5 +1,6 @@
 use crate::byte_arrays::{
-    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, take_first_number_of_bytes_as_string, Endian,
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes,
+    take_first_number_of_bytes_as_string, Endian,
 };
 use crate::errors::LocalError;
 use crate::output::{OutputEntry, Section};
@@ -43,21 +44,31 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let title = take_first_number_of_bytes_as_string(&mut chunk_data, TITLE_LENGTH_IN_BYTES)?;
     let artist = take_first_number_of_bytes_as_string(&mut chunk_data, ARTIST_LENGTH_IN_BYTES)?;
     let cue_id = take_first_number_of_bytes_as_string(&mut chunk_data, CUE_ID_LENGTH_IN_BYTES)?;
-    let client_id = take_first_number_of_bytes_as_string(&mut chunk_data, CLIENT_ID_LENGTH_IN_BYTES)?;
+    let client_id =
+        take_first_number_of_bytes_as_string(&mut chunk_data, CLIENT_ID_LENGTH_IN_BYTES)?;
     let category = take_first_number_of_bytes_as_string(&mut chunk_data, CATEGORY_LENGTH_IN_BYTES)?;
-    let classification = take_first_number_of_bytes_as_string(&mut chunk_data, CLASSIFICATION_LENGTH_IN_BYTES)?;
+    let classification =
+        take_first_number_of_bytes_as_string(&mut chunk_data, CLASSIFICATION_LENGTH_IN_BYTES)?;
     let out_cue = take_first_number_of_bytes_as_string(&mut chunk_data, OUT_CUE_LENGTH_IN_BYTES)?;
-    let start_date = take_first_number_of_bytes_as_string(&mut chunk_data, START_DATE_LENGTH_IN_BYTES)?;
-    let start_time = take_first_number_of_bytes_as_string(&mut chunk_data, START_TIME_LENGTH_IN_BYTES)?;
+    let start_date =
+        take_first_number_of_bytes_as_string(&mut chunk_data, START_DATE_LENGTH_IN_BYTES)?;
+    let start_time =
+        take_first_number_of_bytes_as_string(&mut chunk_data, START_TIME_LENGTH_IN_BYTES)?;
     let end_date = take_first_number_of_bytes_as_string(&mut chunk_data, END_DATE_LENGTH_IN_BYTES)?;
     let end_time = take_first_number_of_bytes_as_string(&mut chunk_data, END_TIME_LENGTH_IN_BYTES)?;
-    let producer_app_id = take_first_number_of_bytes_as_string(&mut chunk_data, PRODUCER_APP_ID_LENGTH_IN_BYTES)?;
-    let producer_app_version =
-        take_first_number_of_bytes_as_string(&mut chunk_data, PRODUCER_APP_VERSION_LENGTH_IN_BYTES)?;
+    let producer_app_id =
+        take_first_number_of_bytes_as_string(&mut chunk_data, PRODUCER_APP_ID_LENGTH_IN_BYTES)?;
+    let producer_app_version = take_first_number_of_bytes_as_string(
+        &mut chunk_data,
+        PRODUCER_APP_VERSION_LENGTH_IN_BYTES,
+    )?;
     let user_def = take_first_number_of_bytes_as_string(&mut chunk_data, USER_DEF_LENGTH_IN_BYTES)?;
-    let dw_level_reference = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let post_timer =
-        get_post_timer_from_bytes(take_first_number_of_bytes(&mut chunk_data, POST_TIMER_LENGTH_IN_BYTES)?)?;
+    let dw_level_reference =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let post_timer = get_post_timer_from_bytes(take_first_number_of_bytes(
+        &mut chunk_data,
+        POST_TIMER_LENGTH_IN_BYTES,
+    )?)?;
     let reserved = take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_LENGTH_IN_BYTES)?;
     let url = take_first_number_of_bytes_as_string(&mut chunk_data, URL_LENGTH_IN_BYTES)?;
 
@@ -99,8 +110,10 @@ fn get_post_timer_from_bytes(mut post_timer_data: Vec<u8>) -> Result<Vec<CartTim
     let mut post_timer: Vec<CartTimer> = vec![];
 
     for _ in 0..NUMBER_OF_POST_TIMERS_PER_TIMER {
-        let dw_usage = take_first_number_of_bytes_as_string(&mut post_timer_data, DW_USAGE_LENGTH_IN_BYTES)?;
-        let dw_value = take_first_four_bytes_as_unsigned_integer(&mut post_timer_data, Endian::Little)?;
+        let dw_usage =
+            take_first_number_of_bytes_as_string(&mut post_timer_data, DW_USAGE_LENGTH_IN_BYTES)?;
+        let dw_value =
+            take_first_four_bytes_as_unsigned_integer(&mut post_timer_data, Endian::Little)?;
 
         if !dw_usage.is_empty() || dw_value != 0 {
             post_timer.push(CartTimer { dw_usage, dw_value });
@@ -127,17 +140,17 @@ mod tests {
 
     #[test]
     fn correctly_formats_the_version_string_when_passed_a_four_digit_version() {
-        assert_eq!(
-            get_formated_version_from_version_string("0234".to_string()),
-            "2.34".to_string()
-        );
+        let test_version = "0234".to_string();
+        let expected_result = "2.34".to_string();
+        let result = get_formated_version_from_version_string(test_version);
+        assert_eq!(result, expected_result);
     }
 
     #[test]
     fn returns_the_passed_version_unaltered_if_it_is_less_than_3_digits() {
-        assert_eq!(
-            get_formated_version_from_version_string("34".to_string()),
-            "34".to_string()
-        );
+        let test_version = "34".to_string();
+        let expected_result = "34".to_string();
+        let result = get_formated_version_from_version_string(test_version);
+        assert_eq!(result, expected_result);
     }
 }

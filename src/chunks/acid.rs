@@ -37,10 +37,9 @@ struct FileType {
 }
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
-    let file_type = get_file_type_from_bytes(take_first_four_bytes_as_unsigned_integer(
-        &mut chunk_data,
-        Endian::Little,
-    )?);
+    let file_type = get_file_type_from_file_type_integer(
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?,
+    );
 
     let loop_on = match file_type.one_shot {
         true => ONE_SHOT_FILE_TYPE_MESSAGE,
@@ -73,9 +72,12 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     )? as u32);
     let mystery_one = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let mystery_two = take_first_four_bytes_as_float(&mut chunk_data)?;
-    let number_of_beats = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let meter_denominator = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let meter_numerator = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let number_of_beats =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let meter_denominator =
+        take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let meter_numerator =
+        take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let tempo = take_first_four_bytes_as_float(&mut chunk_data)?;
 
     let wave_output_values: Value = upon::value! {
@@ -100,7 +102,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     })
 }
 
-fn get_file_type_from_bytes(file_type: u32) -> FileType {
+fn get_file_type_from_file_type_integer(file_type: u32) -> FileType {
     FileType {
         one_shot: check_bit_mask_position(file_type, FILE_TYPE_BIT_POSITION),
         root_note: check_bit_mask_position(file_type, ROOT_NOTE_BIT_POSITION),
@@ -122,41 +124,48 @@ mod tests {
     use super::*;
 
     #[test]
-    fn correct_file_type_struct_is_returned_from_file_type_integers() {
-        assert_eq!(
-            get_file_type_from_bytes(0),
-            FileType {
-                one_shot: false,
-                root_note: false,
-                stretch: false,
-                disk_based: false,
-                acidizer: false,
-            }
-        );
-
-        assert_eq!(
-            get_file_type_from_bytes(31),
-            FileType {
-                one_shot: true,
-                root_note: true,
-                stretch: true,
-                disk_based: true,
-                acidizer: true,
-            }
-        );
+    fn return_correct_file_type_struct_is_returned_from_file_type_integers_when_no_bits_are_set() {
+        let correct_result = FileType {
+            one_shot: false,
+            root_note: false,
+            stretch: false,
+            disk_based: false,
+            acidizer: false,
+        };
+        let result = get_file_type_from_file_type_integer(0);
+        assert_eq!(result, correct_result);
     }
 
     #[test]
-    fn check_bit_mask_position_is_returned_from_file_type_integers() {
-        let correct_disk_based_bit_position_filetype = 8;
-        let incorrect_disk_based_bit_position_filetype = 7;
+    fn return_correct_file_type_struct_is_returned_from_file_type_integers_when_all_bits_are_set() {
+        let correct_result = FileType {
+            one_shot: true,
+            root_note: true,
+            stretch: true,
+            disk_based: true,
+            acidizer: true,
+        };
+        let result = get_file_type_from_file_type_integer(31);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_true_when_a_specific_bit_position_is_set() {
+        let test_position: u8 = 3;
+        let bit_position_3_set_integer: u32 = 8;
         assert!(check_bit_mask_position(
-            correct_disk_based_bit_position_filetype,
-            DISK_BASED_BIT_POSITION
+            bit_position_3_set_integer,
+            test_position
         ));
+    }
+
+    #[test]
+    fn return_false_when_a_specific_bit_position_is_not_set() {
+        let test_position: u8 = 3;
+        let no_bit_positions_set_integer: u32 = 0;
         assert!(!check_bit_mask_position(
-            incorrect_disk_based_bit_position_filetype,
-            DISK_BASED_BIT_POSITION
+            no_bit_positions_set_integer,
+            test_position
         ));
     }
 }

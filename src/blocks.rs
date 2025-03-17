@@ -47,7 +47,10 @@ pub fn get_metadata_from_blocks(flac_file: &mut File) -> Result<Vec<OutputEntry>
     Ok(output)
 }
 
-pub fn get_block_metadata(block_type: u32, block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
+pub fn get_block_metadata(
+    block_type: u32,
+    block_data: Vec<u8>,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let result = match block_type {
         STREAM_INFO_BLOCK_ID => stream_info::get_metadata(block_data)?,
         PADDING_BLOCK_ID => padding::get_metadata(block_data)?,
