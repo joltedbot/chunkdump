@@ -1,4 +1,6 @@
-use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer, Endian};
+use crate::byte_arrays::{
+    take_first_four_bytes_as_unsigned_integer, take_first_two_bytes_as_unsigned_integer, Endian,
+};
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use byte_unit::rust_decimal::prelude::Zero;
@@ -22,23 +24,23 @@ const GUID_LENGTH_IN_BYTES: usize = 16;
 const SIZE_IF_EXTENSION_IS_PRESENT: u16 = 22;
 const SPEAKER_POSITION_MASK_BIT_MEANING: [&str; 18] = [
     "Front Left",
-    "Front Tight",
+    "Front Right",
     "Front Center",
     "Low Frequency",
     "Back Left",
-    "Back Tight",
+    "Back Right",
     "Front Left Of Center",
-    "Front Tight Of Center",
+    "Front Right Of Center",
     "Back Center",
     "Side Left",
-    "Side Tight",
+    "Side Right",
     "Top Center",
     "Top Front Left",
     "Top Front Center",
-    "Top Front Tight",
+    "Top Front Right",
     "Top Back Left",
     "Top Back Center",
-    "Top Back Tight",
+    "Top Back Right",
 ];
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
@@ -48,11 +50,16 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         &mut chunk_data,
         Endian::Little,
     )?);
-    let number_of_channels = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let samples_per_second = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let average_data_rate = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let data_block_size = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let number_of_channels =
+        take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let samples_per_second =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let average_data_rate =
+        take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let data_block_size =
+        take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+    let bits_per_sample =
+        take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
 
     let mut extension_size: u16 = Default::default();
 
@@ -65,8 +72,10 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let mut subformat_guid: [u8; GUID_LENGTH_IN_BYTES] = Default::default();
 
     if extension_size == SIZE_IF_EXTENSION_IS_PRESENT {
-        valid_bits_per_sample = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-        speaker_position_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        valid_bits_per_sample =
+            take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
+        speaker_position_mask =
+            take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
         subformat_guid.copy_from_slice(chunk_data.as_slice());
     }
 
@@ -108,7 +117,10 @@ fn format_guid(guid_bytes: [u8; GUID_LENGTH_IN_BYTES]) -> String {
         return String::new();
     }
 
-    let formated_guid: Vec<String> = guid_bytes.iter().map(|byte| format!("{:X}", byte)).collect();
+    let formated_guid: Vec<String> = guid_bytes
+        .iter()
+        .map(|byte| format!("{:X}", byte))
+        .collect();
 
     formated_guid.join("")
 }
@@ -130,4 +142,60 @@ fn format_speaker_position(speaker_position_mask: u32) -> String {
     }
 
     positions.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::chunks::fmt::{
+        format_guid, format_speaker_position, get_format_name_from_format_id, PCM_FORMAT_NAME,
+        UNKOWN_FORMAT,
+    };
+
+    #[test]
+    fn return_correct_format_name_from_valid_format_id_integer() {
+        let test_integer: u16 = 1;
+        let correct_result: String = PCM_FORMAT_NAME.to_string();
+        let result = get_format_name_from_format_id(test_integer);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_format_name_from_unknown_format_id_integer() {
+        let test_integer: u16 = 0;
+        let correct_result: String = format!("{} {}", UNKOWN_FORMAT.to_string(), test_integer);
+        let result = get_format_name_from_format_id(test_integer);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_guid_from_valid_guid_bytes() {
+        let test_guid_bytes: [u8; 16] = [0x2A; 16];
+        let correct_result: String = "2A".repeat(16).to_string();
+        let result = format_guid(test_guid_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_empty_string_from_empty_guid_bytes() {
+        let test_guid_bytes: [u8; 16] = [0; 16];
+        let correct_result: String = "".to_string();
+        let result = format_guid(test_guid_bytes);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_speaker_positions_from_integer_with_all_position_bits_set() {
+        let test_speaker_position_mask: u32 = 262143;
+        let correct_result: String = "\n - Front Left\n - Front Right\n - Front Center\n - Low Frequency\n - Back Left\n - Back Right\n - Front Left Of Center\n - Front Right Of Center\n - Back Center\n - Side Left\n - Side Right\n - Top Center\n - Top Front Left\n - Top Front Center\n - Top Front Right\n - Top Back Left\n - Top Back Center\n - Top Back Right".to_string();
+        let result = format_speaker_position(test_speaker_position_mask);
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn return_correct_speaker_positions_from_integer_zero() {
+        let test_speaker_position_mask: u32 = 0;
+        let correct_result: String = "".to_string();
+        let result = format_speaker_position(test_speaker_position_mask);
+        assert_eq!(result, correct_result);
+    }
 }

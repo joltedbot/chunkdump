@@ -15,9 +15,12 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/blocks/stream_info.tmp
 pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let min_block_size = take_first_two_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
     let max_block_size = take_first_two_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let min_frame_size = take_first_three_bytes_as_32bit_unsigned_integer(&mut block_data, Endian::Big)?;
-    let max_frame_size = take_first_three_bytes_as_32bit_unsigned_integer(&mut block_data, Endian::Big)?;
-    let sub_byte_fields_bytes = take_first_number_of_bytes(&mut block_data, RATE_CHANNEL_AND_BITS_LENGTH_IN_BYTES)?;
+    let min_frame_size =
+        take_first_three_bytes_as_32bit_unsigned_integer(&mut block_data, Endian::Big)?;
+    let max_frame_size =
+        take_first_three_bytes_as_32bit_unsigned_integer(&mut block_data, Endian::Big)?;
+    let sub_byte_fields_bytes =
+        take_first_number_of_bytes(&mut block_data, RATE_CHANNEL_AND_BITS_LENGTH_IN_BYTES)?;
     let md5sum_bytes = take_first_number_of_bytes(&mut block_data, MD5SUM_LENGTH_IN_BYTES)?;
 
     let sample_rate = get_sample_rate_from_bytes(&sub_byte_fields_bytes);
@@ -80,7 +83,8 @@ fn get_bits_per_sample_from_bytes(data_bytes: &[u8]) -> u8 {
     let bits_per_sample_minus_one_remaining_bits = data_bytes[3] >> 4;
 
     let bits_per_sample_minus_one_first_bit = (bits_per_sample_minus_one_first_bit_byte & 1) << 4;
-    let bits_per_sample_minus_one = bits_per_sample_minus_one_first_bit + bits_per_sample_minus_one_remaining_bits;
+    let bits_per_sample_minus_one =
+        bits_per_sample_minus_one_first_bit + bits_per_sample_minus_one_remaining_bits;
 
     bits_per_sample_minus_one + 1
 }
@@ -92,9 +96,9 @@ fn get_number_of_channels_from_byte(data_bytes: &[u8]) -> u8 {
 }
 
 fn format_md5_sum_from_bytes(bytes: [u8; 16]) -> String {
-    bytes
-        .iter()
-        .fold(String::new(), |acc, byte| acc + format!("{:02x}", byte).as_str())
+    bytes.iter().fold(String::new(), |acc, byte| {
+        acc + format!("{:02x}", byte).as_str()
+    })
 }
 
 #[cfg(test)]

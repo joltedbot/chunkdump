@@ -1,4 +1,6 @@
-use crate::byte_arrays::{take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian};
+use crate::byte_arrays::{
+    take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian,
+};
 use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
 use chrono::DateTime;
@@ -19,9 +21,9 @@ pub fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
 }
 
 pub fn format_bytes_as_string_of_bytes(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .fold("".to_string(), |umid: String, byte| format!("{} {:02x?}", umid, byte))
+    bytes.iter().fold("".to_string(), |umid: String, byte| {
+        format!("{} {:02x?}", umid, byte)
+    })
 }
 
 pub fn format_bytes_as_string(byte_data: Vec<u8>) -> Result<String, LocalError> {
@@ -38,10 +40,11 @@ pub fn format_mac_hfs_timestamp_as_date_time_string(timestamp: u32) -> Result<St
         return Err(LocalError::HFSTimestampTooSmall);
     }
 
-    let date = match DateTime::from_timestamp((timestamp - MAC_HFS_FORMAT_TIMESTAMP_OFFSET) as i64, 0) {
-        Some(ts) => ts.to_string(),
-        None => BAD_TIMESTAMP_MESSAGE.to_string(),
-    };
+    let date =
+        match DateTime::from_timestamp((timestamp - MAC_HFS_FORMAT_TIMESTAMP_OFFSET) as i64, 0) {
+            Some(ts) => ts.to_string(),
+            None => BAD_TIMESTAMP_MESSAGE.to_string(),
+        };
 
     Ok(date)
 }
@@ -75,19 +78,28 @@ pub fn get_file_name_from_file_path(file_path: &str) -> Result<String, LocalErro
     Ok(file_name)
 }
 
-pub fn format_smpte_offset(smpte_offset_bytes: &mut Vec<u8>, endianness: Endian) -> Result<String, LocalError> {
+pub fn format_smpte_offset(
+    smpte_offset_bytes: &mut Vec<u8>,
+    endianness: Endian,
+) -> Result<String, LocalError> {
     if endianness == Endian::Little {
         let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Little)?;
         let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
         let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
         let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-        Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
+        Ok(format!(
+            "{}h:{}m:{}s & {} samples",
+            hours, minutes, seconds, samples
+        ))
     } else {
         let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
         let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
         let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
         let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Big)?;
-        Ok(format!("{}h:{}m:{}s & {} samples", hours, minutes, seconds, samples))
+        Ok(format!(
+            "{}h:{}m:{}s & {} samples",
+            hours, minutes, seconds, samples
+        ))
     }
 }
 
@@ -136,7 +148,9 @@ mod tests {
 
     #[test]
     fn return_error_if_mac_hfs_timestamp_is_below_the_valid_range() {
-        let result = format_mac_hfs_timestamp_as_date_time_string(1).err().unwrap();
+        let result = format_mac_hfs_timestamp_as_date_time_string(1)
+            .err()
+            .unwrap();
         assert_eq!(result, LocalError::HFSTimestampTooSmall);
     }
 
@@ -157,7 +171,12 @@ mod tests {
 
     #[test]
     fn return_correct_canonicalize_path_when_given_path_is_valid() {
-        let correct_result = std::env::current_dir().unwrap().to_str().unwrap().to_string() + "/src/main.rs";
+        let correct_result = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
+            + "/src/main.rs";
         let result = canonicalize_file_path("./src/main.rs").unwrap();
 
         assert_eq!(result, correct_result);

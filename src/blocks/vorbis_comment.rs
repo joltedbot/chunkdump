@@ -1,4 +1,6 @@
-use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
+use crate::byte_arrays::{
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian,
+};
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use serde::Serialize;
@@ -15,9 +17,12 @@ struct VorbisTag {
 }
 
 pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
-    let vorbis_vendor_length = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Little)?;
-    let vorbis_vendor = take_first_number_of_bytes_as_string(&mut block_data, vorbis_vendor_length as usize)?;
-    let number_of_tags = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Little)?;
+    let vorbis_vendor_length =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Little)?;
+    let vorbis_vendor =
+        take_first_number_of_bytes_as_string(&mut block_data, vorbis_vendor_length as usize)?;
+    let number_of_tags =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Little)?;
 
     let vorbis_tags = get_vorbis_comment_tags(&mut block_data, number_of_tags)?;
 
@@ -34,11 +39,15 @@ pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     })
 }
 
-fn get_vorbis_comment_tags(block_data: &mut Vec<u8>, number_of_tags: u32) -> Result<Vec<VorbisTag>, Box<dyn Error>> {
+fn get_vorbis_comment_tags(
+    block_data: &mut Vec<u8>,
+    number_of_tags: u32,
+) -> Result<Vec<VorbisTag>, Box<dyn Error>> {
     let mut vorbis_tags: Vec<VorbisTag> = vec![];
 
     for _ in 0..number_of_tags {
-        let tag_length = take_first_four_bytes_as_unsigned_integer(block_data, Endian::Little)? as usize;
+        let tag_length =
+            take_first_four_bytes_as_unsigned_integer(block_data, Endian::Little)? as usize;
         let raw_tag = take_first_number_of_bytes_as_string(block_data, tag_length)?;
 
         let tag_key_and_value = match raw_tag.split_once('=') {

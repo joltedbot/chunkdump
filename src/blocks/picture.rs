@@ -1,4 +1,6 @@
-use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
+use crate::byte_arrays::{
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian,
+};
 use crate::formating::format_file_size_as_string;
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
@@ -37,15 +39,26 @@ pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let picture_type_id = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
     let picture_type = picture_type_names.get(&picture_type_id).unwrap_or(&"Other");
 
-    let media_type_length_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let media_type = take_first_number_of_bytes_as_string(&mut block_data, media_type_length_in_bytes as usize)?;
-    let description_length_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let description = take_first_number_of_bytes_as_string(&mut block_data, description_length_in_bytes as usize)?;
-    let picture_width_in_pixels = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let picture_height_in_pixels = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let colour_depth_in_bits_per_pixel = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let number_of_colours = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-    let picture_length_in_bytes = take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let media_type_length_in_bytes =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let media_type =
+        take_first_number_of_bytes_as_string(&mut block_data, media_type_length_in_bytes as usize)?;
+    let description_length_in_bytes =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let description = take_first_number_of_bytes_as_string(
+        &mut block_data,
+        description_length_in_bytes as usize,
+    )?;
+    let picture_width_in_pixels =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let picture_height_in_pixels =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let colour_depth_in_bits_per_pixel =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let number_of_colours =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+    let picture_length_in_bytes =
+        take_first_four_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
 
     let output_values: Value = upon::value! {
         picture_type: picture_type,

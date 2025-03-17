@@ -1,5 +1,6 @@
 use crate::byte_arrays::{
-    take_first_number_of_bytes, take_first_number_of_bytes_as_string, take_first_two_bytes_as_unsigned_integer, Endian,
+    take_first_number_of_bytes, take_first_number_of_bytes_as_string,
+    take_first_two_bytes_as_unsigned_integer, Endian,
 };
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
@@ -24,19 +25,31 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
             break;
         }
 
-        let _throw_away_header_bytes = take_first_number_of_bytes(&mut chunk_data, TAG_HEADER_LENGTH_IN_BYTES)?;
+        let _throw_away_header_bytes =
+            take_first_number_of_bytes(&mut chunk_data, TAG_HEADER_LENGTH_IN_BYTES)?;
         let tag_id = take_first_number_of_bytes_as_string(&mut chunk_data, TAG_ID_LENGTH_IN_BYTES)?;
-        let tag_data_length = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
-        let _throw_away_spacer = take_first_number_of_bytes(&mut chunk_data, TAG_DATA_SPACER_LENGTH_IN_BYTES)?;
+        let tag_data_length =
+            take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
+        let _throw_away_spacer =
+            take_first_number_of_bytes(&mut chunk_data, TAG_DATA_SPACER_LENGTH_IN_BYTES)?;
         match tag_id.as_str() {
             GENRE_TAG_ID => {
-                genre = take_first_number_of_bytes_as_string(&mut chunk_data, tag_data_length as usize)?;
+                genre = take_first_number_of_bytes_as_string(
+                    &mut chunk_data,
+                    tag_data_length as usize,
+                )?;
             }
             AUTHOR_TAG_ID => {
-                author = take_first_number_of_bytes_as_string(&mut chunk_data, tag_data_length as usize)?;
+                author = take_first_number_of_bytes_as_string(
+                    &mut chunk_data,
+                    tag_data_length as usize,
+                )?;
             }
             ALBUM_TAG_ID => {
-                album = take_first_number_of_bytes_as_string(&mut chunk_data, tag_data_length as usize)?;
+                album = take_first_number_of_bytes_as_string(
+                    &mut chunk_data,
+                    tag_data_length as usize,
+                )?;
             }
             _ => break,
         }

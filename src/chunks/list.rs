@@ -1,4 +1,6 @@
-use crate::byte_arrays::{take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian};
+use crate::byte_arrays::{
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian,
+};
 use crate::errors::LocalError;
 use crate::formating::add_one_if_byte_size_is_odd;
 use crate::output::{OutputEntry, Section};
@@ -61,7 +63,8 @@ struct AssociatedData {
 }
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
-    let list_type = take_first_number_of_bytes_as_string(&mut chunk_data, LIST_TYPE_LENGTH_IN_BYTES)?;
+    let list_type =
+        take_first_number_of_bytes_as_string(&mut chunk_data, LIST_TYPE_LENGTH_IN_BYTES)?;
 
     let mut info_data: Vec<InfoData> = Vec::new();
     let mut adtl_data: Vec<AssociatedData> = Vec::new();
@@ -130,7 +133,9 @@ fn parse_adtl_data(list_data: &mut Vec<u8>) -> Result<Vec<AssociatedData>, Local
 
         let mut associated_data: AssociatedData = Default::default();
 
-        match take_first_number_of_bytes_as_string(list_data, ADTL_SUB_CHUNK_ID_LENGTH_IN_BYTES)?.as_str() {
+        match take_first_number_of_bytes_as_string(list_data, ADTL_SUB_CHUNK_ID_LENGTH_IN_BYTES)?
+            .as_str()
+        {
             ADTL_SUB_CHUNK_ID_LABEL => {
                 let label: LabelData = parse_label_data(list_data)?;
                 associated_data.labels.push(label);
@@ -153,9 +158,11 @@ fn parse_adtl_data(list_data: &mut Vec<u8>) -> Result<Vec<AssociatedData>, Local
 }
 
 fn parse_label_data(list_data: &mut Vec<u8>) -> Result<LabelData, LocalError> {
-    let label_size: usize = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
+    let label_size: usize =
+        take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
     let data_size: usize =
-        add_one_if_byte_size_is_odd((label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES) as u32) as usize;
+        add_one_if_byte_size_is_odd((label_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES) as u32)
+            as usize;
     let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let label_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
     Ok(LabelData {
@@ -165,7 +172,8 @@ fn parse_label_data(list_data: &mut Vec<u8>) -> Result<LabelData, LocalError> {
 }
 
 fn parse_note_data(list_data: &mut Vec<u8>) -> Result<NoteData, LocalError> {
-    let note_size: usize = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
+    let note_size: usize =
+        take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)? as usize;
     let data_size: usize = note_size - ADTL_CUE_POINT_ID_LENGTH_IN_BYTES;
     let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let note_data: String = take_first_number_of_bytes_as_string(list_data, data_size)?;
@@ -178,11 +186,16 @@ fn parse_note_data(list_data: &mut Vec<u8>) -> Result<NoteData, LocalError> {
 fn data_labeled_text_data(list_data: &mut Vec<u8>) -> Result<LabeledText, LocalError> {
     let cue_point_id: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
     let sample_length: u32 = take_first_four_bytes_as_unsigned_integer(list_data, Endian::Little)?;
-    let purpose_id: String = take_first_number_of_bytes_as_string(list_data, ADTL_PURPOSE_ID_LENGTH_IN_BYTES)?;
-    let country: String = take_first_number_of_bytes_as_string(list_data, ADTL_COUNTRY_LENGTH_IN_BYTES)?;
-    let language: String = take_first_number_of_bytes_as_string(list_data, ADTL_LANGUAGE_LENGTH_IN_BYTES)?;
-    let dialect: String = take_first_number_of_bytes_as_string(list_data, ADTL_DIALECT_LENGTH_IN_BYTES)?;
-    let code_page: String = take_first_number_of_bytes_as_string(list_data, ADTL_CODE_PAGE_LENGTH_IN_BYTES)?;
+    let purpose_id: String =
+        take_first_number_of_bytes_as_string(list_data, ADTL_PURPOSE_ID_LENGTH_IN_BYTES)?;
+    let country: String =
+        take_first_number_of_bytes_as_string(list_data, ADTL_COUNTRY_LENGTH_IN_BYTES)?;
+    let language: String =
+        take_first_number_of_bytes_as_string(list_data, ADTL_LANGUAGE_LENGTH_IN_BYTES)?;
+    let dialect: String =
+        take_first_number_of_bytes_as_string(list_data, ADTL_DIALECT_LENGTH_IN_BYTES)?;
+    let code_page: String =
+        take_first_number_of_bytes_as_string(list_data, ADTL_CODE_PAGE_LENGTH_IN_BYTES)?;
     let data: String = take_first_number_of_bytes_as_string(list_data, list_data.len())?;
 
     Ok(LabeledText {

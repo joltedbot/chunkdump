@@ -28,14 +28,17 @@ pub fn get_metadata(mut block_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
             break;
         }
 
-        let first_sample = take_first_eight_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+        let first_sample =
+            take_first_eight_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
         let is_placeholder = first_sample == PLACEHOLDER_POINT_IDENTIFIER_BYTES;
         let mut offset_in_bytes: u64 = 0;
         let mut number_of_samples: u16 = 0;
 
         if !is_placeholder {
-            offset_in_bytes = take_first_eight_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
-            number_of_samples = take_first_two_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+            offset_in_bytes =
+                take_first_eight_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
+            number_of_samples =
+                take_first_two_bytes_as_unsigned_integer(&mut block_data, Endian::Big)?;
         }
 
         let point = Point {

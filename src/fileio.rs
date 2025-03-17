@@ -2,7 +2,8 @@ use crate::byte_arrays::Endian;
 use crate::chunks::{CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
 use crate::errors::LocalError;
 use crate::formating::{
-    add_one_if_byte_size_is_odd, canonicalize_file_path, format_file_size_as_string, get_file_name_from_file_path,
+    add_one_if_byte_size_is_odd, canonicalize_file_path, format_file_size_as_string,
+    get_file_name_from_file_path,
 };
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
@@ -34,13 +35,19 @@ enum RiffDataType {
     Rmid,
 }
 
-pub fn skip_over_bytes_in_file(file: &mut File, number_of_bytes: usize) -> Result<(), Box<dyn Error>> {
+pub fn skip_over_bytes_in_file(
+    file: &mut File,
+    number_of_bytes: usize,
+) -> Result<(), Box<dyn Error>> {
     file.seek_relative(number_of_bytes as i64)?;
 
     Ok(())
 }
 
-pub fn read_bytes_from_file(file: &mut File, number_of_bytes: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+pub fn read_bytes_from_file(
+    file: &mut File,
+    number_of_bytes: usize,
+) -> Result<Vec<u8>, Box<dyn Error>> {
     let mut read_bytes: Vec<u8> = vec![0; number_of_bytes];
     file.read_exact(&mut read_bytes)?;
 
@@ -51,7 +58,9 @@ pub fn read_byte_from_file(file: &mut File) -> Result<u8, Box<dyn Error>> {
     let mut read_bytes = [0; 1];
     file.read_exact(&mut read_bytes)?;
 
-    let result = read_bytes.first().ok_or(LocalError::InsufficientBytesToTake(1, 0))?;
+    let result = read_bytes
+        .first()
+        .ok_or(LocalError::InsufficientBytesToTake(1, 0))?;
     Ok(*result)
 }
 
@@ -83,7 +92,10 @@ fn get_riff_data_type_from_file(wave_file: &mut File) -> Result<RiffDataType, Bo
         WAVE_FILE_TYPE_ID => Ok(RiffDataType::Wave),
         RMID_FILE_TYPE_ID => Ok(RiffDataType::Rmid),
         _ => {
-            eprintln!("RIFF file type mismatch: {:?} ", riff_id_bytes.to_ascii_uppercase());
+            eprintln!(
+                "RIFF file type mismatch: {:?} ",
+                riff_id_bytes.to_ascii_uppercase()
+            );
             Err(Box::new(LocalError::InvalidRiffTypeID))
         }
     }
@@ -94,7 +106,10 @@ pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>
     Ok(String::from_utf8(read_bytes)?)
 }
 
-pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<usize, Box<dyn Error>> {
+pub fn read_chunk_size_from_file(
+    file: &mut File,
+    endianness: Endian,
+) -> Result<usize, Box<dyn Error>> {
     let chunk_size_bytes = read_bytes_from_file(file, 4)?;
     let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
@@ -109,7 +124,11 @@ pub fn read_chunk_size_from_file(file: &mut File, endianness: Endian) -> Result<
     Ok(chunk_size as usize)
 }
 
-pub fn get_file_metadata(file_path: &str, file: &File, header_template: &str) -> Result<OutputEntry, Box<dyn Error>> {
+pub fn get_file_metadata(
+    file_path: &str,
+    file: &File,
+    header_template: &str,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let size_in_bytes = file.metadata()?.len();
     let name = get_file_name_from_file_path(file_path)?;
     let canonical_path = canonicalize_file_path(file_path)?;

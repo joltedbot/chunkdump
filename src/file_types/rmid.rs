@@ -28,13 +28,18 @@ pub fn get_metadata_from_file(rmid_file_path: &str) -> Result<Vec<OutputEntry>, 
     Ok(output)
 }
 
-fn get_metadata_from_rmid_chunks(rmid_file: &mut File, file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
+fn get_metadata_from_rmid_chunks(
+    rmid_file: &mut File,
+    file_path: &str,
+) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut output: Vec<OutputEntry> = vec![];
 
     loop {
         let chunk_id = match read_chunk_id_from_file(rmid_file) {
             Ok(chunk_id) => chunk_id.to_lowercase(),
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => break,
+            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
+                break
+            }
             Err(error) => return Err(error),
         };
 
