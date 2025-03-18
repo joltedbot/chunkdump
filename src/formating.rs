@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn correct_string_of_bytes_is_returned_from_bytes() {
         let input_byte_array_in_decimal: &[u8] = &[1, 2, 58, 75];
-        let correct_result_string: String = " 01 02 3a 4b".to_string();
+        let correct_result_string: String = "01 02 3a 4b".to_string();
         let result_string: String = format_bytes_as_string_of_bytes(input_byte_array_in_decimal);
         assert_eq!(result_string, correct_result_string);
     }
