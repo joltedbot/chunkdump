@@ -460,7 +460,7 @@ mod tests {
     #[test]
     fn return_the_correct_sequencer_specific_field_from_valid_bytes() {
         let mut test_bytes: Vec<u8> = vec![0x07, 0x43, 0x4F, 0x52, 0x52, 0x45, 0x43, 0x54];
-        let correct_result = "7 :  43 4f 52 52 45 43 54".to_string();
+        let correct_result = "7 : 43 4f 52 52 45 43 54".to_string();
         let result = get_sequencer_specific_field_from_bytes(&mut test_bytes);
         assert_eq!(result, correct_result);
     }

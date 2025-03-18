@@ -21,9 +21,11 @@ pub fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
 }
 
 pub fn format_bytes_as_string_of_bytes(bytes: &[u8]) -> String {
-    bytes.iter().fold("".to_string(), |umid: String, byte| {
+    let output_string = bytes.iter().fold("".to_string(), |umid: String, byte| {
         format!("{} {:02x?}", umid, byte)
-    })
+    });
+
+    output_string.trim().to_string()
 }
 
 pub fn format_bytes_as_string(byte_data: Vec<u8>) -> Result<String, LocalError> {
@@ -126,7 +128,7 @@ mod tests {
     #[test]
     fn correct_string_of_bytes_is_returned_from_bytes() {
         let input_byte_array_in_decimal: &[u8] = &[1, 2, 58, 75];
-        let correct_result_string: String = " 01 02 3a 4b".to_string();
+        let correct_result_string: String = "01 02 3a 4b".to_string();
         let result_string: String = format_bytes_as_string_of_bytes(input_byte_array_in_decimal);
         assert_eq!(result_string, correct_result_string);
     }
