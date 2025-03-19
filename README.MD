@@ -2,9 +2,8 @@
 
 **Status: v0.5.1 - _Stable but currently only tested on macOS with Apple Silicon._**
 
-A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in .wav
-Resource Interchange File Format (RIFF) Wave files and Audio Interchange File Format AIFF/AIFF-C .aif files as well as
-the standard metadata from Flac files.
+A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in RIFF
+Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), and both RIFF RMID (.rmi) and standard SMF (.mid) MIDI files.
 
 To use just build as per Rust usual.
 > cargo build -r
