@@ -5,3 +5,4 @@
 tarpaulin-report.html
 check_before_commit.sh
 output_files
+.scannerwork
