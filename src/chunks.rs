@@ -19,7 +19,10 @@ mod text;
 mod umid;
 
 use crate::byte_arrays::Endian;
-use crate::fileio::{read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file};
+use crate::fileio::{
+    read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file,
+    skip_over_bytes_in_file,
+};
 use crate::output::OutputEntry;
 use std::error::Error;
 use std::fs::File;
@@ -72,6 +75,18 @@ const MARKER_CHUNK_ID: &str = "mark";
 pub const AUDIO_SAMPLES_CHUNK_ID: &str = "ssnd";
 pub const NAME_CHUNK_ID: &str = "name";
 const NAME_TEMPLATE_TITLE: &str = "Name";
+pub const CHUNKS_NOT_TO_EXTRACT_DATA_FROM: [&str; 10] = [
+    DATA_CHUNK_ID,
+    AUDIO_SAMPLES_CHUNK_ID,
+    CHAN_CHUNK_ID,
+    PRO_TOOLS_ELM1_CHUNK_ID,
+    PRO_TOOLS_MINF_CHUNK_ID,
+    PRO_TOOLS_DGDA_CHUNK_ID,
+    PRO_TOOLS_REGN_CHUNK_ID,
+    DISP_CHUNK_ID,
+    LOGIC_PRO_CHUNK_ID,
+    ID3_CHUNK_ID,
+];
 pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 
 pub fn get_metadata_from_chunks(
@@ -95,7 +110,13 @@ pub fn get_metadata_from_chunks(
             _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
         };
 
-        let chunk_data = read_bytes_from_file(input_file, chunk_size).unwrap_or_default();
+        let mut chunk_data: Vec<u8> = Vec::new();
+        if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id.as_str()) {
+            skip_over_bytes_in_file(input_file, chunk_size)?;
+        } else {
+            chunk_data = read_bytes_from_file(input_file, chunk_size).unwrap_or_default();
+        }
+
         output.push(get_chunk_metadata(chunk_id, chunk_data, file_path)?);
     }
 

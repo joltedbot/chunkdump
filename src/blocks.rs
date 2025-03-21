@@ -36,10 +36,10 @@ pub fn get_metadata_from_blocks(flac_file: &mut File) -> Result<Vec<OutputEntry>
     skip_over_bytes_in_file(flac_file, FLAC_FILE_SIGNATURE_LENGTH_IN_BYTES)?;
 
     loop {
-        let block = read_metadata_block_from_file(flac_file)?;
-        let block_output = get_block_metadata(block.header_type, block.data)?;
-        output.push(block_output);
-        if block.is_last_block {
+        let metadata_block = read_metadata_block_from_file(flac_file)?;
+        let metadata_output = get_block_metadata(metadata_block.header_type, metadata_block.data)?;
+        output.push(metadata_output);
+        if metadata_block.is_last_block {
             break;
         }
     }
