@@ -1,6 +1,7 @@
 use crate::byte_arrays::Endian;
 use crate::chunks::{CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
 use crate::errors::LocalError;
+use crate::file_types::FileType;
 use crate::formating::{
     add_one_if_byte_size_is_odd, canonicalize_file_path, format_file_size_as_string,
     get_file_name_from_file_path,
@@ -18,16 +19,6 @@ const RIFF_FILE_CHUNKID: &str = "RIFF";
 const MIDI_FILE_CHUNKID: &str = "MThd";
 const WAVE_FILE_TYPE_ID: &str = "WAVE";
 const RMID_FILE_TYPE_ID: &str = "RMID";
-
-#[derive(Debug, PartialEq)]
-pub enum FileType {
-    Aiff,
-    Flac,
-    Wave,
-    Smf,
-    Rmid,
-    Unsupported(String),
-}
 
 #[derive(Debug, PartialEq)]
 enum RiffDataType {

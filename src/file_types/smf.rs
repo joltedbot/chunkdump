@@ -7,10 +7,13 @@ use std::io::Read;
 
 const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/smf.tmpl");
 
-pub fn get_metadata_from_file(smf_file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
+pub fn get_metadata_from_file(
+    smf_file_path: &str,
+    mandatory_sections_only: bool,
+) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut smf_file = File::open(smf_file_path)?;
     let file_metadata = get_file_metadata(smf_file_path, &mut smf_file, TEMPLATE_CONTENT)?;
-    let smf_metadata = get_metadata_from_smf(&mut smf_file)?;
+    let smf_metadata = get_metadata_from_smf(&mut smf_file, mandatory_sections_only)?;
 
     let mut chunks = vec![file_metadata];
     chunks.extend(smf_metadata);
@@ -18,9 +21,12 @@ pub fn get_metadata_from_file(smf_file_path: &str) -> Result<Vec<OutputEntry>, B
     Ok(chunks)
 }
 
-pub fn get_metadata_from_smf(smf_file: &mut File) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
+pub fn get_metadata_from_smf(
+    smf_file: &mut File,
+    mandatory_sections_only: bool,
+) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut midi_data = get_midi_data_from_file(smf_file)?;
-    let midi_metadata = get_metadata_from_midi_data(&mut midi_data)?;
+    let midi_metadata = get_metadata_from_midi_data(&mut midi_data, mandatory_sections_only)?;
     Ok(midi_metadata)
 }
 

@@ -107,11 +107,21 @@ pub struct MetaEvent {
 
 pub fn get_metadata_from_midi_data(
     midi_data: &mut Vec<u8>,
+    mandatory_sections_only: bool,
 ) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let header = get_header_metadata_from_midi_data(midi_data)?;
     let header_chunk = get_header_chunk_from_header_metadata(&header)?;
-    let meta_events_chunk = get_meta_events_from_track_data(midi_data, header.number_of_tracks)?;
-    Ok(vec![header_chunk, meta_events_chunk])
+
+    let mut output = vec![header_chunk];
+
+    if !mandatory_sections_only {
+        output.push(get_meta_events_from_track_data(
+            midi_data,
+            header.number_of_tracks,
+        )?);
+    }
+
+    Ok(output)
 }
 
 pub fn get_header_metadata_from_midi_data(
