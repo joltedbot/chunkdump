@@ -75,6 +75,7 @@ const MARKER_CHUNK_ID: &str = "mark";
 pub const AUDIO_SAMPLES_CHUNK_ID: &str = "ssnd";
 pub const NAME_CHUNK_ID: &str = "name";
 const NAME_TEMPLATE_TITLE: &str = "Name";
+pub const MANDATORY_CHUNKS: [&str; 3] = [FMT_CHUNK_ID, FACT_CHUNK_ID, COMMON_CHUNK_ID];
 pub const CHUNKS_NOT_TO_EXTRACT_DATA_FROM: [&str; 10] = [
     DATA_CHUNK_ID,
     AUDIO_SAMPLES_CHUNK_ID,
@@ -92,6 +93,7 @@ pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fil
 pub fn get_metadata_from_chunks(
     input_file: &mut File,
     file_path: &str,
+    mandatory_sections_only: bool,
     endianness: Endian,
 ) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut output: Vec<OutputEntry> = vec![];
@@ -105,22 +107,45 @@ pub fn get_metadata_from_chunks(
             Err(error) => return Err(error),
         };
 
-        let chunk_size = match chunk_id.as_str() {
-            ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
-            _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
-        };
+        let chunk_size = get_chunk_size_from_file(input_file, &endianness, &chunk_id)?;
 
-        let mut chunk_data: Vec<u8> = Vec::new();
-        if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id.as_str()) {
+        if mandatory_sections_only && !MANDATORY_CHUNKS.contains(&chunk_id.as_str()) {
             skip_over_bytes_in_file(input_file, chunk_size)?;
-        } else {
-            chunk_data = read_bytes_from_file(input_file, chunk_size).unwrap_or_default();
+            continue;
         }
 
+        let chunk_data = get_chunk_data_bytes_from_file(input_file, &chunk_id, chunk_size)?;
         output.push(get_chunk_metadata(chunk_id, chunk_data, file_path)?);
     }
 
     Ok(output)
+}
+
+fn get_chunk_size_from_file(
+    input_file: &mut File,
+    endianness: &Endian,
+    chunk_id: &String,
+) -> Result<usize, Box<dyn Error>> {
+    let chunk_size = match chunk_id.as_str() {
+        ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
+        _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
+    };
+    Ok(chunk_size)
+}
+
+fn get_chunk_data_bytes_from_file(
+    input_file: &mut File,
+    chunk_id: &String,
+    chunk_size: usize,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    Ok(
+        if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id.as_str()) {
+            skip_over_bytes_in_file(input_file, chunk_size)?;
+            Vec::new()
+        } else {
+            read_bytes_from_file(input_file, chunk_size).unwrap_or_default()
+        },
+    )
 }
 
 pub fn get_chunk_metadata(

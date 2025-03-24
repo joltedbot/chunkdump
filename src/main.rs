@@ -28,14 +28,15 @@ fn main() {
         exit(EXIT_CODE_ERROR);
     });
 
-    let metadata = file_types::get_file_metadata(&cli_args.input_file_path, file_type)
-        .unwrap_or_else(|err| {
-            handle_local_error(
-                LocalError::CouldNotReadData(cli_args.input_file_path),
-                err.to_string(),
-            );
-            exit(EXIT_CODE_ERROR);
-        });
+    let metadata =
+        file_types::get_file_metadata(&cli_args.input_file_path, file_type, cli_args.mandatory)
+            .unwrap_or_else(|err| {
+                handle_local_error(
+                    LocalError::CouldNotReadData(cli_args.input_file_path),
+                    err.to_string(),
+                );
+                exit(EXIT_CODE_ERROR);
+            });
 
     output_metadata(metadata, cli_args.output_file_path).unwrap_or_else(|error| {
         handle_local_error(LocalError::CouldNotWrteOutData, error.to_string());

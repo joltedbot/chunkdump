@@ -30,7 +30,10 @@ struct MetadataBlock {
     data: Vec<u8>,
 }
 
-pub fn get_metadata_from_blocks(flac_file: &mut File) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
+pub fn get_metadata_from_blocks(
+    flac_file: &mut File,
+    mandatory_sections_only: bool,
+) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut output: Vec<OutputEntry> = vec![];
 
     skip_over_bytes_in_file(flac_file, FLAC_FILE_SIGNATURE_LENGTH_IN_BYTES)?;
@@ -39,7 +42,8 @@ pub fn get_metadata_from_blocks(flac_file: &mut File) -> Result<Vec<OutputEntry>
         let metadata_block = read_metadata_block_from_file(flac_file)?;
         let metadata_output = get_block_metadata(metadata_block.header_type, metadata_block.data)?;
         output.push(metadata_output);
-        if metadata_block.is_last_block {
+
+        if metadata_block.is_last_block || mandatory_sections_only {
             break;
         }
     }

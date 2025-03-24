@@ -8,6 +8,7 @@ pub const USAGE_MESSAGE: &str = " usage: chunkdump [-hv] file";
 
 #[derive(PartialEq, Debug)]
 pub struct Args {
+    pub mandatory: bool,
     pub input_file_path: String,
     pub output_file_path: Option<String>,
 }
@@ -20,10 +21,15 @@ pub struct CliArguments {
     #[argh(switch, short = 'v')]
     version: bool,
 
+    /// only print the mandatory flags
+    #[argh(switch, short = 'm')]
+    mandatory: bool,
+
     /// a file path to output the data to rather than stdout
     #[argh(option, short = 'o')]
     output_file: Option<String>,
 
+    /// a file path to the file to dump the metadata from
     #[argh(positional)]
     file: Option<String>,
 }
@@ -40,6 +46,7 @@ pub fn process_cli_arguments(args: CliArguments) -> Args {
     }
 
     Args {
+        mandatory: args.mandatory,
         input_file_path: args.file.unwrap(),
         output_file_path: args.output_file,
     }
@@ -59,10 +66,12 @@ mod tests {
         let test_output_path = String::from("/tmp/test.txt");
         let test_args = CliArguments {
             version: false,
+            mandatory: true,
             file: Some(test_input_path.clone()),
             output_file: Some(test_output_path.clone()),
         };
         let correct_result = Args {
+            mandatory: true,
             input_file_path: test_input_path,
             output_file_path: Some(test_output_path),
         };
@@ -77,10 +86,12 @@ mod tests {
         let test_input_path = String::from("/tmp/test.wav");
         let test_args = CliArguments {
             version: false,
+            mandatory: false,
             file: Some(test_input_path.clone()),
             output_file: None,
         };
         let correct_result = Args {
+            mandatory: false,
             input_file_path: test_input_path,
             output_file_path: None,
         };

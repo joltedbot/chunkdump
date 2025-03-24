@@ -13,12 +13,20 @@ const CHUNK_ID_LENGTH_IN_BYTES: usize = 4;
 const AIFF_CHUNK_SIZE_LENGTH_IN_BYTES: usize = 4;
 const AIFF_FORM_TYPE_LENGTH_IN_BYTES: usize = 4;
 
-pub fn get_metadata_from_file(file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
+pub fn get_metadata_from_file(
+    file_path: &str,
+    mandatory_sections_only: bool,
+) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut aiff_file = File::open(file_path)?;
 
     let file_metadata = get_file_metadata(file_path, &aiff_file, TEMPLATE_CONTENT)?;
     let form_metadata = get_form_metadata_from_file(&mut aiff_file)?;
-    let chunk_metadata = get_metadata_from_chunks(&mut aiff_file, file_path, Endian::Big)?;
+    let chunk_metadata = get_metadata_from_chunks(
+        &mut aiff_file,
+        file_path,
+        mandatory_sections_only,
+        Endian::Big,
+    )?;
 
     let mut output = vec![file_metadata, form_metadata];
     output.extend(chunk_metadata);
