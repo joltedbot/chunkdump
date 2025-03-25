@@ -1,5 +1,5 @@
 use crate::byte_arrays::{
-    take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
+    take_first_byte, take_first_four_bytes_as_unsigned_integer,
     take_first_number_of_bytes_as_string, take_first_two_bytes_as_signed_integer,
     take_first_two_bytes_as_unsigned_integer, Endian,
 };
@@ -28,8 +28,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         let marker_id = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
         let position = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
 
-        let name_size_unpadded =
-            take_first_byte_as_unsigned_integer(&mut chunk_data, Endian::Big)? as u32;
+        let name_size_unpadded = take_first_byte(&mut chunk_data)? as u32;
         let name_size =
             add_one_if_byte_size_is_odd(name_size_unpadded) + PSTRING_TERMINATOR_BYTE_LENGTH;
         let name = take_first_number_of_bytes_as_string(&mut chunk_data, name_size as usize)?;

@@ -1,6 +1,4 @@
-use crate::byte_arrays::{
-    take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian,
-};
+use crate::byte_arrays::{take_first_byte, take_first_byte_as_signed_integer, Endian};
 use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
 use chrono::DateTime;
@@ -86,17 +84,17 @@ pub fn format_smpte_offset(
 ) -> Result<String, LocalError> {
     if endianness == Endian::Little {
         let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Little)?;
-        let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-        let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-        let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+        let minutes = take_first_byte(smpte_offset_bytes)?;
+        let seconds = take_first_byte(smpte_offset_bytes)?;
+        let samples = take_first_byte(smpte_offset_bytes)?;
         Ok(format!(
             "{}h:{}m:{}s & {} samples",
             hours, minutes, seconds, samples
         ))
     } else {
-        let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
-        let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
-        let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
+        let samples = take_first_byte(smpte_offset_bytes)?;
+        let seconds = take_first_byte(smpte_offset_bytes)?;
+        let minutes = take_first_byte(smpte_offset_bytes)?;
         let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Big)?;
         Ok(format!(
             "{}h:{}m:{}s & {} samples",

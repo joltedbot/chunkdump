@@ -1,7 +1,7 @@
 use crate::byte_arrays::{
-    take_first_byte_as_unsigned_integer, take_first_four_bytes_as_signed_integer,
-    take_first_number_of_bytes_as_string, take_first_ten_bytes_as_an_apple_extended_integer,
-    take_first_two_bytes_as_signed_integer, Endian,
+    take_first_byte, take_first_four_bytes_as_signed_integer, take_first_number_of_bytes_as_string,
+    take_first_ten_bytes_as_an_apple_extended_integer, take_first_two_bytes_as_signed_integer,
+    Endian,
 };
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
@@ -26,8 +26,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
             COMPRESSION_NAME_LENGTH_IN_BYTES,
         )?;
 
-        let compression_name_size =
-            take_first_byte_as_unsigned_integer(&mut chunk_data, Endian::Big)? as usize;
+        let compression_name_size = take_first_byte(&mut chunk_data)? as usize;
         compression_name =
             take_first_number_of_bytes_as_string(&mut chunk_data, compression_name_size)?;
     }

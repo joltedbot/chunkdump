@@ -1,7 +1,6 @@
 use crate::byte_arrays::{
-    take_first_byte, take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer,
-    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes,
-    take_first_two_bytes_as_unsigned_integer, Endian,
+    take_first_byte, take_first_byte_as_signed_integer, take_first_four_bytes_as_unsigned_integer,
+    take_first_number_of_bytes, take_first_two_bytes_as_unsigned_integer, Endian,
 };
 use crate::chunks::CHUNK_SIZE_FIELD_LENGTH_IN_BYTES;
 use crate::formating::{
@@ -218,7 +217,7 @@ pub fn get_midi_meta_events_from_track_data(
         {
             get_variable_length_unsigned_integer_from_track_data(&mut track_data)
         } else {
-            take_first_byte_as_unsigned_integer(&mut track_data, Endian::Big)? as u32
+            take_first_byte(&mut track_data)? as u32
         };
 
         if meta_event_data_length == 0 || track_data.len() < meta_event_data_length as usize {
@@ -289,17 +288,11 @@ fn get_meta_event_from_event_data_by_type_byte(
         ),
         0x20 => (
             META_EVENT_CHANNEL_PREFIX.to_string(),
-            format!(
-                "{}",
-                take_first_byte_as_unsigned_integer(&mut bytes, Endian::Big)?
-            ),
+            format!("{}", take_first_byte(&mut bytes)?),
         ),
         0x21 => (
             META_EVENT_MIDI_PORT.to_string(),
-            format!(
-                "{}",
-                take_first_byte_as_unsigned_integer(&mut bytes, Endian::Big)?
-            ),
+            format!("{}", take_first_byte(&mut bytes)?),
         ),
         0x51 => (
             META_EVENT_SET_TEMPO.to_string(),
@@ -317,7 +310,7 @@ fn get_meta_event_from_event_data_by_type_byte(
             META_EVENT_KEY_SIGNATURE.to_string(),
             get_key_from_number_of_flats(
                 take_first_byte_as_signed_integer(&mut bytes, Endian::Big)?,
-                take_first_byte_as_unsigned_integer(&mut bytes, Endian::Big)?.is_zero(),
+                take_first_byte(&mut bytes)?.is_zero(),
             ),
         ),
         0x7F => (
@@ -403,19 +396,16 @@ fn get_variable_length_unsigned_integer_from_track_data(bytes: &mut Vec<u8>) -> 
 }
 
 fn get_sequencer_specific_field_from_bytes(bytes: &mut Vec<u8>) -> String {
-    let manufacturer_id =
-        take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or_default();
+    let manufacturer_id = take_first_byte(bytes).unwrap_or_default();
     let remaining_bytes = format_bytes_as_string_of_bytes(bytes);
     format!("{} : {}", manufacturer_id, remaining_bytes)
 }
 
 fn get_time_signature_from_bytes(bytes: &mut Vec<u8>) -> String {
-    let numerator = take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or(4);
-    let denominator = take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or(2);
-    let clock_ticks_per_metronome_click =
-        take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or_default();
-    let thirtysecond_notes_per_beat =
-        take_first_byte_as_unsigned_integer(bytes, Endian::Big).unwrap_or_default();
+    let numerator = take_first_byte(bytes).unwrap_or(4);
+    let denominator = take_first_byte(bytes).unwrap_or(2);
+    let clock_ticks_per_metronome_click = take_first_byte(bytes).unwrap_or_default();
+    let thirtysecond_notes_per_beat = take_first_byte(bytes).unwrap_or_default();
 
     format!(
         "{}/{}\n{}: {}\n{}: {}",

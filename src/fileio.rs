@@ -19,6 +19,7 @@ const RIFF_FILE_CHUNKID: &str = "RIFF";
 const MIDI_FILE_CHUNKID: &str = "MThd";
 const WAVE_FILE_TYPE_ID: &str = "WAVE";
 const RMID_FILE_TYPE_ID: &str = "RMID";
+const OGG_FILE_TYPE_ID: &str = "OggS";
 
 #[derive(Debug, PartialEq)]
 enum RiffDataType {
@@ -68,6 +69,7 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
             RiffDataType::Rmid => FileType::Rmid,
         },
         MIDI_FILE_CHUNKID => FileType::Smf,
+        OGG_FILE_TYPE_ID => FileType::Ogg,
         _ => FileType::Unsupported(file_id),
     };
 
