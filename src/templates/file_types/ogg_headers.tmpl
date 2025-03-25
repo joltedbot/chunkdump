@@ -13,4 +13,4 @@ Vendor Comment:      {{ vendor_comment }}
 User Comments:
 --------------
 {%- for comments in user_comments %}
-{{ comments.0 }}: {{ comments.1 }}{% endfor %}
+{{ comments.key }}:    {{ comments.spacer }}{{ comments.value }}{% endfor %}

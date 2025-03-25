@@ -2,6 +2,7 @@ use crate::errors::LocalError;
 use crate::fileio::{
     get_file_metadata, read_byte_from_file, read_bytes_from_file, skip_over_bytes_in_file,
 };
+use crate::formating::{set_key_value_pair_spacers, KeyValuePair as UserComment};
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use byte_unit::rust_decimal::prelude::Zero;
@@ -54,13 +55,15 @@ fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn
 
     let number_of_user_comments = get_4_byte_field_from_file(ogg_file)?;
 
-    let mut user_comments: Vec<(String, String)> = vec![];
+    let mut user_comments: Vec<UserComment> = vec![];
     for _ in 0..number_of_user_comments {
         match get_user_comment_from_file(ogg_file) {
             Ok(comment) => user_comments.push(comment),
             Err(_) => break,
         }
     }
+
+    set_key_value_pair_spacers(&mut user_comments);
 
     let output_values: Value = upon::value! {
         vorbis_version: vorbis_version,
@@ -84,16 +87,18 @@ fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn
     })
 }
 
-fn get_user_comment_from_file(ogg_file: &mut File) -> Result<(String, String), Box<dyn Error>> {
+fn get_user_comment_from_file(ogg_file: &mut File) -> Result<UserComment, Box<dyn Error>> {
     let user_comment_length = get_4_byte_field_from_file(ogg_file)?;
     let user_comment = get_string_from_file(ogg_file, user_comment_length as usize)?;
     let user_comment_key_value = user_comment
         .split_once("=")
         .ok_or(LocalError::InvalidVorbisComment)?;
-    Ok((
-        user_comment_key_value.0.to_string(),
-        user_comment_key_value.1.to_string(),
-    ))
+
+    Ok(UserComment {
+        key: user_comment_key_value.0.to_string(),
+        spacer: " ".to_string(),
+        value: user_comment_key_value.1.to_string(),
+    })
 }
 
 fn get_4_byte_field_from_file(file: &mut File) -> Result<u32, Box<dyn Error>> {
