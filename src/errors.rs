@@ -41,6 +41,9 @@ pub enum LocalError {
 
     #[error("Could not write out metadata.")]
     CouldNotWrteOutData,
+
+    #[error("Invalid Vorbis User Comment. No = character found.")]
+    InvalidVorbisComment,
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

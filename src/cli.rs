@@ -4,7 +4,7 @@ use std::process::exit;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const EXIT_CODE_ERROR: i32 = 1;
 pub const EXIT_CODE_SUCCESS: i32 = 0;
-pub const USAGE_MESSAGE: &str = " usage: chunkdump [-hv] file";
+pub const USAGE_MESSAGE: &str = " usage: chunkdump [-hmv] [-o output_file] file";
 
 #[derive(PartialEq, Debug)]
 pub struct Args {
@@ -14,7 +14,7 @@ pub struct Args {
 }
 
 #[derive(FromArgs)]
-/// Chunkdump - Extract Metadata From RIFF Wave, AIFF, Flac, SMF MIDI, and RIFF RMID Files
+/// Chunkdump - Extract Metadata From RIFF Wave, AIFF, Flac, Ogg Vorbis, SMF MIDI, and RIFF RMID Files
 #[argh(help_triggers("-h", "--help", "help"))]
 pub struct CliArguments {
     /// print the version

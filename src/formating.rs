@@ -1,9 +1,8 @@
-use crate::byte_arrays::{
-    take_first_byte_as_signed_integer, take_first_byte_as_unsigned_integer, Endian,
-};
+use crate::byte_arrays::{take_first_byte, take_first_byte_as_signed_integer, Endian};
 use crate::errors::LocalError;
 use byte_unit::{Byte, UnitType};
 use chrono::DateTime;
+use serde::Serialize;
 use std::error::Error;
 use std::path::Path;
 
@@ -12,6 +11,14 @@ const NOTE_NAMES_WITHOUT_OCTAVES: [&str; 12] = [
 ];
 const BAD_TIMESTAMP_MESSAGE: &str = "Unexpected bad timestamp format";
 const MAC_HFS_FORMAT_TIMESTAMP_OFFSET: u32 = 2082844800;
+const DEFAULT_SPACER_LENGTH: usize = 5;
+
+#[derive(Debug, PartialEq, Serialize)]
+pub struct KeyValuePair {
+    pub key: String,
+    pub spacer: String,
+    pub value: String,
+}
 
 pub fn format_file_size_as_string(file_size_in_bytes: u64) -> String {
     format!(
@@ -86,22 +93,37 @@ pub fn format_smpte_offset(
 ) -> Result<String, LocalError> {
     if endianness == Endian::Little {
         let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Little)?;
-        let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-        let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
-        let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Little)?;
+        let minutes = take_first_byte(smpte_offset_bytes)?;
+        let seconds = take_first_byte(smpte_offset_bytes)?;
+        let samples = take_first_byte(smpte_offset_bytes)?;
         Ok(format!(
             "{}h:{}m:{}s & {} samples",
             hours, minutes, seconds, samples
         ))
     } else {
-        let samples = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
-        let seconds = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
-        let minutes = take_first_byte_as_unsigned_integer(smpte_offset_bytes, Endian::Big)?;
+        let samples = take_first_byte(smpte_offset_bytes)?;
+        let seconds = take_first_byte(smpte_offset_bytes)?;
+        let minutes = take_first_byte(smpte_offset_bytes)?;
         let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Big)?;
         Ok(format!(
             "{}h:{}m:{}s & {} samples",
             hours, minutes, seconds, samples
         ))
+    }
+}
+
+pub fn set_key_value_pair_spacers(key_value_pairs: &mut Vec<KeyValuePair>) {
+    let longest_key = match key_value_pairs.iter().max_by_key(|tag| tag.key.len()) {
+        Some(tag) => tag.key.len(),
+        None => DEFAULT_SPACER_LENGTH,
+    };
+
+    for kv in key_value_pairs {
+        if longest_key > kv.key.len() {
+            kv.spacer = " ".repeat(longest_key - kv.key.len());
+        } else {
+            kv.spacer = String::new();
+        }
     }
 }
 
@@ -230,5 +252,55 @@ mod tests {
     fn does_not_add_one_if_byte_size_is_even() {
         let test_size = 4;
         assert_eq!(add_one_if_byte_size_is_odd(test_size), test_size);
+    }
+
+    #[test]
+    fn correctly_set_tag_spacers() {
+        let mut test_tags: Vec<crate::formating::KeyValuePair> = vec![
+            crate::formating::KeyValuePair {
+                key: "k".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+            crate::formating::KeyValuePair {
+                key: "ke".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+            crate::formating::KeyValuePair {
+                key: "key".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+            crate::formating::KeyValuePair {
+                key: "keyvaluepair".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+        ];
+        let correct_tags: Vec<crate::formating::KeyValuePair> = vec![
+            crate::formating::KeyValuePair {
+                key: "k".to_string(),
+                spacer: "           ".to_string(),
+                value: "none".to_string(),
+            },
+            crate::formating::KeyValuePair {
+                key: "ke".to_string(),
+                spacer: "          ".to_string(),
+                value: "none".to_string(),
+            },
+            crate::formating::KeyValuePair {
+                key: "key".to_string(),
+                spacer: "         ".to_string(),
+                value: "none".to_string(),
+            },
+            crate::formating::KeyValuePair {
+                key: "keyvaluepair".to_string(),
+                spacer: "".to_string(),
+                value: "none".to_string(),
+            },
+        ];
+        set_key_value_pair_spacers(&mut test_tags);
+        assert_eq!(test_tags, correct_tags);
     }
 }

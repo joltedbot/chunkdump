@@ -1,6 +1,5 @@
 use crate::byte_arrays::{
-    take_first_byte_as_unsigned_integer, take_first_four_bytes_as_unsigned_integer,
-    take_first_number_of_bytes, Endian,
+    take_first_byte, take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes, Endian,
 };
 use crate::errors::LocalError;
 use crate::formating::{format_midi_note_number_as_note_name, format_smpte_offset};
@@ -86,11 +85,10 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
 }
 
 fn format_manufacturer_id(mut bytes: Vec<u8>) -> Result<String, LocalError> {
-    let manufacturer_id_bytes: Vec<u8> =
-        match take_first_byte_as_unsigned_integer(&mut bytes, Endian::Little) {
-            Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
-            Err(e) => return Err(e),
-        };
+    let manufacturer_id_bytes: Vec<u8> = match take_first_byte(&mut bytes) {
+        Ok(id_length) => bytes.drain(0..id_length as usize).collect(),
+        Err(e) => return Err(e),
+    };
 
     let mut manufacturer_id: Vec<String> = vec![];
 

@@ -1,0 +1,19 @@
+
+Vorbis Version:      {{ vorbis_version }}
+Number of Channels:  {{ audio_channels }}
+Audio Sample Rate:   {{ audio_sample_rate }} kHz
+Maximum Bitrate:     {{ bitrate_maximum }} kbit/s
+Nominal Bitrate:     {{ bitrate_nominal }} kbit/s
+Minimum Bitrate:     {{ bitrate_minimum }} kbit/s
+Bitrate Type:        {{ bitrate_type }}
+Decode Blocksize 0:  {{ blocksize_0 }}
+Decode Blocksize 1:  {{ blocksize_1 }}
+Vendor Comment:      {{ vendor_comment }}
+
+{% if user_comments %}
+User Comments:
+--------------
+{%- endif %}
+{%- for comments in user_comments %}
+{{ comments.key }}:    {{ comments.spacer }}{{ comments.value }}{% endfor %}
+

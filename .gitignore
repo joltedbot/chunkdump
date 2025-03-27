@@ -1,7 +1,7 @@
 .idea
 .DS_Store
 /target
-/test
+/test_files
 tarpaulin-report.html
 check_before_commit.sh
 output_files
