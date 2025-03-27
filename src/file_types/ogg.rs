@@ -6,6 +6,7 @@ use crate::formating::{set_key_value_pair_spacers, KeyValuePair as UserComment};
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use byte_unit::rust_decimal::prelude::Zero;
+use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use upon::Value;
@@ -24,6 +25,20 @@ const BAD_USER_COMMENT_KEY: &str = "XXXX";
 const BAD_USER_COMMENT_VALUE: &str =
     "[Corrupt or Non-Standard Format User Comment. Halting processing comments.]";
 
+#[derive(Debug, Default, Serialize)]
+struct HeaderMetadata {
+    vorbis_version: u32,
+    audio_channels: u8,
+    audio_sample_rate: u32,
+    bitrate_maximum: u32,
+    bitrate_nominal: u32,
+    bitrate_minimum: u32,
+    blocksizes: (u8, u8),
+    bitrate_type: String,
+    vendor_comment: String,
+    user_comments: Vec<UserComment>,
+}
+
 pub fn get_metadata_from_file(ogg_file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut ogg_file = File::open(ogg_file_path)?;
     let file_metadata = get_file_metadata(ogg_file_path, &ogg_file, TEMPLATE_CONTENT)?;
@@ -34,8 +49,35 @@ pub fn get_metadata_from_file(ogg_file_path: &str) -> Result<Vec<OutputEntry>, B
 }
 
 fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn Error>> {
-    skip_over_ogg_packet_header_in_file(ogg_file)?;
-    skip_over_vorbis_common_header_in_file(ogg_file)?;
+    let mut header_metadata = get_identification_header_metadata_from_file(ogg_file)?;
+    get_comment_header_metadata_from_file(ogg_file, &mut header_metadata)?;
+
+    let output_values: Value = upon::value! {
+        vorbis_version: header_metadata.vorbis_version,
+        audio_channels: header_metadata.audio_channels,
+        audio_sample_rate: header_metadata.audio_sample_rate as f64 / 1000.0,
+        bitrate_maximum: header_metadata.bitrate_maximum/1000,
+        bitrate_nominal: header_metadata.bitrate_nominal/1000,
+        bitrate_minimum: header_metadata.bitrate_minimum/1000,
+        blocksize_0: header_metadata.blocksizes.0,
+        blocksize_1: header_metadata.blocksizes.1,
+        bitrate_type: header_metadata.bitrate_type,
+        vendor_comment: header_metadata.vendor_comment,
+        user_comments: header_metadata.user_comments,
+    };
+
+    let formated_output = get_file_chunk_output(HEADER_TEMPLATE_CONTENT, output_values)?;
+
+    Ok(OutputEntry {
+        section: Section::Mandatory,
+        text: formated_output,
+    })
+}
+
+fn get_identification_header_metadata_from_file(
+    ogg_file: &mut File,
+) -> Result<HeaderMetadata, Box<dyn Error>> {
+    skip_over_ogg_packet_and_vorbis_common_headers_in_file(ogg_file)?;
 
     let vorbis_version = get_4_byte_field_from_file(ogg_file)?;
     let audio_channels = read_byte_from_file(ogg_file)?;
@@ -47,20 +89,38 @@ fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn
     let bitrate_type =
         get_bitrate_type_from_bitrate_values(bitrate_minimum, bitrate_nominal, bitrate_maximum);
 
+    let header_metadata = HeaderMetadata {
+        vorbis_version,
+        audio_channels,
+        audio_sample_rate,
+        bitrate_maximum,
+        bitrate_nominal,
+        bitrate_minimum,
+        blocksizes,
+        bitrate_type,
+        ..Default::default()
+    };
+
     skip_over_bytes_in_file(ogg_file, FRAMING_FLAG_LENGTH_IN_BYTES)?;
-    skip_over_ogg_packet_header_in_file(ogg_file)?;
-    skip_over_vorbis_common_header_in_file(ogg_file)?;
+
+    Ok(header_metadata)
+}
+
+fn get_comment_header_metadata_from_file(
+    ogg_file: &mut File,
+    header_metadata: &mut HeaderMetadata,
+) -> Result<(), Box<dyn Error>> {
+    skip_over_ogg_packet_and_vorbis_common_headers_in_file(ogg_file)?;
 
     let vendor_comment_length_in_bytes = get_4_byte_field_from_file(ogg_file)?;
-    let vendor_comment = get_string_from_file(ogg_file, vendor_comment_length_in_bytes as usize)?;
+    header_metadata.vendor_comment =
+        get_string_from_file(ogg_file, vendor_comment_length_in_bytes as usize)?;
 
     let number_of_user_comments = get_4_byte_field_from_file(ogg_file)?;
-    let mut user_comments: Vec<UserComment> = vec![];
-
     for _ in 0..number_of_user_comments {
         match get_user_comment_from_file(ogg_file) {
-            Ok(comment) => user_comments.push(comment),
-            Err(_) => user_comments.push(UserComment {
+            Ok(comment) => header_metadata.user_comments.push(comment),
+            Err(_) => header_metadata.user_comments.push(UserComment {
                 key: BAD_USER_COMMENT_KEY.to_string(),
                 spacer: " ".to_string(),
                 value: BAD_USER_COMMENT_VALUE.to_string(),
@@ -68,28 +128,21 @@ fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn
         }
     }
 
-    set_key_value_pair_spacers(&mut user_comments);
+    set_key_value_pair_spacers(&mut header_metadata.user_comments);
 
-    let output_values: Value = upon::value! {
-        vorbis_version: vorbis_version,
-        audio_channels: audio_channels,
-        audio_sample_rate: audio_sample_rate as f64 / 1000.0,
-        bitrate_maximum: bitrate_maximum/1000,
-        bitrate_nominal: bitrate_nominal/1000,
-        bitrate_minimum: bitrate_minimum/1000,
-        blocksize_0: blocksizes.0,
-        blocksize_1: blocksizes.1,
-        bitrate_type: bitrate_type,
-        vendor_comment: vendor_comment,
-        user_comments: user_comments,
-    };
+    Ok(())
+}
 
-    let formated_output = get_file_chunk_output(HEADER_TEMPLATE_CONTENT, output_values)?;
+fn skip_over_ogg_packet_and_vorbis_common_headers_in_file(
+    ogg_file: &mut File,
+) -> Result<(), Box<dyn Error>> {
+    skip_over_bytes_in_file(ogg_file, OGG_CONTAINER_HEADER_LENGTH_IN_BYTES)?;
+    let number_of_page_segments = read_byte_from_file(ogg_file)?;
+    skip_over_bytes_in_file(ogg_file, number_of_page_segments as usize)?;
 
-    Ok(OutputEntry {
-        section: Section::Mandatory,
-        text: formated_output,
-    })
+    skip_over_bytes_in_file(ogg_file, VORBIS_COMMON_HEADER_LENGTH_IN_BYTES)?;
+
+    Ok(())
 }
 
 fn get_user_comment_from_file(ogg_file: &mut File) -> Result<UserComment, Box<dyn Error>> {
@@ -150,18 +203,86 @@ fn get_bitrate_type_from_bitrate_values(minimum: u32, nominal: u32, maximum: u32
     UNKNOWN_BIT_RATE_OUTPUT_STRING.to_string()
 }
 
-fn skip_over_ogg_packet_header_in_file(ogg_file: &mut File) -> Result<(), Box<dyn Error>> {
-    skip_over_bytes_in_file(ogg_file, OGG_CONTAINER_HEADER_LENGTH_IN_BYTES)?;
-    let number_of_page_segments = read_byte_from_file(ogg_file)?;
-    skip_over_bytes_in_file(ogg_file, number_of_page_segments as usize)?;
-
-    Ok(())
-}
-
-fn skip_over_vorbis_common_header_in_file(ogg_file: &mut File) -> Result<(), Box<dyn Error>> {
-    skip_over_bytes_in_file(ogg_file, VORBIS_COMMON_HEADER_LENGTH_IN_BYTES)?;
-    Ok(())
-}
-
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+
+    #[test]
+    fn returns_correct_blocksizes_from_valid_blocksize_byte() {
+        let test_byte = 0b11010101;
+        let correct_blocksizes = (13, 5);
+        let blocksizes = get_blocksizes_from_byte(test_byte);
+
+        assert_eq!(correct_blocksizes, blocksizes);
+    }
+
+    #[test]
+    fn return_fixed_bit_rate_output_string_when_all_bitrates_are_equal() {
+        let test_minimum = 123456;
+        let test_nominal = 123456;
+        let test_maximum = 123456;
+        let output_string =
+            get_bitrate_type_from_bitrate_values(test_minimum, test_nominal, test_maximum);
+        assert_eq!(output_string, FIXED_BIT_RATE_OUTPUT_STRING.to_string());
+    }
+
+    #[test]
+    fn return_variable_bit_rate_output_string_when_min_and_max_are_zero_but_nominal_is_not_zero() {
+        let test_minimum = 0;
+        let test_nominal = 123456;
+        let test_maximum = 0;
+        let output_string =
+            get_bitrate_type_from_bitrate_values(test_minimum, test_nominal, test_maximum);
+        assert_eq!(output_string, VBR_ABR_BIT_RATE_OUTPUT_STRING.to_string());
+    }
+
+    #[test]
+    fn return_max_limited_bit_rate_output_string_when_min_and_nominal_are_zero_but_max_is_not_zero()
+    {
+        let test_minimum = 0;
+        let test_nominal = 0;
+        let test_maximum = 123456;
+        let output_string =
+            get_bitrate_type_from_bitrate_values(test_minimum, test_nominal, test_maximum);
+        assert_eq!(
+            output_string,
+            MAX_LIMITED_BIT_RATE_OUTPUT_STRING.to_string()
+        );
+    }
+
+    #[test]
+    fn return_min_limited_bit_rate_output_string_when_max_and_nominal_are_zero_but_min_is_not_zero()
+    {
+        let test_minimum = 123456;
+        let test_nominal = 0;
+        let test_maximum = 0;
+        let output_string =
+            get_bitrate_type_from_bitrate_values(test_minimum, test_nominal, test_maximum);
+        assert_eq!(
+            output_string,
+            MIN_LIMITED_BIT_RATE_OUTPUT_STRING.to_string()
+        );
+    }
+
+    #[test]
+    fn return_unknown_bit_rate_output_string_when_max_and_nominal_bitrates_are_set_and_min_is_zero()
+    {
+        let test_minimum = 0;
+        let test_nominal = 123456;
+        let test_maximum = 123456;
+        let output_string =
+            get_bitrate_type_from_bitrate_values(test_minimum, test_nominal, test_maximum);
+        assert_eq!(output_string, UNKNOWN_BIT_RATE_OUTPUT_STRING.to_string());
+    }
+
+    #[test]
+    fn return_unknown_bit_rate_output_string_when_min_and_nominal_bitrates_are_set_and_max_is_zero()
+    {
+        let test_minimum = 123456;
+        let test_nominal = 123456;
+        let test_maximum = 0;
+        let output_string =
+            get_bitrate_type_from_bitrate_values(test_minimum, test_nominal, test_maximum);
+        assert_eq!(output_string, UNKNOWN_BIT_RATE_OUTPUT_STRING.to_string());
+    }
+}

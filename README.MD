@@ -1,9 +1,11 @@
 # CHUNKDUMP
 
-**Status: v0.5.2 - _Stable but currently only tested on macOS with Apple Silicon._**
+**Status: v0.6.0 - _Stable but currently only tested on macOS with Apple Silicon._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in RIFF
-Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), and both RIFF RMID (.rmi) and standard SMF (.mid) MIDI files.
+Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), Ogg Vorbis, and both RIFF RMID (.rmi) and standard SMF (.mid) MIDI files.
+
+## Usage
 
 To use just build as per Rust usual.
 > cargo build -r
@@ -12,21 +14,40 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav, .aif, .flac, .mid or .rmid file with
+Then point it at your .wav, .aif, .flac, .ogg. .mid or .rmid file with
 > chunkdump /path/to/file
 
-#### Usage
+or more fully
 
-> chunkdump [-v] [-o <output-file>] <file>
+> chunkdump [-hmv] [-o <output-file>] <file>
 
 #### Flags:
 
+> -h - Display usage information
 > -v - Print the version  
 > -o /path/to/output/file - A file path to output the data to rather than stdout  
-> -h - Display usage information
+> -m - Only output mandatory chunks for each file type
 
+## File Type Support Details TOC
 
-&nbsp;
+- Flac
+    - [Current List of Supported FLAC Blocks](#current-list-of-supported-flac-blocks)
+    - [Special Skipped FLAC Blocks](#special-skipped-flac-blocks)
+- Wave
+    - [Current List of Supported Wave Chunks](#current-list-of-supported-wave-chunks)
+    - [Special Skipped Wave Chunks](#special-skipped-wave-chunks)
+- AIFF/AIFF-C
+    - [Current List of Supported AIFF - AIFF C Chunks](#current-list-of-supported-aiff-and-aiff-c-chunks)
+    - [Special Skipped AIFF - AIFF C Chunks](#special-skipped-aiff-and-aiff-c-chunks)
+- Wave and AIFF Unsupported Chunks
+    - [For Unsupported Wave and AIFF Chunks](#for-unsupported-wave-and-aiff-chunks)
+- Ogg Vorbis
+    - [Current List of Supported Ogg Vorbis Headers](#current-list-of-supported-ogg-vorbis-headers)
+    - [Special Skipped Ogg Vorbis Headers](#special-skipped-ogg-vorbis-headers)
+- MIDI (SMF & RMID)
+    - [Current List of Supported MIDI File Metadata](#current-list-of-supported-midi-file-metadata)
+
+## File Type Chunk Details
 
 ### Current List of Supported FLAC Blocks
 
@@ -49,9 +70,9 @@ Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 - **Stream Info**
     - A mandatory Flac file block specifying the format of the data
 - **Vorbis Comments**
-    - An optional block storing key value pair metadata similar to Vorbis codex metadata hence the name.
+    - An optional block storing key value pair metadata similar to Vorbis User Comment metadata hence the name.
 
-### Special Skipped FLAC Blocks:
+### Special Skipped FLAC Blocks
 
 - **Audio Frames**: This is the audio portion which is just skipped. See your media player of choice to read that block.
 
@@ -104,7 +125,7 @@ Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 - **umid**
     - A basic UMID filed added by Pro Tools
 
-### Special Skipped Wave Chunks:
+### Special Skipped Wave Chunks
 
 - **data**: This is the audio portion which is just skipped. See your media player of choice to read that chunk.
 - **DISP**: This is a Windows Clipboard chunk and isn't useful here so it is skipped
@@ -113,7 +134,7 @@ Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 - **DGDA, minf, elm1, regn**: Proprietary Pro Tools chunks that don't seem to have documentation or obvious formats.
   DGDA might eventually be reverse engineerable though we shall see what happens.
 
-### Current List of Supported AIFF/AIFF-C Chunks
+### Current List of Supported AIFF and AIFF C Chunks
 
 - **ANNO**
     - A simple text chunk storing a free form text comment or annotation about the recorded sound.
@@ -147,7 +168,7 @@ Then point it at your .wav, .aif, .flac, .mid or .rmid file with
 - **NAME**
     - A simple text chunk storing the name of the recorded sound.
 
-### Special Skipped AIFF/AIFF-C Chunks:
+### Special Skipped AIFF and AIFF C Chunks
 
 - **SSND**: This is the audio portion which is just skipped. See your media player of choice to read that chunk.
 - **LGWV**: A Logic Pro proprietary chunk. This is unsupported in chunkdump as I can't find any specs online.
@@ -166,6 +187,26 @@ For now they will show up in "Extra Chunks" until I actually have something to w
 - **Audio Recording Chunk - AESD**
 - **Instrument Chunk - INST**
 - **MIDI Data Chunk - MIDI**
+
+### Current List of Supported Ogg Vorbis Headers
+
+- **Identifications**
+    - This describes the basic format data for the file. Like the "fmt " chunk in .wav files.
+- **Comment**
+    - A header storing an single Vendor Comment text string and a list of options key value metadata pairs about the
+      file similar to FLAC's Vorbis Comment.
+
+### Special Skipped Ogg Vorbis Headers
+
+- **OggS**: This is the header to mark this as an Ogg container. It contains no metadata and is skipped.
+- **vorbis**: The "Common" Header. This is just a header in each OggS container chunk that specifies that this is a
+  Vorbis header.
+  There is no metadata in it so it is skipped.
+- **Setup**: While it is its own header it is largely just some variable inputs for the math used to read the audio
+  section and doesn't provide
+  any useful metadata so it is skipped.
+- **Audio Packets**: This is the audio portion which is just skipped. See your media player of choice to read that
+  data.
 
 ### Current List of Supported MIDI File Metadata
 
@@ -222,7 +263,7 @@ All of which will be clearly stated in the header info.
     - The idea was to provide instructions for hardware sequencers. Perhaps to save its internal state in some way.
     - The data will be a string of raw hex bytes as there is no way to know what it should be. The format is:
 
-> manufacturer: data bytes
+  > manufacturer: data bytes
 
 If a meta event that isn't supported does show up chunkdump will note that and display the byte representing that event
 id
