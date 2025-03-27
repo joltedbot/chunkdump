@@ -15,19 +15,21 @@ const VORBIS_COMMON_HEADER_LENGTH_IN_BYTES: usize = 7;
 const FRAMING_FLAG_LENGTH_IN_BYTES: usize = 1;
 const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/ogg.tmpl");
 const HEADER_TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/ogg_headers.tmpl");
-
 const FIXED_BIT_RATE_OUTPUT_STRING: &str = "Fixed";
 const VBR_ABR_BIT_RATE_OUTPUT_STRING: &str = "VBR or ABR";
 const MAX_LIMITED_BIT_RATE_OUTPUT_STRING: &str = "Maximum Limited";
 const MIN_LIMITED_BIT_RATE_OUTPUT_STRING: &str = "Minimum Limited";
 const UNKNOWN_BIT_RATE_OUTPUT_STRING: &str = "Unknown";
+const BAD_USER_COMMENT_KEY: &str = "XXXX";
+const BAD_USER_COMMENT_VALUE: &str =
+    "[Corrupt or Non-Standard Format User Comment. Halting processing comments.]";
 
 pub fn get_metadata_from_file(ogg_file_path: &str) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut ogg_file = File::open(ogg_file_path)?;
     let file_metadata = get_file_metadata(ogg_file_path, &ogg_file, TEMPLATE_CONTENT)?;
     let vorbis_metadata = get_metadata_from_headers(&mut ogg_file)?;
-
     let chunks = vec![file_metadata, vorbis_metadata];
+
     Ok(chunks)
 }
 
@@ -46,7 +48,6 @@ fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn
         get_bitrate_type_from_bitrate_values(bitrate_minimum, bitrate_nominal, bitrate_maximum);
 
     skip_over_bytes_in_file(ogg_file, FRAMING_FLAG_LENGTH_IN_BYTES)?;
-
     skip_over_ogg_packet_header_in_file(ogg_file)?;
     skip_over_vorbis_common_header_in_file(ogg_file)?;
 
@@ -54,12 +55,16 @@ fn get_metadata_from_headers(ogg_file: &mut File) -> Result<OutputEntry, Box<dyn
     let vendor_comment = get_string_from_file(ogg_file, vendor_comment_length_in_bytes as usize)?;
 
     let number_of_user_comments = get_4_byte_field_from_file(ogg_file)?;
-
     let mut user_comments: Vec<UserComment> = vec![];
+
     for _ in 0..number_of_user_comments {
         match get_user_comment_from_file(ogg_file) {
             Ok(comment) => user_comments.push(comment),
-            Err(_) => break,
+            Err(_) => user_comments.push(UserComment {
+                key: BAD_USER_COMMENT_KEY.to_string(),
+                spacer: " ".to_string(),
+                value: BAD_USER_COMMENT_VALUE.to_string(),
+            }),
         }
     }
 
@@ -105,6 +110,7 @@ fn get_4_byte_field_from_file(file: &mut File) -> Result<u32, Box<dyn Error>> {
     let size_bytes = read_bytes_from_file(file, 4)?;
     let mut byte_array: [u8; 4] = Default::default();
     byte_array.copy_from_slice(size_bytes.as_slice());
+
     Ok(u32::from_le_bytes(byte_array))
 }
 
@@ -113,6 +119,7 @@ fn get_string_from_file(
     string_length_in_bytes: usize,
 ) -> Result<String, Box<dyn Error>> {
     let read_bytes = read_bytes_from_file(file, string_length_in_bytes)?;
+
     Ok(String::from_utf8(read_bytes)?)
 }
 
@@ -155,3 +162,6 @@ fn skip_over_vorbis_common_header_in_file(ogg_file: &mut File) -> Result<(), Box
     skip_over_bytes_in_file(ogg_file, VORBIS_COMMON_HEADER_LENGTH_IN_BYTES)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {}

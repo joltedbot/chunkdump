@@ -10,7 +10,10 @@ Decode Blocksize 0:  {{ blocksize_0 }}
 Decode Blocksize 1:  {{ blocksize_1 }}
 Vendor Comment:      {{ vendor_comment }}
 
+{% if user_comments %}
 User Comments:
 --------------
+{%- endif %}
 {%- for comments in user_comments %}
 {{ comments.key }}:    {{ comments.spacer }}{{ comments.value }}{% endfor %}
+
