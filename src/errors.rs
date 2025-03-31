@@ -44,6 +44,21 @@ pub enum LocalError {
 
     #[error("Invalid Vorbis User Comment. No = character found.")]
     InvalidVorbisComment,
+
+    #[error("Value is not a valid sync safe integer. At least one byte exceeds the max sync safe byte size {0}.")]
+    MP3SyncSafeIntegerOverflow(u8),
+
+    #[error("{0} is not a valid MP3 header sample rate index value.")]
+    MP3SampleRateIndexOverflow(u8),
+
+    #[error("{0} is not a valid MP3 header version index value.")]
+    MP3VersionIndexOverflow(u8),
+
+    #[error("{0} is not a valid MP3 header layer index value.")]
+    MP3LayerIndexOverflow(u8),
+
+    #[error("{0} is not a valid MP3 header bitrate index value.")]
+    MP3BitrateIndexOverflow(u8),
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

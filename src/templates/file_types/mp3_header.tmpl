@@ -1,0 +1,17 @@
+---------------
+Header Details:
+---------------
+Version:            {{ version }},
+Layer Description:  {{ layer }}
+CRC Protected:      {{ protected }}
+Bitrate:            {{ bitrate }} kbps
+Sample Rate:        {{ sample_rate }} kHz
+Private Bit Set:    {{ private_bit }}
+Is Copyrighted:     {{ copyright }}
+Is Original Media:  {{ original }}
+Emphasis:           {{ emphasis }}
+Channel Mode:       {{ channel_mode }}
+{% if joint_stereo %}Joint Stereo Bands: {{ joint_stereo }}{% endif %}
+{%- if intensity_stereo %}Intensity Stereo:   {{ intensity_stereo }}{% endif %}
+{% if mid_side_stereo %}Mid/Side Stereo:    {{ mid_side_stereo }}{% endif %}
+

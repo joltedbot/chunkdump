@@ -8,11 +8,11 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/file_types/flac.tmpl")
 
 pub fn get_metadata_from_file(
     file_path: &str,
-    mandtory_sections_only: bool,
+    mandatory_sections_only: bool,
 ) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut flac_file = File::open(file_path)?;
     let file_metadata = get_file_metadata(file_path, &flac_file, TEMPLATE_CONTENT)?;
-    let block_metadata = get_metadata_from_blocks(&mut flac_file, mandtory_sections_only)?;
+    let block_metadata = get_metadata_from_blocks(&mut flac_file, mandatory_sections_only)?;
 
     let mut output = vec![file_metadata];
     output.extend(block_metadata);

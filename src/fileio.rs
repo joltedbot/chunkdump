@@ -1,7 +1,7 @@
 use crate::byte_arrays::Endian;
 use crate::chunks::{CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
 use crate::errors::LocalError;
-use crate::file_types::FileType;
+use crate::file_types::{FileType, Mp3SubType};
 use crate::formating::{
     add_one_if_byte_size_is_odd, canonicalize_file_path, format_file_size_as_string,
     get_file_name_from_file_path,
@@ -13,13 +13,15 @@ use std::fs::File;
 use std::io::{Read, Seek};
 use upon::Value;
 
-const AIFF_FILE_CHUNKID: &str = "FORM";
-const FLAC_FILE_CHUNKID: &str = "fLaC";
-const RIFF_FILE_CHUNKID: &str = "RIFF";
-const MIDI_FILE_CHUNKID: &str = "MThd";
-const WAVE_FILE_TYPE_ID: &str = "WAVE";
-const RMID_FILE_TYPE_ID: &str = "RMID";
-const OGG_FILE_TYPE_ID: &str = "OggS";
+const AIFF_FILE_CHUNKID: &[u8] = "FORM".as_bytes();
+const FLAC_FILE_CHUNKID: &[u8] = "fLaC".as_bytes();
+const RIFF_FILE_CHUNKID: &[u8] = "RIFF".as_bytes();
+const MIDI_FILE_CHUNKID: &[u8] = "MThd".as_bytes();
+const WAVE_FILE_TYPE_ID: &[u8] = "WAVE".as_bytes();
+const RMID_FILE_TYPE_ID: &[u8] = "RMID".as_bytes();
+const OGG_FILE_TYPE_ID: &[u8] = "OggS".as_bytes();
+const MP3_ID3_FILE_TYPE_ID: &[u8] = "ID3".as_bytes();
+const MP3_NON_ID3_FILE_TYPE_ID: &[u8] = &[0xFF, 0xFB];
 
 #[derive(Debug, PartialEq)]
 enum RiffDataType {
@@ -59,9 +61,9 @@ pub fn read_byte_from_file(file: &mut File) -> Result<u8, Box<dyn Error>> {
 pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn Error>> {
     let mut input_file = File::open(input_file_path)?;
     let file_id_bytes = read_bytes_from_file(&mut input_file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
-    let file_id = String::from_utf8(file_id_bytes)?;
+    let file_id = &file_id_bytes[0..CHUNK_ID_FIELD_LENGTH_IN_BYTES];
 
-    let file_type = match file_id.as_str() {
+    let file_type = match file_id {
         AIFF_FILE_CHUNKID => FileType::Aiff,
         FLAC_FILE_CHUNKID => FileType::Flac,
         RIFF_FILE_CHUNKID => match get_riff_data_type_from_file(&mut input_file)? {
@@ -70,7 +72,15 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
         },
         MIDI_FILE_CHUNKID => FileType::Smf,
         OGG_FILE_TYPE_ID => FileType::Ogg,
-        _ => FileType::Unsupported(file_id),
+        unknown => {
+            if unknown.starts_with(MP3_ID3_FILE_TYPE_ID) {
+                FileType::Mp3(Mp3SubType::ID3)
+            } else if unknown.starts_with(MP3_NON_ID3_FILE_TYPE_ID) {
+                FileType::Mp3(Mp3SubType::NonId3)
+            } else {
+                FileType::Unsupported(String::from_utf8_lossy(file_id).to_string())
+            }
+        }
     };
 
     Ok(file_type)
@@ -79,9 +89,10 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
 fn get_riff_data_type_from_file(wave_file: &mut File) -> Result<RiffDataType, Box<dyn Error>> {
     skip_over_bytes_in_file(wave_file, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
 
-    let riff_id_bytes = read_chunk_id_from_file(wave_file)?;
+    let riff_id_bytes = read_bytes_from_file(wave_file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
+    let riff_id = &riff_id_bytes[0..CHUNK_ID_FIELD_LENGTH_IN_BYTES];
 
-    match riff_id_bytes.as_str() {
+    match riff_id {
         WAVE_FILE_TYPE_ID => Ok(RiffDataType::Wave),
         RMID_FILE_TYPE_ID => Ok(RiffDataType::Rmid),
         _ => {

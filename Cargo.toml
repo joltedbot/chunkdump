@@ -1,9 +1,9 @@
 [package]
 name = "chunkdump"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Dave White"]
-description = "Exports the metadata from Riff Wave, RIFF RMID, AIFF/AIFF-C, Flac, Ogg Vorbis, and SMF MIDI files including non-standard chunks"
+description = "Exports the metadata from Riff Wave, RIFF RMID, AIFF/AIFF-C, Flac, Ogg Vorbis, MP3, and SMF MIDI files including non-standard chunks"
 license = "Apache-2.0"
 
 [profile.release]
