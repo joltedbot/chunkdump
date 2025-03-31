@@ -5,6 +5,7 @@ use std::error::Error;
 pub mod aiff;
 pub mod flac;
 pub mod midi;
+pub mod mp3;
 pub mod ogg;
 pub mod rmid;
 pub mod smf;
@@ -18,7 +19,14 @@ pub enum FileType {
     Smf,
     Rmid,
     Ogg,
+    Mp3(Mp3SubType),
     Unsupported(String),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Mp3SubType {
+    ID3,
+    NonId3,
 }
 
 pub fn get_file_metadata(
@@ -33,6 +41,9 @@ pub fn get_file_metadata(
         FileType::Smf => smf::get_metadata_from_file(input_file_path, mandatory_sections_only)?,
         FileType::Rmid => rmid::get_metadata_from_file(input_file_path, mandatory_sections_only)?,
         FileType::Ogg => ogg::get_metadata_from_file(input_file_path)?,
+        FileType::Mp3(subtype) => {
+            mp3::get_metadata_from_file(input_file_path, subtype, mandatory_sections_only)?
+        }
         FileType::Unsupported(file_id) => {
             return Err(Box::new(LocalError::UnsupportedFileType(file_id)))
         }

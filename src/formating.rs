@@ -256,45 +256,45 @@ mod tests {
 
     #[test]
     fn correctly_set_tag_spacers() {
-        let mut test_tags: Vec<crate::formating::KeyValuePair> = vec![
-            crate::formating::KeyValuePair {
+        let mut test_tags: Vec<KeyValuePair> = vec![
+            KeyValuePair {
                 key: "k".to_string(),
                 spacer: "".to_string(),
                 value: "none".to_string(),
             },
-            crate::formating::KeyValuePair {
+            KeyValuePair {
                 key: "ke".to_string(),
                 spacer: "".to_string(),
                 value: "none".to_string(),
             },
-            crate::formating::KeyValuePair {
+            KeyValuePair {
                 key: "key".to_string(),
                 spacer: "".to_string(),
                 value: "none".to_string(),
             },
-            crate::formating::KeyValuePair {
+            KeyValuePair {
                 key: "keyvaluepair".to_string(),
                 spacer: "".to_string(),
                 value: "none".to_string(),
             },
         ];
-        let correct_tags: Vec<crate::formating::KeyValuePair> = vec![
-            crate::formating::KeyValuePair {
+        let correct_tags: Vec<KeyValuePair> = vec![
+            KeyValuePair {
                 key: "k".to_string(),
                 spacer: "           ".to_string(),
                 value: "none".to_string(),
             },
-            crate::formating::KeyValuePair {
+            KeyValuePair {
                 key: "ke".to_string(),
                 spacer: "          ".to_string(),
                 value: "none".to_string(),
             },
-            crate::formating::KeyValuePair {
+            KeyValuePair {
                 key: "key".to_string(),
                 spacer: "         ".to_string(),
                 value: "none".to_string(),
             },
-            crate::formating::KeyValuePair {
+            KeyValuePair {
                 key: "keyvaluepair".to_string(),
                 spacer: "".to_string(),
                 value: "none".to_string(),

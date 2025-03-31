@@ -5,6 +5,7 @@ use crate::byte_arrays::{
 };
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
+use extended::Extended;
 use std::error::Error;
 use upon::Value;
 
@@ -15,7 +16,8 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let number_of_channels = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
     let sample_frames = take_first_four_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
     let sample_size = take_first_two_bytes_as_signed_integer(&mut chunk_data, Endian::Big)?;
-    let sample_rate = take_first_ten_bytes_as_an_apple_extended_integer(&mut chunk_data)?;
+    let sample_rate_extended = take_first_ten_bytes_as_an_apple_extended_integer(&mut chunk_data)?;
+    let sample_rate = get_sample_rate_from_apple_extended(sample_rate_extended);
 
     let mut compression_type = String::new();
     let mut compression_name = String::new();
@@ -30,8 +32,6 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         compression_name =
             take_first_number_of_bytes_as_string(&mut chunk_data, compression_name_size)?;
     }
-
-    let sample_rate = format!("{:#.1}", sample_rate.to_f64() / 1000.0);
 
     let aiff_output_values: Value = upon::value! {
         number_of_channels: number_of_channels,
@@ -48,4 +48,14 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         section: Section::Mandatory,
         text: formated_output,
     })
+}
+
+fn get_sample_rate_from_apple_extended(sample_rate: Extended) -> String {
+    let sample_rate_in_khz = sample_rate.to_f64() / 1000.0;
+
+    if sample_rate_in_khz == sample_rate_in_khz.floor() {
+        format!("{:#.0}", sample_rate_in_khz)
+    } else {
+        format!("{:#.1}", sample_rate_in_khz)
+    }
 }

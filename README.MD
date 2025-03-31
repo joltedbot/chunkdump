@@ -14,7 +14,7 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav, .aif, .flac, .ogg. .mid or .rmid file with
+Then point it at your .wav, .aif, .flac, .ogg, .mp3, .mid or .rmid file with
 > chunkdump /path/to/file
 
 or more fully
@@ -44,6 +44,8 @@ or more fully
 - Ogg Vorbis
     - [Current List of Supported Ogg Vorbis Headers](#current-list-of-supported-ogg-vorbis-headers)
     - [Special Skipped Ogg Vorbis Headers](#special-skipped-ogg-vorbis-headers)
+- MP3
+  - 
 - MIDI (SMF & RMID)
     - [Current List of Supported MIDI File Metadata](#current-list-of-supported-midi-file-metadata)
 
@@ -206,6 +208,28 @@ For now they will show up in "Extra Chunks" until I actually have something to w
   section and doesn't provide
   any useful metadata so it is skipped.
 - **Audio Packets**: This is the audio portion which is just skipped. See your media player of choice to read that
+  data.
+
+### Current List of Supported MP3 Headers
+
+- **Frame Header**
+    - MP3s are made up of multiple frames and each should have it's own frame header with all the information about
+      data.
+      While this could change in each frame, outside of variable bitrate schemes it generally shouldn't. As is ofter
+      done
+      I just read the first header to get the information. This should suffice but know that VBR bitrates might change
+      per frame.
+- **id3**
+    - ID3 format metadata tags. MP3 doesn't really have its own metadata for things like artist and title so while ID3
+      is
+      optional and not expressly part of the MP3 standard, it does in practice play the part of the MP3 file's metadata
+      chunks.
+
+### Special Skipped Ogg Vorbis Headers
+
+- **Additional Frame Headers**: As mentioned above I do not check each frame's frame header to look for variable
+  bitrates.
+- **Audio Frames**: This is the audio portion which is just skipped. See your media player of choice to read that
   data.
 
 ### Current List of Supported MIDI File Metadata
