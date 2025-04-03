@@ -22,6 +22,7 @@ const RMID_FILE_TYPE_ID: &[u8] = "RMID".as_bytes();
 const OGG_FILE_TYPE_ID: &[u8] = "OggS".as_bytes();
 const MP3_ID3_FILE_TYPE_ID: &[u8] = "ID3".as_bytes();
 const MP3_NON_ID3_FILE_TYPE_ID: &[u8] = &[0xFF, 0xFB];
+const M4A_FILE_TYPE_ID: &[u8] = "ftyp".as_bytes();
 
 #[derive(Debug, PartialEq)]
 enum RiffDataType {
@@ -78,7 +79,16 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
             } else if unknown.starts_with(MP3_NON_ID3_FILE_TYPE_ID) {
                 FileType::Mp3(Mp3SubType::NonId3)
             } else {
-                FileType::Unsupported(String::from_utf8_lossy(file_id).to_string())
+                let additional_file_id_bytes =
+                    read_bytes_from_file(&mut input_file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
+                let additional_file_id =
+                    &additional_file_id_bytes[0..CHUNK_ID_FIELD_LENGTH_IN_BYTES];
+
+                if additional_file_id == M4A_FILE_TYPE_ID {
+                    FileType::M4a
+                } else {
+                    FileType::Unsupported(String::from_utf8_lossy(file_id).to_string())
+                }
             }
         }
     };
