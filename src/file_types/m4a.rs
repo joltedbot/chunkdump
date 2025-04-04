@@ -47,7 +47,7 @@ fn get_mandatory_m4a_chunk_metdata(m4a_tags: &mut Tag) -> Result<OutputEntry, Bo
     let max_bitrate = m4a_tags.max_bitrate().unwrap_or_default() / 1000;
 
     let raw_duration = m4a_tags.duration().as_secs();
-    let duration = format!("{}:{}", raw_duration / 60, raw_duration % 60);
+    let duration = format!("{}:{:#02?}", raw_duration / 60, raw_duration % 60);
 
     let mut sample_rate = String::new();
     if let Some(rate) = m4a_tags.sample_rate() {
