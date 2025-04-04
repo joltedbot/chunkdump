@@ -1,9 +1,10 @@
 # CHUNKDUMP
 
-**Status: v0.6.0 - _Stable but currently only tested on macOS with Apple Silicon._**
+**Status: v0.8.0 - _Stable but currently only tested on macOS with Apple Silicon._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in RIFF
-Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), Ogg Vorbis, and both RIFF RMID (.rmi) and standard SMF (.mid) MIDI files.
+Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), Ogg Vorbis (.ogg), MPEG-4 Audio (.m4a), and both RIFF RMID (.rmi) and
+standard SMF (.mid) MIDI files.
 
 ## Usage
 
@@ -14,7 +15,7 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav, .aif, .flac, .ogg, .mp3, .mid or .rmid file with
+Then point it at your .wav, .aif, .flac, .ogg, .mp3, .m4a, .mid or .rmid file with
 > chunkdump /path/to/file
 
 or more fully
@@ -45,7 +46,11 @@ or more fully
     - [Current List of Supported Ogg Vorbis Headers](#current-list-of-supported-ogg-vorbis-headers)
     - [Special Skipped Ogg Vorbis Headers](#special-skipped-ogg-vorbis-headers)
 - MP3
-  - 
+    - [Current List of Supported MP3 Headers](#current-list-of-supported-mp3-headers)
+    - [Special Skipped MP3 Headers](#special-skipped-mp3-headers)
+- M4A
+    - [Current List of Supported M4A Chunks](#current-list-of-supported-m4a-chunks)
+    - [Special Skipped M4A Chunks](#special-skipped-m4a-chunks)
 - MIDI (SMF & RMID)
     - [Current List of Supported MIDI File Metadata](#current-list-of-supported-midi-file-metadata)
 
@@ -225,11 +230,25 @@ For now they will show up in "Extra Chunks" until I actually have something to w
       optional and not expressly part of the MP3 standard, it does in practice play the part of the MP3 file's metadata
       chunks.
 
-### Special Skipped Ogg Vorbis Headers
+### Special Skipped MP3 Headers
 
 - **Additional Frame Headers**: As mentioned above I do not check each frame's frame header to look for variable
   bitrates.
 - **Audio Frames**: This is the audio portion which is just skipped. See your media player of choice to read that
+  data.
+
+### Current List of Supported M4A Chunks
+
+- **Audio Info**
+    - There are some general audio format chunks much like fmt or comm in the wave and aiff files respectively.
+      In this case Channel Count, Duration, Sample Rate, and Average and Max Bitrates.
+- **User Data**
+    - Much like Ogg Vorbis or ID3 tags these user data chunk tags are key value pairs with information about the
+      recording like track tile, artist, etc. There are also some off iTunes specific longer tags.
+
+### Special Skipped M4A Chunks
+
+- **Audio Chunks**: This is the audio portion which is just skipped. See your media player of choice to read that
   data.
 
 ### Current List of Supported MIDI File Metadata
