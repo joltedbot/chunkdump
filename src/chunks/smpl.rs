@@ -63,7 +63,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         })
     }
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         manufacturer:  &manufacturer,
         product:  product,
         sample_period:  sample_period,
@@ -76,7 +76,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         sample_loops: &sample_loops,
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Optional,

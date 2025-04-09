@@ -1,6 +1,6 @@
 # CHUNKDUMP
 
-**Status: v0.8.1 - _Stable but currently only tested on macOS with Apple Silicon._**
+**Status: Stable and tested on macOS with Apple Silicon, AMD64 Linux, and AMD64 Windows 11._**
 
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in RIFF
 Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), Ogg Vorbis (.ogg), MPEG-4 Audio (.m4a), and both RIFF RMID (.rmi) and

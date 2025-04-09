@@ -14,7 +14,7 @@ pub struct Args {
 }
 
 #[derive(FromArgs)]
-/// Chunkdump - Extract Metadata From RIFF Wave, AIFF, Flac, Ogg Vorbis, MP3, SMF MIDI, and RIFF RMID Files
+/// Chunkdump - Extract Metadata From RIFF Wave, AIFF, Flac, Ogg Vorbis, MP3, M4A, CAF, SMF MIDI, and RIFF RMID Files
 #[argh(help_triggers("-h", "--help", "help"))]
 pub struct CliArguments {
     /// print the version

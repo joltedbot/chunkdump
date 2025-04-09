@@ -12,11 +12,11 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
     let timestamp = format_mac_hfs_timestamp_as_date_time_string(mac_hfs_format_timestamp)?;
 
-    let aiff_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         timestamp: timestamp,
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, aiff_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Optional,

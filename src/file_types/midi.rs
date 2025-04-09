@@ -147,7 +147,9 @@ pub fn get_header_metadata_from_midi_data(
     })
 }
 
-fn get_header_chunk_from_header_metadata(header: &Header) -> Result<OutputEntry, Box<dyn Error>> {
+pub fn get_header_chunk_from_header_metadata(
+    header: &Header,
+) -> Result<OutputEntry, Box<dyn Error>> {
     let midi_output_values: Value = upon::value! {
         format: &header.format,
         number_of_tracks: header.number_of_tracks,
@@ -162,7 +164,7 @@ fn get_header_chunk_from_header_metadata(header: &Header) -> Result<OutputEntry,
     })
 }
 
-fn get_meta_events_from_track_data(
+pub fn get_meta_events_from_track_data(
     midi_data: &mut Vec<u8>,
     number_of_tracks: u16,
 ) -> Result<OutputEntry, Box<dyn Error>> {
@@ -188,7 +190,7 @@ fn get_meta_events_from_track_data(
     Ok(output)
 }
 
-fn get_track_data_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>> {
+pub fn get_track_data_from_midi_data(midi_data: &mut Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>> {
     let _ = take_first_number_of_bytes(midi_data, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
     let track_chunk_size = take_first_four_bytes_as_unsigned_integer(midi_data, Endian::Big)?;
     let track_track_data = take_first_number_of_bytes(midi_data, track_chunk_size as usize)?;

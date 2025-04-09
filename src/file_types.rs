@@ -3,8 +3,9 @@ use crate::output::OutputEntry;
 use std::error::Error;
 
 pub mod aiff;
+pub mod caf;
 pub mod flac;
-mod m4a;
+pub mod m4a;
 pub mod midi;
 pub mod mp3;
 pub mod ogg;
@@ -22,6 +23,7 @@ pub enum FileType {
     Ogg,
     Mp3(Mp3SubType),
     M4a,
+    Caf,
     Unsupported(String),
 }
 
@@ -47,6 +49,7 @@ pub fn get_file_metadata(
             mp3::get_metadata_from_file(input_file_path, subtype, mandatory_sections_only)?
         }
         FileType::M4a => m4a::get_metadata_from_file(input_file_path, mandatory_sections_only)?,
+        FileType::Caf => caf::get_metadata_from_file(input_file_path, mandatory_sections_only)?,
         FileType::Unsupported(file_id) => {
             return Err(Box::new(LocalError::UnsupportedFileType(file_id)))
         }

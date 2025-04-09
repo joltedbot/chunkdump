@@ -9,7 +9,7 @@ pub enum LocalError {
     #[error("Could not extract the filename from the supplied path")]
     InvalidFileName,
 
-    #[error("Unsupported file type: '{0}'.  Only Wave, AIFF, Flac, and RMID or SWF MIDI files are supported")]
+    #[error("Unsupported file type: '{0}'.  Only Wave, AIFF, Flac, Ogg Vorbis, MP3, M4a, Caf and RMID or SWF MIDI files are supported")]
     UnsupportedFileType(String),
 
     #[error("Incorrect RIFF file type, file is not a valid RIFF WAVE or RMID file")]

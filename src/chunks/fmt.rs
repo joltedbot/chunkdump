@@ -79,7 +79,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         subformat_guid.copy_from_slice(chunk_data.as_slice());
     }
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         format_code: &format_code,
         number_of_channels: &number_of_channels,
         samples_per_second: &(samples_per_second as f64 / 1000.0),
@@ -91,7 +91,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         subformat_guid: format_guid(subformat_guid)
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Mandatory,

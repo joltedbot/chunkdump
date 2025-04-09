@@ -71,7 +71,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         take_first_number_of_bytes_as_string(&mut chunk_data, RESERVED_FIELD_LENGTH_IN_BYTES)?;
     let coding_history = get_coding_history_from_bytes(chunk_data)?;
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         description: description,
         originator: originator,
         originator_reference: originator_reference,
@@ -96,7 +96,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         user: format_bytes_as_string_of_bytes(&umid.user),
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Optional,

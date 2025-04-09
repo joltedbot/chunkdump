@@ -23,6 +23,7 @@ const OGG_FILE_TYPE_ID: &[u8] = "OggS".as_bytes();
 const MP3_ID3_FILE_TYPE_ID: &[u8] = "ID3".as_bytes();
 const MP3_NON_ID3_FILE_TYPE_ID: &[u8] = &[0xFF, 0xFB];
 const M4A_FILE_TYPE_ID: &[u8] = "ftyp".as_bytes();
+const CAF_FILE_TYPE_ID: &[u8] = "caff".as_bytes();
 
 #[derive(Debug, PartialEq)]
 enum RiffDataType {
@@ -73,6 +74,7 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
         },
         MIDI_FILE_CHUNKID => FileType::Smf,
         OGG_FILE_TYPE_ID => FileType::Ogg,
+        CAF_FILE_TYPE_ID => FileType::Caf,
         unknown => {
             if unknown.starts_with(MP3_ID3_FILE_TYPE_ID) {
                 FileType::Mp3(Mp3SubType::ID3)
@@ -124,7 +126,7 @@ pub fn read_chunk_size_from_file(
     file: &mut File,
     endianness: Endian,
 ) -> Result<usize, Box<dyn Error>> {
-    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
+    let chunk_size_bytes = read_bytes_from_file(file, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
     let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
 

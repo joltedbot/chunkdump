@@ -33,7 +33,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
             take_first_number_of_bytes_as_string(&mut chunk_data, compression_name_size)?;
     }
 
-    let aiff_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         number_of_channels: number_of_channels,
         sample_frames: sample_frames,
         sample_size: sample_size,
@@ -42,7 +42,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         compression_type: &compression_type,
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, aiff_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Mandatory,
