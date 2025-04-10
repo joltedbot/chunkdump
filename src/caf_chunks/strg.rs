@@ -56,7 +56,7 @@ fn get_string_ids_from_bytes(
 ) -> Result<Vec<(u32, i64)>, Box<dyn Error>> {
     let mut string_ids: Vec<(u32, i64)> = Vec::new();
 
-    for i in 0..number_of_entries {
+    for _ in 0..number_of_entries {
         let string_id = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
         let string_start_byte_offset =
             take_first_eight_bytes_as_signed_integer(chunk_data, Endian::Big)?;

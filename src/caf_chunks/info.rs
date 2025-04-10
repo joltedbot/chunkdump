@@ -14,6 +14,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let information_entries: Vec<Entry> = get_entries_from_bytes(chunk_data)?;
 
     let output_values: Value = upon::value! {
+            number_of_entries: number_of_entries,
             information_entries: information_entries,
     };
 

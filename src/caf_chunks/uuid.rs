@@ -9,7 +9,6 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/caf_chunks/uuid.tmpl")
 const REMAINING_DATA_MESSAGE: &str =
     "*Note: Additional data exists but is in an unsupported format unique to the application that created the file.";
 const UUID_LENGTH_AS_BYTES: usize = 16;
-const NODE_LENGTH_AS_BYTES: usize = 4;
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let uuid_bytes = take_first_number_of_bytes(&mut chunk_data, 16)?;

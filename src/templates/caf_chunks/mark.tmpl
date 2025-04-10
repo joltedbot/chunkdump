@@ -1,0 +1,14 @@
+
+---------------------------------
+Marker  Chunk Details:
+---------------------------------
+SMPTE Time Type: {{ smpte_time_type }}
+Number of Markers {{ number_of_regions }}
+{% for marker in markers %}
+----------------------------
+Marker ID:       {{ marker.id }}
+Channel:         {{ marker.channel }}
+Marker Type:     {{ marker.marker_type }}
+Frame Position:  {{ frame_position }}
+SMPTE Timestamp: {{ marker.smpte_time }}
+{% endfor %}

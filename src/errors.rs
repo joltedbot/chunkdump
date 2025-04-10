@@ -59,6 +59,9 @@ pub enum LocalError {
 
     #[error("{0} is not a valid MP3 header bitrate index value.")]
     MP3BitrateIndexOverflow(u8),
+
+    #[error("[{0}] is not a valid chunk ID and likely indicates an invalid metadata format in this file. Processing can not continue.")]
+    InvalidChunkIDCanNotContinue(String),
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {

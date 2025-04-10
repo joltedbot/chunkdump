@@ -2,5 +2,6 @@
 ---------------------------------
 Information Layout Chunk Details:
 ---------------------------------
+Number of Information Entries: {{ number_of_entries }}
 {%- for entry in information_entries %}
 {{ entry.key }}: {{ entry.spacer }}{{ entry.value }}{% endfor %}

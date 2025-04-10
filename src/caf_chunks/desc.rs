@@ -12,7 +12,6 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/caf_chunks/desc.tmpl")
 const FORMAT_ID_LENGTH_IN_BYTES: usize = 4;
 const FORMAT_ID_LINEAR_PCM: &str = "lpcm";
 const FORMAT_ID_MPEG_4_AAC: &str = "aac ";
-const FORMAT_LINEAR_PCM: &str = "Linear PCM";
 const FORMAT_FLAG_FLOAT: &str = "Floating Point";
 const FORMAT_FLAG_UNSIGNED_INTEGER: &str = "Unsigned Integer";
 const LITTLE_ENDIAN: &str = "Little Endian";

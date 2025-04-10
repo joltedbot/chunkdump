@@ -119,6 +119,17 @@ fn get_riff_data_type_from_file(wave_file: &mut File) -> Result<RiffDataType, Bo
 
 pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>> {
     let read_bytes = read_bytes_from_file(file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
+
+    if read_bytes.starts_with(&[0]) {
+        let chunk_id: String = read_bytes
+            .iter()
+            .map(|bytes| String::from_utf8_lossy(&[*bytes]).to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        return Err(Box::new(LocalError::InvalidChunkIDCanNotContinue(chunk_id)));
+    }
+
     Ok(String::from_utf8(read_bytes)?)
 }
 

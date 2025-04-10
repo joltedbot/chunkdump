@@ -89,6 +89,8 @@ pub const CHUNKS_NOT_TO_EXTRACT_DATA_FROM: [&str; 10] = [
     ID3_CHUNK_ID,
 ];
 pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
+const ERROR_TO_MATCH_IF_CHUNK_ID_IS_NOT_A_VALID_STRING: &str =
+    "invalid utf-8 sequence of 1 bytes from index 0";
 
 pub fn get_metadata_from_chunks(
     input_file: &mut File,
@@ -102,6 +104,9 @@ pub fn get_metadata_from_chunks(
         let chunk_id: String = match read_chunk_id_from_file(input_file) {
             Ok(chunk_id) => chunk_id.to_lowercase(),
             Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
+                break
+            }
+            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_CHUNK_ID_IS_NOT_A_VALID_STRING => {
                 break
             }
             Err(error) => return Err(error),

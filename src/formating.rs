@@ -135,6 +135,14 @@ pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
     byte_size
 }
 
+pub fn format_bit_as_bool_string(bit: u8) -> String {
+    if bit == 1 {
+        "True".to_string()
+    } else {
+        "False".to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
