@@ -54,7 +54,7 @@ pub const CHUNKS_NOT_TO_EXTRACT_DATA_FROM: [&str; 3] = [
 ];
 pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 const ERROR_TO_MATCH_IF_CHUNK_ID_IS_NOT_A_VALID_STRING: &str =
-    "invalid utf-8 sequence of 1 bytes from index 0";
+    "invalid utf-8 sequence of 1 byte from index 0";
 
 pub fn get_metadata_from_caf_chunks(
     input_file: &mut File,

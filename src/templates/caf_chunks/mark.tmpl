@@ -1,14 +1,14 @@
 
 ---------------------------------
-Marker  Chunk Details:
+Marker Chunk Details:
 ---------------------------------
 SMPTE Time Type: {{ smpte_time_type }}
-Number of Markers {{ number_of_regions }}
+Number of Markers {{ number_of_markers }}
 {% for marker in markers %}
 ----------------------------
 Marker ID:       {{ marker.id }}
 Channel:         {{ marker.channel }}
 Marker Type:     {{ marker.marker_type }}
-Frame Position:  {{ frame_position }}
-SMPTE Timestamp: {{ marker.smpte_time }}
+Frame Position:  {{ marker.frame_position }}
+{% if marker.smpte_time %}SMPTE Timestamp: {{ marker.smpte_time }}{% endif %}
 {% endfor %}

@@ -129,9 +129,9 @@ pub fn get_metadata_from_chunks(
 fn get_chunk_size_from_file(
     input_file: &mut File,
     endianness: &Endian,
-    chunk_id: &String,
+    chunk_id: &str,
 ) -> Result<usize, Box<dyn Error>> {
-    let chunk_size = match chunk_id.as_str() {
+    let chunk_size = match chunk_id {
         ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
         _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
     };
@@ -140,17 +140,15 @@ fn get_chunk_size_from_file(
 
 fn get_chunk_data_bytes_from_file(
     input_file: &mut File,
-    chunk_id: &String,
+    chunk_id: &str,
     chunk_size: usize,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
-    Ok(
-        if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id.as_str()) {
-            skip_over_bytes_in_file(input_file, chunk_size)?;
-            Vec::new()
-        } else {
-            read_bytes_from_file(input_file, chunk_size).unwrap_or_default()
-        },
-    )
+    Ok(if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id) {
+        skip_over_bytes_in_file(input_file, chunk_size)?;
+        Vec::new()
+    } else {
+        read_bytes_from_file(input_file, chunk_size).unwrap_or_default()
+    })
 }
 
 pub fn get_chunk_metadata(

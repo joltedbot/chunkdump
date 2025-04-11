@@ -50,6 +50,7 @@ const CHANNEL_LAYOUT_USE_DESCRIPTIONS_MESSAGE: &str = "Use Audio Channel Descrip
 const CHANNEL_LAYOUT_USE_BITMASK_MESSAGE: &str = "Use Audio Channel Bitmask";
 const CHANNEL_LAYOUT_TAG_NUMBER_OF_LOW_BITS: u32 = 16;
 const CHANNEL_LAYOUT_HIGH_BITS_CHANNEL_ORDER_INDEX_OFFSET: u32 = 100;
+const COORDINATE_NUMBER_OF_COMPONENTS: usize = 3;
 
 #[derive(PartialEq, Debug, Serialize)]
 struct ChannelDescription {
@@ -98,9 +99,9 @@ fn take_channel_descriptions_from_bytes(
 fn get_channel_description(chunk_data: &mut Vec<u8>) -> Result<ChannelDescription, Box<dyn Error>> {
     let channel_label = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
     let channel_flags = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
-    let mut coordinates: [f32; 3] = Default::default();
+    let mut coordinates: [f32; COORDINATE_NUMBER_OF_COMPONENTS] = Default::default();
 
-    for i in 0..3 {
+    for i in 0..COORDINATE_NUMBER_OF_COMPONENTS {
         coordinates[i] = take_first_four_bytes_as_float(chunk_data, Endian::Big)?;
     }
 

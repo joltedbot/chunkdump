@@ -1,6 +1,6 @@
 use crate::byte_arrays::{
-    take_first_byte, take_first_eight_bytes_as_float, take_first_four_bytes_as_unsigned_integer,
-    take_first_number_of_bytes_as_string, Endian,
+    take_first_byte_as_signed_integer, take_first_eight_bytes_as_float,
+    take_first_four_bytes_as_unsigned_integer, take_first_number_of_bytes_as_string, Endian,
 };
 use crate::caf_chunks::regn::get_time_type_from_smpte_type_number;
 use crate::output::{OutputEntry, Section};
@@ -37,10 +37,10 @@ const TEMPLATE_CONTENT: &str = include_str!("../templates/caf_chunks/mark.tmpl")
 
 #[derive(Default, Debug, Serialize)]
 pub struct CafSmpteTimestamp {
-    hours: u8,
-    minutes: u8,
-    seconds: u8,
-    frames: u32,
+    hours: i8,
+    minutes: i8,
+    seconds: i8,
+    frames: i8,
     sub_frame_sample_offset: u32,
 }
 
@@ -57,7 +57,8 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let smpte_time_type = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
     let number_of_markers =
         take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
-    let markers: Vec<Marker> = get_markers_from_bytes(&mut chunk_data, number_of_markers)?;
+    let markers: Vec<Marker> =
+        get_markers_from_bytes(&mut chunk_data, smpte_time_type, number_of_markers)?;
 
     let output_values: Value = upon::value! {
         smpte_time_type: get_time_type_from_smpte_type_number(smpte_time_type),
@@ -75,18 +76,22 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
 
 pub fn get_markers_from_bytes(
     chunk_data: &mut Vec<u8>,
+    smpte_time_type: u32,
     number_of_markers: u32,
 ) -> Result<Vec<Marker>, Box<dyn Error>> {
     let mut markers: Vec<Marker> = Vec::new();
 
     for _ in 0..number_of_markers {
-        markers.push(get_marker(chunk_data)?);
+        markers.push(get_marker(smpte_time_type, chunk_data)?);
     }
 
     Ok(markers)
 }
 
-pub fn get_marker(chunk_data: &mut Vec<u8>) -> Result<Marker, Box<dyn Error>> {
+pub fn get_marker(
+    smpte_time_type: u32,
+    chunk_data: &mut Vec<u8>,
+) -> Result<Marker, Box<dyn Error>> {
     let marker_types_list: HashMap<&str, &str> = HashMap::from(MARKER_TYPES);
     let marker_type_id =
         take_first_number_of_bytes_as_string(chunk_data, MARKER_TYPE_LENGTH_IN_BYTES)?;
@@ -96,7 +101,11 @@ pub fn get_marker(chunk_data: &mut Vec<u8>) -> Result<Marker, Box<dyn Error>> {
     let channel = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
 
     let marker_type = marker_types_list[marker_type_id.as_str()].to_string();
-    let smpte_time = format_caf_smpte_timestamp(smpte_time_components);
+    let smpte_time = if smpte_time_type == 0 {
+        String::new()
+    } else {
+        format_caf_smpte_timestamp(smpte_time_components)
+    };
 
     Ok(Marker {
         marker_type,
@@ -110,10 +119,10 @@ pub fn get_marker(chunk_data: &mut Vec<u8>) -> Result<Marker, Box<dyn Error>> {
 fn get_smpte_time_from_bytes(
     chunk_data: &mut Vec<u8>,
 ) -> Result<CafSmpteTimestamp, Box<dyn Error>> {
-    let hours = take_first_byte(chunk_data)?;
-    let minutes = take_first_byte(chunk_data)?;
-    let seconds = take_first_byte(chunk_data)?;
-    let frames = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
+    let hours = take_first_byte_as_signed_integer(chunk_data)?;
+    let minutes = take_first_byte_as_signed_integer(chunk_data)?;
+    let seconds = take_first_byte_as_signed_integer(chunk_data)?;
+    let frames = take_first_byte_as_signed_integer(chunk_data)?;
     let sub_frame_sample_offset =
         take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
 

@@ -27,8 +27,11 @@ pub enum LocalError {
     #[error("Could not extract ID3 tags from the file: {0}")]
     InvalidID3TagDataFound(String),
 
-    #[error("Requested number of bytes {0} is greater than the available bytes: {1}")]
+    #[error("Can not take {0} bytes from array of size {1}.")]
     InsufficientBytesToTake(usize, usize),
+
+    #[error("Can not read {0} bytes from the file. File has fewer bytes left that requested.")]
+    InsufficientBytesToRead(usize),
 
     #[error("Output File {0} Already Exists")]
     OutputFileAlreadyExists(String),

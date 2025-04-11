@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn return_correct_format_name_from_unknown_format_id_integer() {
         let test_integer: u16 = 0;
-        let correct_result: String = format!("{} {}", UNKOWN_FORMAT.to_string(), test_integer);
+        let correct_result: String = format!("{} {}", UNKOWN_FORMAT, test_integer);
         let result = get_format_name_from_format_id(test_integer);
         assert_eq!(result, correct_result);
     }

@@ -27,7 +27,10 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
 }
 
 fn get_entries_from_bytes(chunk_data: Vec<u8>) -> Result<Vec<Entry>, Box<dyn Error>> {
-    let keys_and_values: Vec<&[u8]> = chunk_data.split(|byte| *byte == 0x00).collect();
+    let keys_and_values: Vec<&[u8]> = chunk_data
+        .split(|byte| *byte == 0x00)
+        .filter(|value| !value.is_empty())
+        .collect();
     let mut entries: Vec<Entry> = Vec::new();
 
     keys_and_values.chunks(2).for_each(|chunk| {

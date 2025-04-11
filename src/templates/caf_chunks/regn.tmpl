@@ -6,18 +6,18 @@ SMPTE Time Type: {{ smpte_time_type }}
 Number of Regions {{ number_of_regions }}
 {% for region in regions %}
 ---------------------------
-ID:             {{ id }}
-Loop Enabled:   {{ loop_enabled }}
-Play Forward:   {{ play_forward }}
-Play Backward:  {{ play_backward }}
-Number Of Markers:  {{ number_of_markers }}
+ID:             {{ region.id }}
+Loop Enabled:   {{ region.loop_enable }}
+Play Forward:   {{ region.play_forward }}
+Play Backward:  {{ region.play_backward }}
+Number Of Markers:  {{ region.number_of_markers }}
 
-{% for marker in markers %}
+{% for marker in region.markers %}
     ----------------------------
     Marker ID:       {{ marker.id }}
     Channel:         {{ marker.channel }}
     Marker Type:     {{ marker.marker_type }}
-    Frame Position:  {{ frame_position }}
-    SMPTE Timestamp: {{ marker.smpte_time }}
+    Frame Position:  {{ marker.frame_position }}
+{% if marker.smpte_time %}    SMPTE Timestamp: {{ marker.smpte_time }}{% endif %}
 {% endfor %}
 {% endfor %}

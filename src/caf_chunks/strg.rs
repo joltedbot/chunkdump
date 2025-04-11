@@ -34,7 +34,11 @@ fn get_string_entries_from_bytes(
     chunk_data: Vec<u8>,
     string_ids: Vec<(u32, i64)>,
 ) -> Result<Vec<StringEntry>, Box<dyn Error>> {
-    let values: Vec<&[u8]> = chunk_data.split(|byte| *byte == 0x00).collect();
+    let values: Vec<&[u8]> = chunk_data
+        .split(|byte| *byte == 0x00)
+        .filter(|value| !value.is_empty())
+        .collect();
+
     let mut entries: Vec<StringEntry> = Vec::new();
 
     for i in 0..values.len() {

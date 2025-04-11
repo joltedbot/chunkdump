@@ -56,7 +56,7 @@ pub fn read_byte_from_file(file: &mut File) -> Result<u8, Box<dyn Error>> {
 
     let result = read_bytes
         .first()
-        .ok_or(LocalError::InsufficientBytesToTake(1, 0))?;
+        .ok_or(LocalError::InsufficientBytesToRead(1))?;
     Ok(*result)
 }
 

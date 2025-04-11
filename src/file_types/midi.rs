@@ -311,7 +311,7 @@ fn get_meta_event_from_event_data_by_type_byte(
         0x59 => (
             META_EVENT_KEY_SIGNATURE.to_string(),
             get_key_from_number_of_flats(
-                take_first_byte_as_signed_integer(&mut bytes, Endian::Big)?,
+                take_first_byte_as_signed_integer(&mut bytes)?,
                 take_first_byte(&mut bytes)?.is_zero(),
             ),
         ),

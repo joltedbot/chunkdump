@@ -9,7 +9,7 @@ use upon::Value;
 
 const TEMPLATE_CONTENT: &str = include_str!("../templates/caf_chunks/regn.tmpl");
 pub const TIMECODE_TYPE: [&str; 9] = [
-    "No timecode type is assigned. Use this value if you are not specifying a SMPTE time in the marker.",
+    "No timecode type is assigned.",
     "24 video frames per second—standard for 16mm and 35mm film.",
     "25 video frames per second—standard for PAL and SECAM video.",
     "30 video frames per second, with video-frame-number counts adjusted to ensure that the timecode matches elapsed clock time.",
@@ -37,11 +37,12 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let number_of_regions =
         take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
 
-    let regions: Vec<Region> = get_regions_from_bytes(&mut chunk_data, number_of_regions)?;
+    let regions: Vec<Region> =
+        get_regions_from_bytes(&mut chunk_data, smpte_time_type, number_of_regions)?;
 
     let output_values: Value = upon::value! {
         smpte_time_type: get_time_type_from_smpte_type_number(smpte_time_type),
-        number_regions: number_of_regions,
+        number_of_regions: number_of_regions,
         regions: regions,
     };
 
@@ -63,22 +64,24 @@ pub fn get_time_type_from_smpte_type_number(smpte_time_type: u32) -> String {
 
 fn get_regions_from_bytes(
     chunk_data: &mut Vec<u8>,
+    smpte_time_type: u32,
     number_of_regions: u32,
 ) -> Result<Vec<Region>, Box<dyn Error>> {
     let mut regions: Vec<Region> = Vec::new();
 
     for _ in 0..number_of_regions {
-        regions.push(get_region(chunk_data)?);
+        regions.push(get_region(smpte_time_type, chunk_data)?);
     }
 
     Ok(regions)
 }
 
-fn get_region(chunk_data: &mut Vec<u8>) -> Result<Region, Box<dyn Error>> {
+fn get_region(smpte_time_type: u32, chunk_data: &mut Vec<u8>) -> Result<Region, Box<dyn Error>> {
     let id = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
     let flag_bytes = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
     let number_of_markers = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
-    let markers: Vec<Marker> = get_markers_from_bytes(chunk_data, number_of_markers)?;
+    let markers: Vec<Marker> =
+        get_markers_from_bytes(chunk_data, smpte_time_type, number_of_markers)?;
 
     let flags = get_flags_from_flag_bytes(flag_bytes);
 

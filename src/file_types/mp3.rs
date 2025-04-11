@@ -242,13 +242,13 @@ mod tests {
 
     #[test]
     fn return_true_string_when_boolean_flag_bit_is_set() {
-        let result = format_bit_as_bool_string(1 as u8);
+        let result = format_bit_as_bool_string(1);
         assert_eq!(result, "True");
     }
 
     #[test]
     fn return_true_string_when_boolean_flag_bit_is_unset() {
-        let result = format_bit_as_bool_string(0 as u8);
+        let result = format_bit_as_bool_string(0);
         assert_eq!(result, "False");
     }
 
