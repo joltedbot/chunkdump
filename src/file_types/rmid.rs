@@ -1,7 +1,7 @@
 use crate::byte_arrays::Endian;
 use crate::chunks::{
-    get_chunk_metadata, CHUNKS_NOT_TO_EXTRACT_DATA_FROM,
-    ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE, MANDATORY_CHUNKS,
+    get_chunk_metadata, CHUNKS_NOT_TO_EXTRACT_DATA_FROM
+    , MANDATORY_CHUNKS,
 };
 use crate::file_types::midi::get_metadata_from_midi_data;
 use crate::fileio::{
@@ -43,13 +43,11 @@ fn get_metadata_from_rmid_chunks(
     let mut output: Vec<OutputEntry> = vec![];
 
     loop {
-        let chunk_id = match read_chunk_id_from_file(input_file) {
-            Ok(chunk_id) => chunk_id.to_lowercase(),
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
-                break
-            }
-            Err(error) => return Err(error),
-        };
+        let chunk_id: String = read_chunk_id_from_file(input_file)?;
+
+        if chunk_id.is_empty() {
+            break;
+        }
 
         let chunk_size = read_chunk_size_from_file(input_file, Endian::Little)?;
 

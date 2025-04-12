@@ -1,18 +1,15 @@
 mod chan;
 mod desc;
-mod extra;
 mod info;
 mod mark;
 mod midi;
 mod ovvw;
 mod regn;
-mod skipped;
 mod strg;
-mod text;
 mod uuid;
 
 use crate::byte_arrays::Endian;
-use crate::chunks::id3;
+use crate::chunks::{extra, id3, skipped, text};
 use crate::fileio::{
     read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file,
     skip_over_bytes_in_file,
@@ -53,8 +50,6 @@ pub const CHUNKS_NOT_TO_EXTRACT_DATA_FROM: [&str; 3] = [
     ID3_CHUNK_ID,
 ];
 pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
-const ERROR_TO_MATCH_IF_CHUNK_ID_IS_NOT_A_VALID_STRING: &str =
-    "invalid utf-8 sequence of 1 byte from index 0";
 
 pub fn get_metadata_from_caf_chunks(
     input_file: &mut File,
@@ -64,16 +59,11 @@ pub fn get_metadata_from_caf_chunks(
     let mut output: Vec<OutputEntry> = vec![];
 
     loop {
-        let chunk_id: String = match read_chunk_id_from_file(input_file) {
-            Ok(chunk_id) => chunk_id.to_lowercase(),
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
-                break
-            }
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_CHUNK_ID_IS_NOT_A_VALID_STRING => {
-                break
-            }
-            Err(error) => return Err(error),
-        };
+        let chunk_id: String = read_chunk_id_from_file(input_file)?;
+
+        if chunk_id.is_empty() {
+            break;
+        }
 
         let chunk_size = if chunk_id == ID3_CHUNK_ID {
             read_chunk_size_from_file(input_file, Endian::Little)?

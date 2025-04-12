@@ -56,7 +56,7 @@ const COORDINATE_NUMBER_OF_COMPONENTS: usize = 3;
 struct ChannelDescription {
     channel_label: u32,
     channel_flags: u32,
-    coordinates: [f32; 3],
+    coordinates: Vec<f32>,
 }
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
@@ -99,10 +99,10 @@ fn take_channel_descriptions_from_bytes(
 fn get_channel_description(chunk_data: &mut Vec<u8>) -> Result<ChannelDescription, Box<dyn Error>> {
     let channel_label = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
     let channel_flags = take_first_four_bytes_as_unsigned_integer(chunk_data, Endian::Big)?;
-    let mut coordinates: [f32; COORDINATE_NUMBER_OF_COMPONENTS] = Default::default();
+    let mut coordinates: Vec<f32> = Default::default();
 
-    for i in 0..COORDINATE_NUMBER_OF_COMPONENTS {
-        coordinates[i] = take_first_four_bytes_as_float(chunk_data, Endian::Big)?;
+    for _ in 0..COORDINATE_NUMBER_OF_COMPONENTS {
+        coordinates.push(take_first_four_bytes_as_float(chunk_data, Endian::Big)?);
     }
 
     Ok(ChannelDescription {
@@ -115,11 +115,14 @@ fn get_channel_description(chunk_data: &mut Vec<u8>) -> Result<ChannelDescriptio
 fn get_channel_layout_from_bitmap(bitmap: u32) -> Vec<String> {
     let mut channels: Vec<String> = Vec::new();
 
-    for i in 0..CHANNEL_LAYOUT.len() {
-        if bitmap & (1 << i) != 0 {
-            channels.push(CHANNEL_LAYOUT[i].to_string());
-        }
-    }
+    CHANNEL_LAYOUT
+        .iter()
+        .enumerate()
+        .for_each(|(bit_index, description)| {
+            if bitmap & (1 << bit_index) != 0 {
+                channels.push(description.to_string());
+            }
+        });
 
     channels
 }

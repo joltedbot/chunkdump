@@ -1,4 +1,5 @@
 use crate::byte_arrays::Endian;
+use crate::caf_chunks::ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE;
 use crate::chunks::{CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
 use crate::errors::LocalError;
 use crate::file_types::{FileType, Mp3SubType};
@@ -118,7 +119,13 @@ fn get_riff_data_type_from_file(wave_file: &mut File) -> Result<RiffDataType, Bo
 }
 
 pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>> {
-    let read_bytes = read_bytes_from_file(file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
+    let read_bytes = match read_bytes_from_file(file, CHUNK_ID_FIELD_LENGTH_IN_BYTES) {
+        Ok(bytes) => bytes,
+        Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
+            Vec::new()
+        }
+        Err(error) => return Err(error),
+    };
 
     if read_bytes.starts_with(&[0]) {
         let chunk_id: String = read_bytes
@@ -130,7 +137,16 @@ pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>
         return Err(Box::new(LocalError::InvalidChunkIDCanNotContinue(chunk_id)));
     }
 
-    Ok(String::from_utf8(read_bytes)?)
+    let output_string = match String::from_utf8(read_bytes) {
+        Ok(string) => string,
+        Err(err) => {
+            return Err(Box::new(LocalError::InvalidChunkIDCanNotContinue(
+                err.to_string(),
+            )))
+        }
+    };
+
+    Ok(output_string)
 }
 
 pub fn read_chunk_size_from_file(

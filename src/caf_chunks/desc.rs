@@ -101,13 +101,13 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let format_id = format_string.as_str();
     let format = match format_long_names.get(format_id) {
         Some(format) => format.to_string(),
-        None => [UNKNOW_FORMAT_ID_MESSAGE, &format_id].concat(),
+        None => [UNKNOW_FORMAT_ID_MESSAGE, format_id].concat(),
     };
 
     let output_values: Value = upon::value! {
         sample_rate: format_sample_rate(sample_rate),
         format: format,
-        format_flags: get_format_flags_from_mask(format_flag_mask, &format_id),
+        format_flags: get_format_flags_from_mask(format_flag_mask, format_id),
         bytes_per_packet: bytes_per_packet,
         frames_per_packet: frames_per_packet,
         channels_per_frame: channels_per_frame,
