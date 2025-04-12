@@ -17,7 +17,7 @@ const FORMAT_FLAG_UNSIGNED_INTEGER: &str = "Unsigned Integer";
 const LITTLE_ENDIAN: &str = "Little Endian";
 const BIG_ENDIAN: &str = "Big Endian";
 
-const FORMAT_ID_LONG_FORM: [(&str, &str); 11] = [
+const FORMAT_ID_LONG_FORM: [(&str, &str); 12] = [
     ("lpcm", "Linear PCM"),
     ("ima4", "IMA 4:1 ADPCM"),
     ("aac ", "MPEG-4 AAC"),
@@ -29,7 +29,9 @@ const FORMAT_ID_LONG_FORM: [(&str, &str); 11] = [
     (".mp2", "MPEG-1 or 2, Layer 2 audio"),
     (".mp3", "MPEG-1 or 2, Layer 3 audio"),
     ("alac", "Apple Lossless"),
+    ("opus", "Opus Interactive Audio Codec"),
 ];
+const UNKNOW_FORMAT_ID_MESSAGE: &str = "Unknown format: ";
 
 const MPEG_4_AAC_OBJECT_TYPES: [&str; 46] = [
     "Null",
@@ -80,12 +82,13 @@ const MPEG_4_AAC_OBJECT_TYPES: [&str; 46] = [
     "USAC",
 ];
 
+const FORMAT_FLAGS_OTHER_MESSAGE_START: &str = "Meaning is format dependent. See ";
+const FORMAT_FLAGS_OTHER_MESSAGE_MIDDLE: &str = "file specs. Raw flag mask is:";
+
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
     let sample_rate = take_first_eight_bytes_as_float(&mut chunk_data, Endian::Big)?;
-    let format_id =
+    let format_string =
         take_first_number_of_bytes_as_string(&mut chunk_data, FORMAT_ID_LENGTH_IN_BYTES)?;
-    let format_long_names: HashMap<&str, &str> = HashMap::from(FORMAT_ID_LONG_FORM);
-    let format = format_long_names[format_id.as_str()];
     let format_flag_mask = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
     let bytes_per_packet = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
     let frames_per_packet =
@@ -93,6 +96,13 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
     let channels_per_frame =
         take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
     let bits_per_channel = take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Big)?;
+
+    let format_long_names: HashMap<&str, &str> = HashMap::from(FORMAT_ID_LONG_FORM);
+    let format_id = format_string.as_str();
+    let format = match format_long_names.get(format_id) {
+        Some(format) => format.to_string(),
+        None => [UNKNOW_FORMAT_ID_MESSAGE, &format_id].concat(),
+    };
 
     let output_values: Value = upon::value! {
         sample_rate: format_sample_rate(sample_rate),
@@ -140,8 +150,11 @@ fn get_format_flags_from_mask(flag_mask: u32, format_id: &str) -> String {
         }
         FORMAT_ID_MPEG_4_AAC => MPEG_4_AAC_OBJECT_TYPES[flag_mask as usize].to_string(),
         _ => format!(
-            "Meaning is format dependent. See {} file specs. Raw flag mask is: {}",
-            format_id, flag_mask
+            "{} {} {} {}",
+            FORMAT_FLAGS_OTHER_MESSAGE_START,
+            format_id,
+            FORMAT_FLAGS_OTHER_MESSAGE_MIDDLE,
+            flag_mask
         ),
     }
 }
