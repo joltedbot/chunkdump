@@ -127,7 +127,7 @@ pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>
         Err(error) => return Err(error),
     };
 
-    if read_bytes.starts_with(&[0]) {
+    if read_bytes.starts_with(&[0]) || read_bytes.starts_with(&[255]) {
         let chunk_id: String = read_bytes
             .iter()
             .map(|bytes| String::from_utf8_lossy(&[*bytes]).to_string())

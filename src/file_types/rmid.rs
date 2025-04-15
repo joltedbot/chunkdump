@@ -1,8 +1,5 @@
 use crate::byte_arrays::Endian;
-use crate::chunks::{
-    get_chunk_metadata, CHUNKS_NOT_TO_EXTRACT_DATA_FROM
-    , MANDATORY_CHUNKS,
-};
+use crate::chunks::{get_chunk_metadata, CHUNKS_NOT_TO_EXTRACT_DATA_FROM, MANDATORY_CHUNKS};
 use crate::file_types::midi::get_metadata_from_midi_data;
 use crate::fileio::{
     get_file_metadata, read_bytes_from_file, read_chunk_id_from_file, read_chunk_size_from_file,

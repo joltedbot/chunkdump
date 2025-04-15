@@ -158,3 +158,98 @@ fn get_format_flags_from_mask(flag_mask: u32, format_id: &str) -> String {
         ),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn returns_single_decimal_place_khz_for_hz_with_a_hundreds_value() {
+        let test_hz = 44100.0;
+        let correct_formated_khz = "44.1";
+        let formated_khz = format_sample_rate(test_hz);
+        assert_eq!(formated_khz, correct_formated_khz);
+    }
+
+    #[test]
+    fn returns_single_decimal_place_khz_for_hz_without_a_hundreds_value() {
+        let test_hz = 48000.0;
+        let correct_formated_khz = "48";
+        let formated_khz = format_sample_rate(test_hz);
+        assert_eq!(formated_khz, correct_formated_khz);
+    }
+
+    #[test]
+    fn return_correctly_formated_flags_for_big_endian_uint_zero_bitmask() {
+        let flag_mask = 0;
+        let correct_formated_flags = "Big Endian, Unsigned Integer";
+        let formated_flags = get_format_flags_from_mask(flag_mask, FORMAT_ID_LINEAR_PCM);
+        assert_eq!(formated_flags, correct_formated_flags);
+    }
+
+    #[test]
+    fn return_correctly_formated_flags_for_little_endian_float_all_ones_bitmask() {
+        let flag_mask = 255;
+        let correct_formated_flags = "Little Endian, Floating Point";
+        let formated_flags = get_format_flags_from_mask(flag_mask, FORMAT_ID_LINEAR_PCM);
+        assert_eq!(formated_flags, correct_formated_flags);
+    }
+
+    #[test]
+    fn return_correctly_formated_flags_for_aac_lc_bitmask() {
+        let flag_mask = 2;
+        let correct_formated_flags = "AAC LC (Low Complexity)";
+        let formated_flags = get_format_flags_from_mask(flag_mask, FORMAT_ID_MPEG_4_AAC);
+        assert_eq!(formated_flags, correct_formated_flags);
+    }
+
+    #[test]
+    fn return_correctly_formated_flags_for_unknown_bitmask() {
+        let flag_mask = 0;
+        let format_id = "unknown";
+        let formated_flags = get_format_flags_from_mask(flag_mask, format_id);
+
+        assert!(formated_flags.contains(FORMAT_FLAGS_OTHER_MESSAGE_START));
+    }
+
+    #[test]
+    fn return_correct_metdata_output_entry_from_valid_bytes() {
+        let chunk_data: Vec<u8> = vec![
+            0x40, 0x59, 0x0C, 0xCC, 0xCC, 0xCC, 0xCC, 0xCD, // Sample rate: 100.2
+            b'l', b'p', b'c', b'm', // Format ID: "lpcm"
+            0x00, 0x00, 0x00, 0x03, // Format flag mask: 3
+            0x00, 0x00, 0x00, 0x10, // Bytes per packet: 16
+            0x00, 0x00, 0x00, 0x01, // Frames per packet: 1
+            0x00, 0x00, 0x00, 0x02, // Channels per frame: 2
+            0x00, 0x00, 0x00, 0x10, // Bits per channel: 16
+        ];
+
+        let output = get_metadata(chunk_data).unwrap();
+
+        assert_eq!(output.section, Section::Mandatory);
+        assert!(output.text.contains("Linear PCM"));
+        assert!(output.text.contains("Little Endian, Floating Point"));
+        assert!(output.text.contains("16 bit"));
+        assert!(output.text.contains("0.1 kHz"));
+    }
+
+    #[test]
+    fn return_correct_metdata_output_entry_from_unknown_format_id_bytes() {
+        let chunk_data: Vec<u8> = vec![
+            0x40, 0x59, 0x0C, 0xCC, 0xCC, 0xCC, 0xCC, 0xCD, // Sample rate: 100.2
+            0xFF, 0xFF, 0xFF, 0xFF, // Format ID: "lpcm"
+            0x00, 0x00, 0x00, 0x03, // Format flag mask: 3
+            0x00, 0x00, 0x00, 0x10, // Bytes per packet: 16
+            0x00, 0x00, 0x00, 0x01, // Frames per packet: 1
+            0x00, 0x00, 0x00, 0x02, // Channels per frame: 2
+            0x00, 0x00, 0x00, 0x10, // Bits per channel: 16
+        ];
+
+        let output = get_metadata(chunk_data).unwrap();
+
+        assert_eq!(output.section, Section::Mandatory);
+        assert!(output.text.contains(UNKNOW_FORMAT_ID_MESSAGE));
+        assert!(output.text.contains("16 bit"));
+        assert!(output.text.contains("0.1 kHz"));
+    }
+}

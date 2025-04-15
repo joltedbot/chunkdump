@@ -1,4 +1,4 @@
-use crate::byte_arrays::take_first_number_of_bytes;
+use crate::byte_arrays::{take_first_number_of_bytes, take_first_number_of_bytes_as_string};
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use std::error::Error;
@@ -7,7 +7,7 @@ use uuid::{Uuid, Version};
 
 const TEMPLATE_CONTENT: &str = include_str!("../templates/caf_chunks/uuid.tmpl");
 const REMAINING_DATA_MESSAGE: &str =
-    "*Note: Additional data exists but is in an unsupported format unique to the application that created the file.";
+    "** Additional data exists but in a non-standard format. Here is an attempt to render it as a string";
 const UUID_LENGTH_AS_BYTES: usize = 16;
 
 pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> {
@@ -29,10 +29,15 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         None => "None".to_string(),
     };
 
-    let mut remaining_data: &str = "";
+    let mut remaining_data: String = "".to_string();
     let chunk_data_length = chunk_data.len();
     if chunk_data_length > UUID_LENGTH_AS_BYTES {
-        remaining_data = REMAINING_DATA_MESSAGE;
+        let remaining_data_as_string =
+            take_first_number_of_bytes_as_string(&mut chunk_data, chunk_data_length)?;
+        remaining_data = format!(
+            "{} \n\n {}",
+            REMAINING_DATA_MESSAGE, remaining_data_as_string
+        );
     }
 
     let output_values: Value = upon::value! {
