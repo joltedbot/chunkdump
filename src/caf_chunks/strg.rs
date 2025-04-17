@@ -70,3 +70,62 @@ fn get_string_ids_from_bytes(
 
     Ok(string_ids)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn return_correct_string_id_and_offset_values_from_valid_entry_bytes() {
+        // Create test data with 2 entries
+        let mut test_bytes = vec![
+            // Entry 1: ID = 1, offset = 10
+            0x00, 0x00, 0x00, 0x01, // string ID (4 bytes)
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A, // offset (8 bytes)
+            // Entry 2: ID = 2, offset = 20
+            0x00, 0x00, 0x00, 0x02, // string ID (4 bytes)
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, // offset (8 bytes)
+        ];
+        let number_of_entries = 2;
+        let correct_result = vec![(1, 10), (2, 20)];
+        let result = get_string_ids_from_bytes(&mut test_bytes, number_of_entries).unwrap();
+
+        assert_eq!(result, correct_result);
+    }
+
+    #[test]
+    fn get_string_entries_from_bytes_returns_correct_entries() {
+        let test_bytes = "Hello\0World\0".as_bytes().to_vec();
+        let string_ids = vec![(1, 0), (2, 6)];
+
+        let result = get_string_entries_from_bytes(test_bytes, string_ids).unwrap();
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].key, "1");
+        assert_eq!(result[0].value, "Hello");
+        assert_eq!(result[1].key, "2");
+        assert_eq!(result[1].value, "World");
+    }
+
+    #[test]
+    fn get_metadata_returns_correct_output_entry() {
+        let test_bytes = vec![
+            0x00, 0x00, 0x00, 0x02, // number of entries (2)
+            // First entry
+            0x00, 0x00, 0x00, 0x01, // string ID (1)
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // offset (0)
+            // Second entry
+            0x00, 0x00, 0x00, 0x02, // string ID (2)
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, // offset (6)
+            // String data
+            b'H', b'e', b'l', b'l', b'o', 0x00, // "Hello"
+            b'W', b'o', b'r', b'l', b'd', 0x00, // "World"
+        ];
+
+        let result = get_metadata(test_bytes).unwrap();
+
+        assert_eq!(result.section, Section::Optional);
+        assert!(result.text.contains("Hello"));
+        assert!(result.text.contains("World"));
+    }
+}

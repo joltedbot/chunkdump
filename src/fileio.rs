@@ -138,7 +138,7 @@ pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>
     }
 
     let output_string = match String::from_utf8(read_bytes) {
-        Ok(string) => string,
+        Ok(string) => string.to_lowercase(),
         Err(err) => {
             return Err(Box::new(LocalError::InvalidChunkIDCanNotContinue(
                 err.to_string(),
