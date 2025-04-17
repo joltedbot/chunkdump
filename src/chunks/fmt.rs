@@ -79,7 +79,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         subformat_guid.copy_from_slice(chunk_data.as_slice());
     }
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         format_code: &format_code,
         number_of_channels: &number_of_channels,
         samples_per_second: &(samples_per_second as f64 / 1000.0),
@@ -91,7 +91,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         subformat_guid: format_guid(subformat_guid)
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Mandatory,
@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn return_correct_format_name_from_unknown_format_id_integer() {
         let test_integer: u16 = 0;
-        let correct_result: String = format!("{} {}", UNKOWN_FORMAT.to_string(), test_integer);
+        let correct_result: String = format!("{} {}", UNKOWN_FORMAT, test_integer);
         let result = get_format_name_from_format_id(test_integer);
         assert_eq!(result, correct_result);
     }

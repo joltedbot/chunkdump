@@ -18,12 +18,12 @@ pub fn get_metadata(
         chunk_data = EMPTY_DATA_MESSAGE.to_string();
     }
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         chunk_id: chunk_id,
         chunk_data: chunk_data,
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Unsupported,

@@ -2,6 +2,7 @@ use crate::chunks::id3::get_metadata;
 use crate::errors::LocalError;
 use crate::file_types::Mp3SubType;
 use crate::fileio::{get_file_metadata, read_bytes_from_file, skip_over_bytes_in_file};
+use crate::formating::format_bit_as_bool_string;
 use crate::output::{OutputEntry, Section};
 use crate::template::get_file_chunk_output;
 use std::error::Error;
@@ -187,14 +188,6 @@ fn get_sample_rate_from_index(sample_rate: u8, version: u8) -> Result<String, Lo
     }
 }
 
-fn format_bit_as_bool_string(bit: u8) -> String {
-    if bit == 1 {
-        "True".to_string()
-    } else {
-        "False".to_string()
-    }
-}
-
 fn get_mode_extension_from_index(mode_extension: u8, layer: u8) -> (String, String, String) {
     let mut joint_stereo = String::new();
     let mut intensity_stereo = String::new();
@@ -249,13 +242,13 @@ mod tests {
 
     #[test]
     fn return_true_string_when_boolean_flag_bit_is_set() {
-        let result = format_bit_as_bool_string(1 as u8);
+        let result = format_bit_as_bool_string(1);
         assert_eq!(result, "True");
     }
 
     #[test]
     fn return_true_string_when_boolean_flag_bit_is_unset() {
-        let result = format_bit_as_bool_string(0 as u8);
+        let result = format_bit_as_bool_string(0);
         assert_eq!(result, "False");
     }
 

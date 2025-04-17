@@ -1,4 +1,5 @@
 use crate::byte_arrays::Endian;
+use crate::caf_chunks::ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE;
 use crate::chunks::{CHUNK_ID_FIELD_LENGTH_IN_BYTES, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES};
 use crate::errors::LocalError;
 use crate::file_types::{FileType, Mp3SubType};
@@ -23,6 +24,7 @@ const OGG_FILE_TYPE_ID: &[u8] = "OggS".as_bytes();
 const MP3_ID3_FILE_TYPE_ID: &[u8] = "ID3".as_bytes();
 const MP3_NON_ID3_FILE_TYPE_ID: &[u8] = &[0xFF, 0xFB];
 const M4A_FILE_TYPE_ID: &[u8] = "ftyp".as_bytes();
+const CAF_FILE_TYPE_ID: &[u8] = "caff".as_bytes();
 
 #[derive(Debug, PartialEq)]
 enum RiffDataType {
@@ -55,7 +57,7 @@ pub fn read_byte_from_file(file: &mut File) -> Result<u8, Box<dyn Error>> {
 
     let result = read_bytes
         .first()
-        .ok_or(LocalError::InsufficientBytesToTake(1, 0))?;
+        .ok_or(LocalError::InsufficientBytesToRead(1))?;
     Ok(*result)
 }
 
@@ -73,6 +75,7 @@ pub fn get_file_id_from_file(input_file_path: &str) -> Result<FileType, Box<dyn 
         },
         MIDI_FILE_CHUNKID => FileType::Smf,
         OGG_FILE_TYPE_ID => FileType::Ogg,
+        CAF_FILE_TYPE_ID => FileType::Caf,
         unknown => {
             if unknown.starts_with(MP3_ID3_FILE_TYPE_ID) {
                 FileType::Mp3(Mp3SubType::ID3)
@@ -116,15 +119,41 @@ fn get_riff_data_type_from_file(wave_file: &mut File) -> Result<RiffDataType, Bo
 }
 
 pub fn read_chunk_id_from_file(file: &mut File) -> Result<String, Box<dyn Error>> {
-    let read_bytes = read_bytes_from_file(file, CHUNK_ID_FIELD_LENGTH_IN_BYTES)?;
-    Ok(String::from_utf8(read_bytes)?)
+    let read_bytes = match read_bytes_from_file(file, CHUNK_ID_FIELD_LENGTH_IN_BYTES) {
+        Ok(bytes) => bytes,
+        Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
+            Vec::new()
+        }
+        Err(error) => return Err(error),
+    };
+
+    if read_bytes.starts_with(&[0]) || read_bytes.starts_with(&[255]) {
+        let chunk_id: String = read_bytes
+            .iter()
+            .map(|bytes| String::from_utf8_lossy(&[*bytes]).to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        return Err(Box::new(LocalError::InvalidChunkIDCanNotContinue(chunk_id)));
+    }
+
+    let output_string = match String::from_utf8(read_bytes) {
+        Ok(string) => string.to_lowercase(),
+        Err(err) => {
+            return Err(Box::new(LocalError::InvalidChunkIDCanNotContinue(
+                err.to_string(),
+            )))
+        }
+    };
+
+    Ok(output_string)
 }
 
 pub fn read_chunk_size_from_file(
     file: &mut File,
     endianness: Endian,
 ) -> Result<usize, Box<dyn Error>> {
-    let chunk_size_bytes = read_bytes_from_file(file, 4)?;
+    let chunk_size_bytes = read_bytes_from_file(file, CHUNK_SIZE_FIELD_LENGTH_IN_BYTES)?;
     let mut byte_array: [u8; CHUNK_SIZE_FIELD_LENGTH_IN_BYTES] = Default::default();
     byte_array.copy_from_slice(chunk_size_bytes.as_slice());
 

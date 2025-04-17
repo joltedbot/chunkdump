@@ -1,0 +1,14 @@
+
+------------------------------
+Overview Layout Chunk Details:
+------------------------------
+Edit Count:                 {{ edit_count }}
+Frames per Overview Sample: {{ frames_per_ovw_sample }}
+
+Overview Samples:
+-----------------------------
+| Sample | Minimum | Maximum |
+------------------------------
+{%- for sample in samples %}
+| {{ sample.sample_index }}{{ sample.spacer1 }}    | {{ sample.min_value }}{{ sample.spacer2 }}  | {{ sample.max_value }}{{ sample.spacer3 }}    |{% endfor %}
+------------------------------

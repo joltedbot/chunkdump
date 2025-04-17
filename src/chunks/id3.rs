@@ -40,11 +40,11 @@ pub fn get_metadata(file_path: &str) -> Result<OutputEntry, Box<dyn Error>> {
         });
     });
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         id3_tags: id3_entries,
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Optional,

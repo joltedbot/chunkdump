@@ -1,5 +1,6 @@
 mod blocks;
 mod byte_arrays;
+mod caf_chunks;
 mod chunks;
 mod cli;
 mod errors;

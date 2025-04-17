@@ -48,12 +48,12 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         })
     }
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
             number_of_cue_points: &number_of_cue_points,
             cue_points: &cue_points
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Optional,

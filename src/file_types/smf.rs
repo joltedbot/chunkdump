@@ -12,7 +12,7 @@ pub fn get_metadata_from_file(
     mandatory_sections_only: bool,
 ) -> Result<Vec<OutputEntry>, Box<dyn Error>> {
     let mut smf_file = File::open(smf_file_path)?;
-    let file_metadata = get_file_metadata(smf_file_path, &mut smf_file, TEMPLATE_CONTENT)?;
+    let file_metadata = get_file_metadata(smf_file_path, &smf_file, TEMPLATE_CONTENT)?;
     let smf_metadata = get_metadata_from_smf(&mut smf_file, mandatory_sections_only)?;
 
     let mut chunks = vec![file_metadata];

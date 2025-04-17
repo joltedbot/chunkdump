@@ -71,16 +71,16 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         Endian::Little,
     )? as u32);
     let mystery_one = take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let mystery_two = take_first_four_bytes_as_float(&mut chunk_data)?;
+    let mystery_two = take_first_four_bytes_as_float(&mut chunk_data, Endian::Little)?;
     let number_of_beats =
         take_first_four_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let meter_denominator =
         take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
     let meter_numerator =
         take_first_two_bytes_as_unsigned_integer(&mut chunk_data, Endian::Little)?;
-    let tempo = take_first_four_bytes_as_float(&mut chunk_data)?;
+    let tempo = take_first_four_bytes_as_float(&mut chunk_data, Endian::Little)?;
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         loop_on: loop_on,
         root_note_set: root_note_set,
         stretch: stretch,
@@ -95,7 +95,7 @@ pub fn get_metadata(mut chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Erro
         tempo: format!("{:2}", tempo),
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
     Ok(OutputEntry {
         section: Section::Optional,
         text: formated_output,

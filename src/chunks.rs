@@ -12,10 +12,10 @@ pub mod id3;
 mod list;
 pub mod mark;
 mod resu;
-mod skipped;
+pub mod skipped;
 mod smpl;
 mod sndm;
-mod text;
+pub mod text;
 mod umid;
 
 use crate::byte_arrays::Endian;
@@ -88,7 +88,6 @@ pub const CHUNKS_NOT_TO_EXTRACT_DATA_FROM: [&str; 10] = [
     LOGIC_PRO_CHUNK_ID,
     ID3_CHUNK_ID,
 ];
-pub const ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE: &str = "failed to fill whole buffer";
 
 pub fn get_metadata_from_chunks(
     input_file: &mut File,
@@ -99,13 +98,11 @@ pub fn get_metadata_from_chunks(
     let mut output: Vec<OutputEntry> = vec![];
 
     loop {
-        let chunk_id: String = match read_chunk_id_from_file(input_file) {
-            Ok(chunk_id) => chunk_id.to_lowercase(),
-            Err(error) if error.to_string() == ERROR_TO_MATCH_IF_NOT_ENOUGH_BYTES_LEFT_IN_FILE => {
-                break
-            }
-            Err(error) => return Err(error),
-        };
+        let chunk_id: String = read_chunk_id_from_file(input_file)?;
+
+        if chunk_id.is_empty() {
+            break;
+        }
 
         let chunk_size = get_chunk_size_from_file(input_file, &endianness, &chunk_id)?;
 
@@ -124,9 +121,9 @@ pub fn get_metadata_from_chunks(
 fn get_chunk_size_from_file(
     input_file: &mut File,
     endianness: &Endian,
-    chunk_id: &String,
+    chunk_id: &str,
 ) -> Result<usize, Box<dyn Error>> {
-    let chunk_size = match chunk_id.as_str() {
+    let chunk_size = match chunk_id {
         ID3_CHUNK_ID => read_chunk_size_from_file(input_file, Endian::Little)?,
         _ => read_chunk_size_from_file(input_file, endianness.to_owned())?,
     };
@@ -135,17 +132,15 @@ fn get_chunk_size_from_file(
 
 fn get_chunk_data_bytes_from_file(
     input_file: &mut File,
-    chunk_id: &String,
+    chunk_id: &str,
     chunk_size: usize,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
-    Ok(
-        if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id.as_str()) {
-            skip_over_bytes_in_file(input_file, chunk_size)?;
-            Vec::new()
-        } else {
-            read_bytes_from_file(input_file, chunk_size).unwrap_or_default()
-        },
-    )
+    Ok(if CHUNKS_NOT_TO_EXTRACT_DATA_FROM.contains(&chunk_id) {
+        skip_over_bytes_in_file(input_file, chunk_size)?;
+        Vec::new()
+    } else {
+        read_bytes_from_file(input_file, chunk_size).unwrap_or_default()
+    })
 }
 
 pub fn get_chunk_metadata(

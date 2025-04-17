@@ -1,0 +1,27 @@
+
+-----------------------------
+Channel Layout Chunk Details:
+-----------------------------
+Channel Layout Method:  {{ channel_layout_tag }}
+{%- if number_of_channels %}
+Number of Channels:   {{ number_of_channels }} {% endif %}
+number_of_channel_descriptions: {{ number_of_channel_descriptions }}
+{% if channel_bitmap %}
+Bitmask Channels Present:
+-------------------------
+{%- for value in channel_bitmap %}
+  - {{ value }}
+ {%- endfor %}
+ {%- endif %}
+{% if number_of_channel_descriptions %}
+Channel Descriptions:
+---------------------
+{%- for description in channel_descriptions %}
+   ---------------------
+   Channel Lable: {{ description.channel_label }}
+   Channel Flags: {{ description.channel_flags }}
+   Co-ordinates:
+   {%- for coord in description.coordinates %}
+    - {{ coord }}{% endfor %}
+{%- endfor %}
+{% endif %}

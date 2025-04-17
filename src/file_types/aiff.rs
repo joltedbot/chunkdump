@@ -41,12 +41,11 @@ fn get_form_metadata_from_file(aiff_file: &mut File) -> Result<OutputEntry, Box<
     )?;
     let form_type_bytes = read_bytes_from_file(aiff_file, AIFF_FORM_TYPE_LENGTH_IN_BYTES)?;
 
-    let aiff_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         form_type: String::from_utf8(form_type_bytes)?,
     };
 
-    let formated_aiff_output: String =
-        get_file_chunk_output(FORM_TEMPLATE_CONTENT, aiff_output_values)?;
+    let formated_aiff_output: String = get_file_chunk_output(FORM_TEMPLATE_CONTENT, output_values)?;
 
     let form_chunk = OutputEntry {
         section: Section::Header,

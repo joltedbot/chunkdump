@@ -1,10 +1,9 @@
 # CHUNKDUMP
 
-**Status: v0.8.1 - _Stable but currently only tested on macOS with Apple Silicon._**
-
 A simple command line tool to read and display as many of the "chunks" of metadata as I can find and interpret in RIFF
-Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), Ogg Vorbis (.ogg), MPEG-4 Audio (.m4a), and both RIFF RMID (.rmi) and
-standard SMF (.mid) MIDI files.
+Wave (.wav), AIFF/AIFF-C (.aif), FLAC (.flac), Ogg Vorbis (.ogg), MPEG-4 Audio (.m4a), Apple Core Audio Format File (
+.caf)
+and both RIFF RMID (.rmi) and standard SMF (.mid) MIDI files.
 
 ## Usage
 
@@ -15,7 +14,7 @@ To use just build as per Rust usual.
 
 &nbsp;
 
-Then point it at your .wav, .aif, .flac, .ogg, .mp3, .m4a, .mid or .rmid file with
+Then point it at your .wav, .aif, .flac, .ogg, .mp3, .m4a, .caf, .mid or .rmid file with
 > chunkdump /path/to/file
 
 or more fully
@@ -51,6 +50,9 @@ or more fully
 - M4A
     - [Current List of Supported M4A Chunks](#current-list-of-supported-m4a-chunks)
     - [Special Skipped M4A Chunks](#special-skipped-m4a-chunks)
+- CAF
+    - [Current List of Supported CAF Chunks](#current-list-of-supported-caf-chunks)
+    - [Special Skipped CAF Chunks](#special-skipped-caf-chunks)
 - MIDI (SMF & RMID)
     - [Current List of Supported MIDI File Metadata](#current-list-of-supported-midi-file-metadata)
 
@@ -250,6 +252,75 @@ For now they will show up in "Extra Chunks" until I actually have something to w
 
 - **Audio Chunks**: This is the audio portion which is just skipped. See your media player of choice to read that
   data.
+
+### Current List of Supported CAF Chunks
+
+- **chan**
+    - The Channel Layout chunk describes the order and role of each channel in a CAF file.
+- **desc**
+    - The Audio Description describes the format of the audio data in the Audio Data chunk.
+- **free**
+    - The optional Free chunk is for reserving space, or providing padding, in a CAF file. Normally this is ignored but
+      somethimes there is contents in it so I attempt to render it out as a string.
+- **id3**
+    - ID3 format metadata tags. MP3 doesn't really have its own metadata for things like artist and title so while ID3
+      is optional and not expressly part of the MP3 standard, it does in practice play the part of the MP3 file's
+      metadata chunks.
+- **info**
+    - Information chunk to contain any number of human-readable text strings.
+- **mark**
+    - The Marker chunk can contain any number of marker descriptions, each of which marks a particular sample location
+      in the file.
+- **midi**
+    - The MIDI chunk allows you to embed MIDI SMF file data in the CAF container including the SMF metadata which is
+      extrated by chunkdump
+- **ovvw**
+    - You can use the optional Overview chunk to hold sample descriptions that you can use to draw a graphical view of
+      the audio data in a CAF file.
+    - This section can get very long and might require writing it to a file and removing this piece. I might need to
+      find a better output format for this.
+- **regn**
+    - The Region chunks containers region descriptions for the audio data chunk. Each region description includes
+      starting and ending marker
+      descriptions that delineate a span of sample frames in
+      the audio data. See Marker Descriptions for more information about markers.
+- **strg**
+    - The optional Strings chunk contains any number of textual strings, along with an index for accessing them. These
+      strings serve as labels for other chunks, such as Marker or Region chunks.
+    - This is a very strange feature of CAF files. The Marker and Region chunks do not contain the names of each of the
+      markers and regions.
+      Those names are stored in the stings chunk and you have to infer from the order of markers and regions and strings
+      which is which.
+    - Note that markers in the Marker chunk have names in the string chunk and in the same order. Regions can also have
+      markers
+      within them and those markers seem, at least some of the time, to get the same name as the region they are in. It
+      is . . . irritating.
+- **uuid**
+    - The CAF format lets you extend it with user defined chunks. This UUID header is used to define those chunks.
+    - Because those user define chunks are generally created by the maker of the audio application that created file,
+      they are not
+      included in the file specification, they could be anything and so I have no way of identifying and properly
+      parsing them,
+      I print them out as strings in the hope that there is something useful there for you to parse through manually.
+
+### Special Skipped CAF Chunks
+
+- **data**: This is the audio portion which is just skipped. See your media player of choice to read that
+  data.
+- **pakt**:
+- **kuki**
+
+**These chunks are part of the spec for CAF specification but I can not find examples in the wild and can't find an app
+that will create files that use them.
+Rather than release support for them untested or create files myself from scratch and trick myself into believing it is
+connect enough
+to count as valid testing.
+Once I find a CAF file from a valid source that has these metadata chunks I will add support**
+
+- **instr**
+- **edct**
+- **peak**
+- **umid**
 
 ### Current List of Supported MIDI File Metadata
 

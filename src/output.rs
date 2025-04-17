@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{stdout, Write};
 use std::path::Path;
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum Section {
     Header,
     Mandatory,
@@ -13,6 +14,7 @@ pub enum Section {
     Empty,
 }
 
+#[derive(PartialEq, Eq, Debug)]
 pub struct OutputEntry {
     pub section: Section,
     pub text: String,

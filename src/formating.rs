@@ -92,7 +92,7 @@ pub fn format_smpte_offset(
     endianness: Endian,
 ) -> Result<String, LocalError> {
     if endianness == Endian::Little {
-        let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Little)?;
+        let hours = take_first_byte_as_signed_integer(smpte_offset_bytes)?;
         let minutes = take_first_byte(smpte_offset_bytes)?;
         let seconds = take_first_byte(smpte_offset_bytes)?;
         let samples = take_first_byte(smpte_offset_bytes)?;
@@ -104,7 +104,7 @@ pub fn format_smpte_offset(
         let samples = take_first_byte(smpte_offset_bytes)?;
         let seconds = take_first_byte(smpte_offset_bytes)?;
         let minutes = take_first_byte(smpte_offset_bytes)?;
-        let hours = take_first_byte_as_signed_integer(smpte_offset_bytes, Endian::Big)?;
+        let hours = take_first_byte_as_signed_integer(smpte_offset_bytes)?;
         Ok(format!(
             "{}h:{}m:{}s & {} samples",
             hours, minutes, seconds, samples
@@ -133,6 +133,14 @@ pub fn add_one_if_byte_size_is_odd(mut byte_size: u32) -> u32 {
     }
 
     byte_size
+}
+
+pub fn format_bit_as_bool_string(bit: u8) -> String {
+    if bit == 1 {
+        "True".to_string()
+    } else {
+        "False".to_string()
+    }
 }
 
 #[cfg(test)]

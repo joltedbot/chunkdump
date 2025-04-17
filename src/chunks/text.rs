@@ -18,18 +18,18 @@ pub fn get_metadata(title: &str, mut chunk_data: Vec<u8>) -> Result<OutputEntry,
     if body.is_empty() {
         section = Section::Empty;
 
-        let wave_output_values: Value = upon::value! {
+        let output_values: Value = upon::value! {
             body: title.to_string(),
         };
 
-        formated_output = get_file_chunk_output(EMPTY_TEMPLATE_CONTENT, wave_output_values)?;
+        formated_output = get_file_chunk_output(EMPTY_TEMPLATE_CONTENT, output_values)?;
     } else {
-        let wave_output_values: Value = upon::value! {
+        let output_values: Value = upon::value! {
             title: title,
             body: &body,
         };
 
-        formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+        formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
     }
 
     Ok(OutputEntry {

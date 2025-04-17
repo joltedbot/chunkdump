@@ -14,11 +14,11 @@ pub fn get_metadata(chunk_data: Vec<u8>) -> Result<OutputEntry, Box<dyn Error>> 
     zlib.read_to_string(&mut resu_json)
         .map_err(|e| LocalError::InvalidZipDataFound(e.to_string()))?;
 
-    let wave_output_values: Value = upon::value! {
+    let output_values: Value = upon::value! {
         resu_json: resu_json.clone(),
     };
 
-    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, wave_output_values)?;
+    let formated_output = get_file_chunk_output(TEMPLATE_CONTENT, output_values)?;
 
     Ok(OutputEntry {
         section: Section::Optional,

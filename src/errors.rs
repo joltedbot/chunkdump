@@ -9,7 +9,7 @@ pub enum LocalError {
     #[error("Could not extract the filename from the supplied path")]
     InvalidFileName,
 
-    #[error("Unsupported file type: '{0}'.  Only Wave, AIFF, Flac, and RMID or SWF MIDI files are supported")]
+    #[error("Unsupported file type: '{0}'.  Only Wave, AIFF, Flac, Ogg Vorbis, MP3, M4a, CAF and RMID or SWF MIDI files are supported")]
     UnsupportedFileType(String),
 
     #[error("Incorrect RIFF file type, file is not a valid RIFF WAVE or RMID file")]
@@ -27,8 +27,11 @@ pub enum LocalError {
     #[error("Could not extract ID3 tags from the file: {0}")]
     InvalidID3TagDataFound(String),
 
-    #[error("Requested number of bytes {0} is greater than the available bytes: {1}")]
+    #[error("Can not take {0} bytes from array of size {1}.")]
     InsufficientBytesToTake(usize, usize),
+
+    #[error("Can not read {0} bytes from the file. File has fewer bytes left that requested.")]
+    InsufficientBytesToRead(usize),
 
     #[error("Output File {0} Already Exists")]
     OutputFileAlreadyExists(String),
@@ -59,6 +62,9 @@ pub enum LocalError {
 
     #[error("{0} is not a valid MP3 header bitrate index value.")]
     MP3BitrateIndexOverflow(u8),
+
+    #[error("[{0}] is not a valid chunk ID and likely indicates an invalid metadata format in this file. Processing can not continue.")]
+    InvalidChunkIDCanNotContinue(String),
 }
 
 pub fn handle_local_error(local_error: LocalError, specific_error: String) {
