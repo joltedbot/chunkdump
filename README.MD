@@ -309,7 +309,6 @@ For now they will show up in "Extra Chunks" until I actually have something to w
   data.
 - **pakt**:
 - **kuki**
-    - M
 
 **These chunks are part of the spec for CAF specification but I can not find examples in the wild and can't find an app
 that will create files that use them.
