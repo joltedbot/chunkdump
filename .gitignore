@@ -7,3 +7,4 @@ check_before_commit.sh
 run_all_test_files.sh
 output_files
 .scannerwork
+sonar-project.properties

@@ -93,7 +93,7 @@ fn write_to_stdout(file_data: Vec<String>) -> Result<(), Box<dyn Error>> {
 fn write_to_file(file_data: Vec<String>, output_file_path: String) -> Result<(), Box<dyn Error>> {
     if Path::new(&output_file_path).exists() {
         return Err(Box::new(LocalError::OutputFileAlreadyExists(
-            output_file_path.to_string(),
+            output_file_path,
         )));
     }
 
