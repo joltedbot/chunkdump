@@ -1,4 +1,8 @@
-image: "rust:latest"
+include:
+- template: Security/SAST.gitlab-ci.yml
+- template: Security/Secret-Detection.gitlab-ci.yml
+- template: Security/Dependency-Scanning.gitlab-ci.yml
+
 
 stages:
   - build
@@ -7,6 +11,8 @@ stages:
   - semgrep
   - sonarcloud
 
+
+image: "rust:latest"
 
 build:
   stage: build
@@ -19,13 +25,6 @@ test:
   script:
     - rustc --version && cargo --version 
     - cargo test --workspace --verbose
-
-sast:
-  stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
-- template: Security/Secret-Detection.gitlab-ci.yml
-- template: Security/Dependency-Scanning.gitlab-ci.yml
 
 semgrep:
   stage: semgrep
