@@ -3,7 +3,7 @@ image: "rust:latest"
 stages:
   - build
   - test
-  - sast
+  - cargotest
   - semgrep
   - sonarcloud
 
@@ -15,13 +15,13 @@ build:
     - cargo build -r
 
 test:
-  stage: test
+  stage: cargotest
   script:
     - rustc --version && cargo --version 
     - cargo test --workspace --verbose
 
 sast:
-  stage: sast
+  stage: test
 include:
 - template: Security/SAST.gitlab-ci.yml
 - template: Security/Secret-Detection.gitlab-ci.yml
